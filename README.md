@@ -13,8 +13,7 @@ $ sfdx plugins:instal https://github.com/jfgarcia268/vlocity-es_devops_tools.git
 ```sh-session
 $ sfdx COMMAND
 running command...
-$ sfdx (-v|--version|version)
-vlocityEStools/0.0.1 darwin-x64 node-v10.16.3
+
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
