@@ -16,9 +16,9 @@ export default class deleteOldOS extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityTools:deleteOldOS -u myOrg@example.com -n 5
+  `$ sfdx vlocityTools:deleteoldos -u myOrg@example.com -n 5
   `,
-  `$ sfdx vlocityTools:deleteOldOS --targetusername myOrg@example.com --numberversions 5
+  `$ sfdx vlocityTools:deleteoldos --targetusername myOrg@example.com --numberversions 5
   `
   ];
 
