@@ -1,7 +1,7 @@
 {
   "name": "vlocityEStools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -45,8 +45,8 @@
     "commands": "./lib/commands",
     "bin": "sfdx",
     "topics": {
-      "hello": {
-        "description": "Commands to say hello."
+      "vlocityTools": {
+        "description": "Vlocity DevOps tools"
       }
     },
     "devPlugins": [

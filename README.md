@@ -6,7 +6,7 @@ Vlocity ES Tools (Beta)
 <!-- install -->
 # Install
 ```sh-session
-$ npm install -g https://github.com/jfgarcia268/vlocity-es_devops_tools.git
+$ sfdx plugins:instal https://github.com/jfgarcia268/vlocity-es_devops_tools.git
 ```
 
 # Usage
