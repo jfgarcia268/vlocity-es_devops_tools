@@ -2,7 +2,6 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { AppUtils } from '../../utils/AppUtils';
-//import { Utils } from './../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -12,8 +11,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('vlocityEStools', 'deleteOldOS');
 
 
-
-export default class Org extends SfdxCommand {
+export default class deleteOldOS extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
@@ -27,7 +25,6 @@ export default class Org extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    // flag with a value (-n, --name=VALUE)
     numberversions: flags.integer({char: 'n', description: messages.getMessage('numberRecentVersions')})
   };
 
