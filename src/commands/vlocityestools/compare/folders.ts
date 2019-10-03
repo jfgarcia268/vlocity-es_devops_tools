@@ -40,6 +40,7 @@ export default class compareFolders extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage('command')); 
 
     const fs = require('fs');
+    const dircompare = require('dir-compare');
 
     var foldera = this.flags.folder1;
     var folderb = this.flags.folder2;
@@ -50,8 +51,10 @@ export default class compareFolders extends SfdxCommand {
       fs.unlinkSync(resultsFile);
     }
     const CreateFiles = fs.createWriteStream(resultsFile, {flags: 'a'});
-    var initialHeader = 'VLOCITY_KEY,COMP_TYPE,COMP_NAME,' + foldera + ',' + folderb + ',DIFF';
+    var initialHeader = 'VLOCITY_KEY,COMP_TYPE,COMP_NAME,' + foldera + ',' + folderb + ',EQUAL';
     CreateFiles.write(initialHeader+'\r\n');   
+
+    ////////// DIFF - A vs B
     fs.readdir(foldera,(err,folders) => {
       folders.forEach(FolderLevel1 => {
         var pathLevel1 = foldera + '/' + FolderLevel1
@@ -63,10 +66,19 @@ export default class compareFolders extends SfdxCommand {
             //console.log('component: ' + pathLevel2_folderB); 
             try {
               if (fs.existsSync(pathLevel2_folderB)) {
-                console.log('YES: ' + pathLevel2_folderB);
+                //console.log('YES: ' + pathLevel2_folderB);
+                var options = {compareSize: true};
+                var res = dircompare.compareSync(pathLevel2_folderA, pathLevel2_folderB,options);
+                console.log(res.same);
+                var diff = res.same;
+                var foundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,Yes,' + diff;
+                CreateFiles.write(foundResult+'\r\n');   
               }
               else {
-                console.log('NO: ' + pathLevel2_folderB);
+                //console.log('NO: ' + pathLevel2_folderB);
+                //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
+                var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,No,N/A';
+                CreateFiles.write(notFoundResult+'\r\n');   
               }
             } catch(err) {
               console.error('err: ' + err);
@@ -77,10 +89,30 @@ export default class compareFolders extends SfdxCommand {
       });
     })
 
+    ////////// B vs A
+    fs.readdir(folderb,(err,folders) => {
+      folders.forEach(FolderLevel1 => {
+        var pathLevel1 = folderb + '/' + FolderLevel1
+        //console.log('FolderLevel1: ' + pathLevel1);
+        fs.readdir(pathLevel1,(err, components) => {
+          components.forEach(component => {
+            var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
+            //console.log('component: ' + pathLevel2_folderB); 
+            try {
+              if (!fs.existsSync(pathLevel2_folderA)) {
+                //console.log('NO: ' + pathLevel2_folderB);
+                //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
+                var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',No,Yes,N/A';
+                CreateFiles.write(notFoundResult+'\r\n');   
+              }
+            } catch(err) {
+              console.error('err: ' + err);
+            }
+          })
+        })
+      });
+    })
 
-
-    
+   //END public async run()
   }
-
-
 }
