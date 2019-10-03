@@ -111,7 +111,7 @@ export default class deleteOldOS extends SfdxCommand {
             });
             batch.on("response", function(rets) { // fired when batch finished and result retrieved
               for (var i=0; i < rets.length; i++) {
-                AppUtils.log3(JSON.stringify(rets[i]));
+                //AppUtils.log3(JSON.stringify(rets[i]));
                 if (rets[i].success) {
                   AppUtils.log1("#" + (i+1) + " Delete successfully: " + rets[i].id);
                 } else {
