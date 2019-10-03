@@ -45,7 +45,7 @@ export default class compareFolders extends SfdxCommand {
     var foldera = this.flags.folder1;
     var folderb = this.flags.folder2;
 
-    var resultsFile = './Compare_' + foldera + '_' + foldera + '.csv';
+    var resultsFile = './Compare_' + foldera + '_' + folderb + '.csv';
 
     AppUtils.log2('Results File: ' + resultsFile ); 
 
@@ -62,36 +62,39 @@ export default class compareFolders extends SfdxCommand {
     fs.readdir(foldera,(err,folders) => {
       AppUtils.log2('Finding Differences between ' + foldera + ' and ' + folderb + ' And Orphan Components in ' + foldera); 
       folders.forEach(FolderLevel1 => {
-        var pathLevel1 = foldera + '/' + FolderLevel1
-        AppUtils.log1('Comparing: ' + FolderLevel1); 
-       //console.log('FolderLevel1: ' + pathLevel1);
-        fs.readdir(pathLevel1,(err, components) => {
-          components.forEach(component => {
-            var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
-            var pathLevel2_folderB = folderb + '/' + FolderLevel1 + '/' + component
-            //console.log('component: ' + pathLevel2_folderB); 
-            try {
-              if (fs.existsSync(pathLevel2_folderB)) {
-                //console.log('YES: ' + pathLevel2_folderB);
-                var options = {compareSize: true};
-                var res = dircompare.compareSync(pathLevel2_folderA, pathLevel2_folderB,options);
-                //console.log(res.same);
-                var diff = res.same;
-                var foundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,Yes,' + diff;
-                CreateFiles.write(foundResult+'\r\n');   
+        console.log('FolderLevel1:' + FolderLevel1)
+        if(fs.lstatSync(FolderLevel1).isDirectory()){ 
+          var pathLevel1 = foldera + '/' + FolderLevel1
+          AppUtils.log1('Comparing: ' + FolderLevel1); 
+          //console.log('FolderLevel1: ' + pathLevel1);
+          fs.readdir(pathLevel1,(err, components) => {
+            components.forEach(component => {
+              var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
+              var pathLevel2_folderB = folderb + '/' + FolderLevel1 + '/' + component
+              //console.log('component: ' + pathLevel2_folderB); 
+              try {
+                if (fs.lstatSync(pathLevel2_folderB).isDirectory() && fs.existsSync(pathLevel2_folderB)) {
+                  //console.log('YES: ' + pathLevel2_folderB);
+                  var options = {compareSize: true};
+                  var res = dircompare.compareSync(pathLevel2_folderA, pathLevel2_folderB,options);
+                  //console.log(res.same);
+                  var diff = res.same;
+                  var foundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,Yes,' + diff;
+                  CreateFiles.write(foundResult+'\r\n');   
+                }
+                else {
+                  //console.log('NO: ' + pathLevel2_folderB);
+                  //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
+                  var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,No,N/A';
+                  CreateFiles.write(notFoundResult+'\r\n');   
+                }
+              } catch(err) {
+                console.error('err: ' + err);
               }
-              else {
-                //console.log('NO: ' + pathLevel2_folderB);
-                //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
-                var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,No,N/A';
-                CreateFiles.write(notFoundResult+'\r\n');   
-              }
-            } catch(err) {
-              console.error('err: ' + err);
-            }
 
+            })
           })
-        })
+        }
       });
     })
 
@@ -101,25 +104,27 @@ export default class compareFolders extends SfdxCommand {
     fs.readdir(folderb,(err,folders) => {
       AppUtils.log2('Finding Orphan Components in ' + folderb); 
       folders.forEach(FolderLevel1 => {
-        var pathLevel1 = folderb + '/' + FolderLevel1
-        AppUtils.log1('Comparing: ' + FolderLevel1); 
-        //console.log('FolderLevel1: ' + pathLevel1);
-        fs.readdir(pathLevel1,(err, components) => {
-          components.forEach(component => {
-            var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
-            //console.log('component: ' + pathLevel2_folderB); 
-            try {
-              if (!fs.existsSync(pathLevel2_folderA)) {
-                //console.log('NO: ' + pathLevel2_folderB);
-                //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
-                var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',No,Yes,N/A';
-                CreateFiles.write(notFoundResult+'\r\n');   
+        if(fs.lstatSync(FolderLevel1).isDirectory()){ 
+          var pathLevel1 = folderb + '/' + FolderLevel1
+          AppUtils.log1('Comparing: ' + FolderLevel1); 
+          //console.log('FolderLevel1: ' + pathLevel1);
+          fs.readdir(pathLevel1,(err, components) => {
+            components.forEach(component => {
+              var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
+              //console.log('component: ' + pathLevel2_folderB); 
+              try {
+                if (fs.lstatSync(components).isDirectory() && !fs.existsSync(pathLevel2_folderA)) {
+                  //console.log('NO: ' + pathLevel2_folderB);
+                  //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
+                  var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',No,Yes,N/A';
+                  CreateFiles.write(notFoundResult+'\r\n');   
+                }
+              } catch(err) {
+                console.error('err: ' + err);
               }
-            } catch(err) {
-              console.error('err: ' + err);
-            }
+            })
           })
-        })
+        }
       });
     })
 
