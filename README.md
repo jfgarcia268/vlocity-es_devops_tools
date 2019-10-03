@@ -61,7 +61,7 @@ OPTIONS
   -s, --folder1=folder1                                   Vlocity Folder 1 to Compare
                                                 
 
-  -t, --folder2=folder2                                  Vlocity Folder 2 to Compare
+  -t, --folder2=folder2                                   Vlocity Folder 2 to Compare
   
 
 
