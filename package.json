@@ -1,5 +1,5 @@
 {
-  "name": "vlocityEStools",
+  "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
   "version": "0.0.6",
   "author": "Juan Garcia",
@@ -45,8 +45,11 @@
     "commands": "./lib/commands",
     "bin": "sfdx",
     "topics": {
-      "vlocityTools": {
-        "description": "Vlocity DevOps tools"
+      "vlocityesTools": {
+        "description": "Vlocity-DevOps Tools"
+      },
+      "vlocityestools:clean": {
+        "description": "Cleaning Commands"
       }
     },
     "devPlugins": [

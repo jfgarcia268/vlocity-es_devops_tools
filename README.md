@@ -6,7 +6,7 @@ Vlocity ES Tools (Beta)
 <!-- install -->
 # Install
 ```sh-session
-$ sfdx plugins:install https://github.com/jfgarcia268/vlocity-es_devops_tools.git
+$ sfdx plugins:install vlocityestools
 ```
 
 # Usage
@@ -19,7 +19,6 @@ USAGE
   $ sfdx COMMAND
 ```
 
-<!-- commands -->
 # Commands
 
 ## deleteOldOS
@@ -29,7 +28,7 @@ Delete old verions of OmniScritps and leave X amount of latest verions
 ```
 USAGE
 
-  $ sfdx vlocityTools:deleteOldOS -u <string>- v <integer>
+  $ sfdx vlocityestools:clean:omniscrtips -u <string>- v <integer>
 
 OPTIONS
 
@@ -42,8 +41,8 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityTools:deleteOldOS -u myOrg@example.com -n 5
+  $ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5
   
-  $ sfdx vlocityTools:deleteOldOS --targetusername myOrg@example.com --numberversions 5
+  $ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5
 
 ```

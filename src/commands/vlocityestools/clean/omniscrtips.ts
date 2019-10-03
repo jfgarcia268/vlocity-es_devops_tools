@@ -1,24 +1,23 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { AppUtils } from '../../utils/AppUtils';
+import { AppUtils } from '../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('vlocityEStools', 'deleteOldOS');
-
+const messages = Messages.loadMessages('vlocityestools', 'oldomniscripts');
 
 export default class deleteOldOS extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityTools:deleteoldos -u myOrg@example.com -n 5
+  `$ sfdx vlocityESTools:deleteoldos -u myOrg@example.com -n 5
   `,
-  `$ sfdx vlocityTools:deleteoldos --targetusername myOrg@example.com --numberversions 5
+  `$ sfdx vlocityESTools:deleteoldos --targetusername myOrg@example.com --numberversions 5
   `
   ];
 
@@ -113,9 +112,11 @@ export default class deleteOldOS extends SfdxCommand {
             });
             batch.on("response", function(rets) { // fired when batch finished and result retrieved
               for (var i=0; i < rets.length; i++) {
-                var output = 'Name: ' + rets[i].Name + ', Language: ' + rets[i].vlocity_cmt__Language__c + ', Type: '  + rets[i].vlocity_cmt__Type__c + ', SubType: ' + rets[i].vlocity_cmt__SubType__c + ', Version: ' + rets[i].vlocity_cmt__Version__c
+                AppUtils.log3(JSON.stringify(rets[i]));
+                //var output = 'Name: ' + rets[i].id + ', Language: ' + rets[i].vlocity_cmt__Language__c + ', Type: '  + rets[i].vlocity_cmt__Type__c + ', SubType: ' + rets[i].vlocity_cmt__SubType__c + ', Version: ' + rets[i].vlocity_cmt__Version__c
                 if (rets[i].success) {
-                  AppUtils.log1("#" + (i+1) + " Delete successfully: " + output);
+                  //AppUtils.log1("#" + (i+1) + " Delete successfully: " + output);
+                  AppUtils.log1("#" + (i+1) + " Delete successfully: " + rets[i].id);
                 } else {
                   AppUtils.log1("#" + (i+1) + " Error occurred, message = " + rets[i].errors.join(', '));
                 }
