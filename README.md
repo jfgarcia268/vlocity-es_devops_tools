@@ -50,6 +50,7 @@ EXAMPLES
 ## vlocityestools:compare:folders
 
 Compare two local Vlocity Metadata folder 
+The output will be a CVS file with the results
 
 ```
 USAGE
