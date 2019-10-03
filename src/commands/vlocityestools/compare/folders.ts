@@ -47,6 +47,8 @@ export default class compareFolders extends SfdxCommand {
 
     var resultsFile = './Compare_' + foldera + '_' + foldera + '.csv';
 
+    AppUtils.log2('Results File: ' + resultsFile ); 
+
     if (fs.existsSync(resultsFile)) {
       fs.unlinkSync(resultsFile);
     }
@@ -55,10 +57,14 @@ export default class compareFolders extends SfdxCommand {
     CreateFiles.write(initialHeader+'\r\n');   
 
     ////////// DIFF - A vs B
+
+  
     fs.readdir(foldera,(err,folders) => {
+      AppUtils.log2('Finding Differences between ' + foldera + ' and ' + folderb + ' And Orphan Components in ' + foldera); 
       folders.forEach(FolderLevel1 => {
         var pathLevel1 = foldera + '/' + FolderLevel1
-        //console.log('FolderLevel1: ' + pathLevel1);
+        AppUtils.log1('Comparing: ' + FolderLevel1); 
+       //console.log('FolderLevel1: ' + pathLevel1);
         fs.readdir(pathLevel1,(err, components) => {
           components.forEach(component => {
             var pathLevel2_folderA = foldera + '/' + FolderLevel1 + '/' + component
@@ -69,7 +75,7 @@ export default class compareFolders extends SfdxCommand {
                 //console.log('YES: ' + pathLevel2_folderB);
                 var options = {compareSize: true};
                 var res = dircompare.compareSync(pathLevel2_folderA, pathLevel2_folderB,options);
-                console.log(res.same);
+                //console.log(res.same);
                 var diff = res.same;
                 var foundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,Yes,' + diff;
                 CreateFiles.write(foundResult+'\r\n');   
@@ -89,10 +95,14 @@ export default class compareFolders extends SfdxCommand {
       });
     })
 
+    
+
     ////////// B vs A
     fs.readdir(folderb,(err,folders) => {
+      AppUtils.log2('Finding Orphan Components in ' + folderb); 
       folders.forEach(FolderLevel1 => {
         var pathLevel1 = folderb + '/' + FolderLevel1
+        AppUtils.log1('Comparing: ' + FolderLevel1); 
         //console.log('FolderLevel1: ' + pathLevel1);
         fs.readdir(pathLevel1,(err, components) => {
           components.forEach(component => {
