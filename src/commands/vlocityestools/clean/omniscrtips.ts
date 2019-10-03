@@ -93,7 +93,6 @@ export default class deleteOldOS extends SfdxCommand {
           var output = 'Name: ' + record.Name + ', Language: ' + record.vlocity_cmt__Language__c + ', Type: '  + record.vlocity_cmt__Type__c + ', SubType: ' + record.vlocity_cmt__SubType__c + ', Version: ' + record.vlocity_cmt__Version__c
           AppUtils.log1(output);
         }
-        //console.log(componentid + ' ' + record.vlocity_cmt__Version__c + ' Delete?:' + toDelete);
       }
 
       if(OStoDetele.length > 0) {
@@ -113,9 +112,7 @@ export default class deleteOldOS extends SfdxCommand {
             batch.on("response", function(rets) { // fired when batch finished and result retrieved
               for (var i=0; i < rets.length; i++) {
                 AppUtils.log3(JSON.stringify(rets[i]));
-                //var output = 'Name: ' + rets[i].id + ', Language: ' + rets[i].vlocity_cmt__Language__c + ', Type: '  + rets[i].vlocity_cmt__Type__c + ', SubType: ' + rets[i].vlocity_cmt__SubType__c + ', Version: ' + rets[i].vlocity_cmt__Version__c
                 if (rets[i].success) {
-                  //AppUtils.log1("#" + (i+1) + " Delete successfully: " + output);
                   AppUtils.log1("#" + (i+1) + " Delete successfully: " + rets[i].id);
                 } else {
                   AppUtils.log1("#" + (i+1) + " Error occurred, message = " + rets[i].errors.join(', '));
