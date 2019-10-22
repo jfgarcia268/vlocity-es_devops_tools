@@ -6,7 +6,7 @@ Vlocity ES Tools (Beta)
 <!-- install -->
 # Install
 ```sh-session
-$ sfdx plugins:install vlocityestools
+$ sfdx plugins:install vlocityestools # Requires SFDX-CLI
 ```
 
 # Usage
@@ -75,7 +75,7 @@ EXAMPLES
 ```
 
 
-## locityestools:report:dependencies
+## Vlocityestools:report:dependencies
 
 For Both OmniScript and VIP, 1st Level of dependencies: 
 - DataRaptors
