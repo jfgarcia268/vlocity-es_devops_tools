@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Get Dependencies report for Local Folder",
+  "folder": "Folder to hey Dependencies",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"folders"
+}

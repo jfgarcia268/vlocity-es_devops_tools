@@ -14,9 +14,9 @@ export default class compareFolders extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:compare -u myOrg@example.com -n 5
+  `$ sfdx vlocityestools:compare:folders: -u myOrg@example.com -n 5
   `,
-  `$ sfdx vlocityestools:compare --targetusername myOrg@example.com --numberversions 5
+  `$ sfdx vlocityestools:compare:folders --targetusername myOrg@example.com --numberversions 5
   `
   ];
 
@@ -46,11 +46,11 @@ export default class compareFolders extends SfdxCommand {
     var folderb = this.flags.folder2;
 
     if (!fs.existsSync(foldera)) {
-      throw new Error("Folder '" + foldera + "' does Not exist");
+      throw new Error("Folder '" + foldera + "'  not found");
     }
 
     if (!fs.existsSync(folderb)) {
-      throw new Error("Folder '" + folderb + "' does Not exist");
+      throw new Error("Folder '" + folderb + "' not found");
     }
 
     var resultsFile = './Compare_' + foldera + '_' + folderb + '.csv';
