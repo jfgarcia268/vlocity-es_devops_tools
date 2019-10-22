@@ -50,7 +50,7 @@ EXAMPLES
 ## vlocityestools:compare:folders
 
 Compare two local Vlocity Metadata folder 
-The output will be a CVS file with the results
+The output will be a CSV file with the results
 
 ```
 USAGE
@@ -77,19 +77,19 @@ EXAMPLES
 
 ## locityestools:report:dependencies
 
-For Both OmniScript and VIP Dependencies, 1st Level of dependencies of: 
+For Both OmniScript and VIP, 1st Level of dependencies: 
 - DataRaptors
 - OmniScripts
 - VIPS
 - Remote Calls
 - VlocityUITemplate
 
-The output will be a CVS file with the results
+The output will be a CSV file with the results
 
 ```
 USAGE
 
-  $ sfdx vlocityestools:report:dependencies -f 
+  $ sfdx vlocityestools:report:dependencies -f <string>
 
 OPTIONS
 
