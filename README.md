@@ -73,3 +73,34 @@ EXAMPLES
   $ sfdx vlocityestools:compare:folders --folder1 vlocity1 --folder2 vlocity2
 
 ```
+
+
+## locityestools:report:dependencies
+
+For Both OmniScript and VIP Dependencies, 1st Level of dependencies of: 
+- DataRaptors
+- OmniScripts
+- VIPS
+- Remote Calls
+- VlocityUITemplate
+
+The output will be a CVS file with the results
+
+```
+USAGE
+
+  $ sfdx vlocityestools:report:dependencies -f 
+
+OPTIONS
+
+  -f, --folder=folder                                  Vlocity Folder Name
+                                                
+  
+
+EXAMPLES
+
+  $ sfdx vlocityestools:report:dependencies -f vlocity
+  
+  $ sfdx vlocityestools:report:dependencies -folder vlocity
+
+```
