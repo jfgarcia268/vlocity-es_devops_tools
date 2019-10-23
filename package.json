@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {

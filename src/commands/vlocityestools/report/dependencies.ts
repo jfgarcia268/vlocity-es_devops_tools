@@ -47,84 +47,138 @@ export default class dependencies extends SfdxCommand {
       throw new Error("Folder '" + folder+ "' not found");
     }
 
-    var resultsFile = './Compare_' + folder +  '.csv';
+    var resultsFile = './Dependencies_Report.csv';
 
     AppUtils.log2('Results File: ' + resultsFile ); 
 
     if (fs.existsSync(resultsFile)) {
       fs.unlinkSync(resultsFile);
     }
+
+
     const CreateFiles = fs.createWriteStream(resultsFile, {flags: 'a'});
     var initialHeader = 'DataPack Name,Is Reusable,Dependency,Dependency Type,Remote Class,Remote Method';
     CreateFiles.write(initialHeader+'\r\n');   
 
     ////////// OmniScritp Dependencies
-    this.OmniScriptVIPDependencies(fs,CreateFiles,folder,'OmniScript');
-    ////////// VIP Dependencies
-    this.OmniScriptVIPDependencies(fs,CreateFiles,folder,'IntegrationProcedure');
+    var numberOfOmniScriptFound = 0;
+    var OmniScriptsFolder = folder +  '/OmniScript';
+    if(fs.existsSync(OmniScriptsFolder)){
+      var files = fs.readdirSync(OmniScriptsFolder).filter(function (file) {
+        return fs.statSync(OmniScriptsFolder+'/'+file).isDirectory();
+      });
 
+      var numberOfOmniScriptFolder = files.length;
+
+      if(numberOfOmniScriptFolder > 1){
+        var numberOfOmniScriptFound = this.OmniScriptVIPDependencies(fs,CreateFiles,folder,'OmniScript');
+      }
+      else{
+        AppUtils.log3('No OmniScripts found in Folder: ' + folder + '/OmniScript'); 
+      }
+    }
+    else {
+      AppUtils.log3('No OmniScript Folder found in: ' + folder); 
+    }
+  
+    ////////// VIP Dependencies
+    var numberOfIntegrationProceduretFound = 0;
+    var IntegrationProcedureFolder = folder +  '/IntegrationProcedure';
+
+
+    if(fs.existsSync(IntegrationProcedureFolder)){
+      var files = fs.readdirSync(IntegrationProcedureFolder).filter(function (file) {
+        return fs.statSync(IntegrationProcedureFolder+'/'+file).isDirectory();
+      });
+      var numberVIPFolder = files.length;
+      if(numberVIPFolder > 1){
+        var numberOfIntegrationProceduretFound = this.OmniScriptVIPDependencies(fs,CreateFiles,folder,'IntegrationProcedure');
+      }
+      else{
+        AppUtils.log3('No IntegrationProcedures found in Folder: ' + folder + '/OmniScript'); 
+      }
+    }
+    else {
+      AppUtils.log3('No IntegrationProcedures Folder found in: ' + folder); 
+    }
+    console.log('')
+    AppUtils.log3('Donde Finding Dependencies'); 
+    AppUtils.log3('Number of OmniScripts Found: ' + numberOfOmniScriptFound); 
+    AppUtils.log3('Number of IntegrationProcedures Found: ' + numberOfIntegrationProceduretFound); 
+    AppUtils.log3('CSV File Generated: ' + resultsFile); 
+    console.log('')
   }
 
+
   public OmniScriptVIPDependencies(fs,CreateFiles,folder,dataPackType) {
+    console.log('')
     AppUtils.log3('Finding Dependencies for ' + dataPackType + ' in ' + folder); 
     var dataTypePacksFolder = folder + '/' + dataPackType
     var folders = fs.readdirSync(dataTypePacksFolder);
+    var numberOfDPFound = 0;
     folders.forEach(dataPack => {
-      AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
       var dataPacksFolder = folder + '/' + dataPackType + '/' + dataPack
-      var files = fs.readdirSync(dataPacksFolder)
-      var dataPackMainFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + '_DataPack.json';
-      var jsonString = fs.readFileSync(dataPackMainFile, 'utf8');
-      var jsonStringObjects = JSON.parse(jsonString);
-      var isReusable = jsonStringObjects['%vlocity_namespace%__IsReusable__c'];
-      files.forEach(file => {
-        //AppUtils.log3('File ' + file); 
-        var filePath = folder + '/' + dataPackType + '/' + dataPack + '/' + file
-        if(file.includes("_Element_")){
-          var jsonString = fs.readFileSync(filePath)
+      if((fs.statSync(dataPacksFolder)).isDirectory()){
+        AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
+        var files = fs.readdirSync(dataPacksFolder)
+        var dataPackMainFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + '_DataPack.json';
+        if(fs.existsSync(dataPackMainFile)){
+          numberOfDPFound = numberOfDPFound + 1;
+          var jsonString = fs.readFileSync(dataPackMainFile, 'utf8');
           var jsonStringObjects = JSON.parse(jsonString);
+          var isReusable = jsonStringObjects['%vlocity_namespace%__IsReusable__c'];
+          files.forEach(file => {
+            //AppUtils.log3('File ' + file); 
+            var filePath = folder + '/' + dataPackType + '/' + dataPack + '/' + file
+            if((fs.statSync(filePath)).isFile() && file.includes("_Element_")){
+              var jsonString = fs.readFileSync(filePath)
+              var jsonStringObjects = JSON.parse(jsonString);
 
-          var bundle = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].bundle
-          if(bundle != undefined && bundle != ''){
-            //console.log('bundle: ' + bundle);
-            var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',DataRaptor/' +  bundle + ',DataRaptor,None,None';
-            CreateFiles.write(dependencyRecord+'\r\n');   
-          }
+              var bundle = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].bundle
+              if(bundle != undefined && bundle != ''){
+                //console.log('bundle: ' + bundle);
+                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',DataRaptor/' +  bundle + ',DataRaptor,None,None';
+                CreateFiles.write(dependencyRecord+'\r\n');   
+              }
 
-          var type = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].Type;
-          var subType = jsonStringObjects["%vlocity_namespace%__PropertySet__c"]["Sub Type"];
-          var language = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].Language;
-          var omniScriptcompleteName = type + '_' + subType + '_' + language;
-          if(type != undefined && type != ''){
-            //console.log('completeName: ' + completeName);
-            var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',OmniScript/' +  omniScriptcompleteName + ',OmniScript,None,None';
-            CreateFiles.write(dependencyRecord+'\r\n');   
-          }
+              var type = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].Type;
+              var subType = jsonStringObjects["%vlocity_namespace%__PropertySet__c"]["Sub Type"];
+              var language = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].Language;
+              var omniScriptcompleteName = type + '_' + subType + '_' + language;
+              if(type != undefined && type != ''){
+                //console.log('completeName: ' + completeName);
+                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',OmniScript/' +  omniScriptcompleteName + ',OmniScript,None,None';
+                CreateFiles.write(dependencyRecord+'\r\n');   
+              }
 
-          var vipKey = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].integrationProcedureKey
-          if(vipKey != undefined && vipKey != ''){
-            //console.log('vipKey: ' + vipKey);
-            var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',IntegrationProcedure/' +  vipKey + ',IntegrationProcedure,None,None';
-            CreateFiles.write(dependencyRecord+'\r\n');   
-          }
+              var vipKey = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].integrationProcedureKey
+              if(vipKey != undefined && vipKey != ''){
+                //console.log('vipKey: ' + vipKey);
+                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',IntegrationProcedure/' +  vipKey + ',IntegrationProcedure,None,None';
+                CreateFiles.write(dependencyRecord+'\r\n');   
+              }
 
-          var remoteClass = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteClass
-          var remoteMethod = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteMethod
-          if(remoteClass != undefined && remoteClass != ''){
-            //console.log('remoteClass.remoteClass: ' + remoteClass + '.' + remoteMethod);
-            var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',' + remoteClass + '.' + remoteMethod + ',REMOTE CALL,' + remoteClass + ',' + remoteMethod;
-            CreateFiles.write(dependencyRecord+'\r\n');   
-          }
+              var remoteClass = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteClass
+              var remoteMethod = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteMethod
+              if(remoteClass != undefined && remoteClass != ''){
+                //console.log('remoteClass.remoteClass: ' + remoteClass + '.' + remoteMethod);
+                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',' + remoteClass + '.' + remoteMethod + ',REMOTE CALL,' + remoteClass + ',' + remoteMethod;
+                CreateFiles.write(dependencyRecord+'\r\n');   
+              }
 
-          var templateID = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].HTMLTemplateId
-          if(templateID != undefined && templateID != ''){
-            //console.log('templateID: ' + templateID);
-            var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',VlocityUITemplate/' +  templateID + ',VlocityUITemplate,None,None';
-            CreateFiles.write(dependencyRecord+'\r\n');   
-          }
+              var templateID = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].HTMLTemplateId
+              if(templateID != undefined && templateID != ''){
+                //console.log('templateID: ' + templateID);
+                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',VlocityUITemplate/' +  templateID + ',VlocityUITemplate,None,None';
+                CreateFiles.write(dependencyRecord+'\r\n');   
+              }
+            }
+          })
         }
-      })
+      }
     });
+    AppUtils.log3('Done finding Dependencies for ' + dataPackType + ' in ' + folder); 
+    return numberOfDPFound;
   }
 
 }
