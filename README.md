@@ -37,7 +37,7 @@ OPTIONS
 
   -n, --numberversions=numberversions                       Number of most recent versions of
                                                             OmniScrits to keep for each one.
-                                                            Has to be grater than 0.
+                                                            Has to be greater than 0.
 
 EXAMPLES
 
