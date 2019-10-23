@@ -9,6 +9,8 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('vlocityestools', 'reportdependencies');
 
+var dependenciesFound = 0;
+
 export default class dependencies extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
@@ -37,7 +39,7 @@ export default class dependencies extends SfdxCommand {
 
   public async run() {
     AppUtils.logInitial(messages.getMessage('command')); 
-
+    dependenciesFound = 0;
     const fs = require('fs');
 
     var folder = this.flags.folder;
@@ -101,10 +103,13 @@ export default class dependencies extends SfdxCommand {
     else {
       AppUtils.log3('No IntegrationProcedures Folder found in: ' + folder); 
     }
+
+    ////////// Report
     console.log('')
     AppUtils.log3('Donde Finding Dependencies'); 
-    AppUtils.log3('Number of OmniScripts Found: ' + numberOfOmniScriptFound); 
-    AppUtils.log3('Number of IntegrationProcedures Found: ' + numberOfIntegrationProceduretFound); 
+    AppUtils.log3('Number of OmniScripts Scanned: ' + numberOfOmniScriptFound); 
+    AppUtils.log3('Number of IntegrationProcedures Scanned: ' + numberOfIntegrationProceduretFound); 
+    AppUtils.log3('Number of Total Dependencies Found: ' + dependenciesFound); 
     AppUtils.log3('CSV File Generated: ' + resultsFile); 
     console.log('')
   }
@@ -139,6 +144,7 @@ export default class dependencies extends SfdxCommand {
                 //console.log('bundle: ' + bundle);
                 var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',DataRaptor/' +  bundle + ',DataRaptor,None,None';
                 CreateFiles.write(dependencyRecord+'\r\n');   
+                dependenciesFound = dependenciesFound + 1;
               }
 
               var type = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].Type;
@@ -149,13 +155,15 @@ export default class dependencies extends SfdxCommand {
                 //console.log('completeName: ' + completeName);
                 var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',OmniScript/' +  omniScriptcompleteName + ',OmniScript,None,None';
                 CreateFiles.write(dependencyRecord+'\r\n');   
+                dependenciesFound = dependenciesFound + 1;
               }
 
               var vipKey = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].integrationProcedureKey
               if(vipKey != undefined && vipKey != ''){
                 //console.log('vipKey: ' + vipKey);
                 var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',IntegrationProcedure/' +  vipKey + ',IntegrationProcedure,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n');   
+                CreateFiles.write(dependencyRecord+'\r\n'); 
+                dependenciesFound = dependenciesFound + 1;  
               }
 
               var remoteClass = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteClass
@@ -164,13 +172,15 @@ export default class dependencies extends SfdxCommand {
                 //console.log('remoteClass.remoteClass: ' + remoteClass + '.' + remoteMethod);
                 var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',' + remoteClass + '.' + remoteMethod + ',REMOTE CALL,' + remoteClass + ',' + remoteMethod;
                 CreateFiles.write(dependencyRecord+'\r\n');   
+                dependenciesFound = dependenciesFound + 1;
               }
 
               var templateID = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].HTMLTemplateId
               if(templateID != undefined && templateID != ''){
                 //console.log('templateID: ' + templateID);
                 var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',VlocityUITemplate/' +  templateID + ',VlocityUITemplate,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n');   
+                CreateFiles.write(dependencyRecord+'\r\n');  
+                dependenciesFound = dependenciesFound + 1; 
               }
             }
           })
