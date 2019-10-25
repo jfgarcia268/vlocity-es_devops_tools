@@ -28,7 +28,7 @@ Delete old verions of OmniScritps and leave X amount of latest verions
 ```
 USAGE
 
-  $ sfdx vlocityestools:clean:omniscrtips -u <string>- v <integer>
+  $ sfdx vlocityestools:clean:omniscrtips -u <string> -v <integer> -p <string>
 
 OPTIONS
 
@@ -39,11 +39,15 @@ OPTIONS
                                                             OmniScrits to keep for each one.
                                                             Has to be greater than 0.
 
+  -p, --package                                             Vlocity Package Type, Options:
+                                                                - 'cmt'
+                                                                - 'ins' 
+
 EXAMPLES
 
-  $ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5
+  $ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5 -p cmt
   
-  $ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5
+  $ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5 --package ins
 
 ```
 

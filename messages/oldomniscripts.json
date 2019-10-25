@@ -1,6 +1,7 @@
 {
   "commandDescription": "Delete old verions of OmniScritps and leave X amount of latest verions",
   "numberRecentVersions": "Number of most recent versions to keep",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
   "errorNoOrgResults": "No results found for the org '%s'.",
   "command":"omniscrtips"
 }

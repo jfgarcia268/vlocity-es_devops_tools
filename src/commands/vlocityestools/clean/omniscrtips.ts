@@ -15,16 +15,17 @@ export default class deleteOldOS extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5
+  `$ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5 -p cmt
   `,
-  `$ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5
+  `$ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5 --package ins
   `
   ];
 
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    numberversions: flags.integer({char: 'n', description: messages.getMessage('numberRecentVersions')})
+    numberversions: flags.integer({char: 'n', description: messages.getMessage('numberRecentVersions')}),
+    package: flags.string({char: 'p', description: messages.getMessage('packageType')})
   };
 
   // Comment this out if your command does not require an org username
@@ -39,36 +40,42 @@ export default class deleteOldOS extends SfdxCommand {
   public async run(): Promise<AnyJson> {
 
     var versionsToKeep = this.flags.numberversions;
+    var packageType = this.flags.package;
 
+    if(packageType == 'cmt'){
+      AppUtils.namespace = 'vlocity_cmt__';
+    } else if(packageType == 'ins'){
+      AppUtils.namespace = 'vlocity_ins__';
+    } else {
+      throw new Error("Error: -p, --package has to be either cmt or ins ");
+    }
+    
     AppUtils.logInitial(messages.getMessage('command'));
     AppUtils.log2('versionsToKeep: ' + versionsToKeep);
 
     if(versionsToKeep > 0){
       // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
       const conn = this.org.getConnection();
-      const query = 'SELECT ID, Name, vlocity_cmt__Version__c, vlocity_cmt__IsActive__c, vlocity_cmt__Language__c, vlocity_cmt__Type__c, vlocity_cmt__SubType__c FROM vlocity_cmt__OmniScript__c  Order By Name, vlocity_cmt__Language__c,vlocity_cmt__Type__c,vlocity_cmt__SubType__c,vlocity_cmt__Version__c DESC';
-
-      // The type we are querying for
-      interface vlocity_cmt__OmniScript__c {
-        ID: string;
-        vlocity_cmt__IsActive__c: boolean;
-        Name: string;
-        vlocity_cmt__Language__c: string;
-        vlocity_cmt__Type__c: string;
-        vlocity_cmt__SubType__c:string;
-        vlocity_cmt__Version__c: number;
-      }
-
+      const initialQuery = 'SELECT ID, Name, %name-space%Version__c, %name-space%IsActive__c, %name-space%Language__c, %name-space%Type__c, %name-space%SubType__c FROM %name-space%OmniScript__c  Order By Name, %name-space%Language__c, %name-space%Type__c,%name-space%SubType__c, %name-space%Version__c DESC';
+      const query = AppUtils.replaceaNameSpace(initialQuery);
       // Query the org
-      const result = await conn.query<vlocity_cmt__OmniScript__c>(query);
+      const result = await conn.query(query);
 
       // The output and --json will automatically be handled for you.
       if (!result.records || result.records.length <= 0) {
         throw new SfdxError(messages.getMessage('errorNoOrgResults', [this.org.getOrgId()]));
       }
 
+
+      var nameField = 'Name';
+      var languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
+      var typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
+      var subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
+      var isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
+      var versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
+
       var firstresult = result.records[0]
-      var currentComp = firstresult.Name + firstresult.vlocity_cmt__Language__c + firstresult.vlocity_cmt__Type__c + firstresult.vlocity_cmt__SubType__c;
+      var currentComp = firstresult[nameField] + firstresult[languageField] + firstresult[typeField] + firstresult[subTypeField];
 
       var count = 0;
 
@@ -76,10 +83,10 @@ export default class deleteOldOS extends SfdxCommand {
 
       AppUtils.log2('The Following OmniScritps will be deteled:');
 
-
       for (var i=0; i<result.records.length; i++) {
         var record = result.records[i];
-        var componentid = record.Name + record.vlocity_cmt__Language__c + record.vlocity_cmt__Type__c + record.vlocity_cmt__SubType__c;
+        var componentid = record[nameField] + record[languageField]+ record[typeField] + record[subTypeField];
+        
         if(currentComp==componentid) {
           count = count + 1;
         }
@@ -88,16 +95,16 @@ export default class deleteOldOS extends SfdxCommand {
           count =  1;
         }
 
-        if(count > versionsToKeep && !record.vlocity_cmt__IsActive__c) {
+        if(count > versionsToKeep && !record[isActiveField]) {
           OStoDetele.push(record);
-          var output = 'Name: ' + record.Name + ', Language: ' + record.vlocity_cmt__Language__c + ', Type: '  + record.vlocity_cmt__Type__c + ', SubType: ' + record.vlocity_cmt__SubType__c + ', Version: ' + record.vlocity_cmt__Version__c
+          var output = 'Name: ' + record[nameField] + ', Language: ' + record[languageField] + ', Type: '  + record[typeField] + ', SubType: ' + record[subTypeField] + ', Version: ' + record[versionField];
           AppUtils.log1(output);
         }
       }
 
       if(OStoDetele.length > 0) {
         await new Promise((resolveBatch) => {
-            var job = conn.bulk.createJob("vlocity_cmt__OmniScript__c", "delete");
+            var job = conn.bulk.createJob("%name-space%OmniScript__c", "delete");
             var batch = job.createBatch();
             batch.execute(OStoDetele);
 
@@ -128,7 +135,7 @@ export default class deleteOldOS extends SfdxCommand {
       return { OStoDetele };
 
     } else {
-      AppUtils.log2("Error: -n, --numberversions has to be greated than 0");
+      throw new Error("Error: -n, --numberversions has to be greated than 0");
     }
   }
 }
