@@ -40,8 +40,7 @@ OPTIONS
                                                             Has to be greater than 0.
 
   -p, --package                                             Vlocity Package Type, Options:
-                                                                - 'cmt'
-                                                                - 'ins' 
+                                                            'cmt' or 'ins' 
 
 EXAMPLES
 
