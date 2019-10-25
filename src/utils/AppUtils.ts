@@ -3,6 +3,15 @@ export class AppUtils {
 
     public static appVersion = require('../../package.json').version;
 
+    public static namespace;
+
+    public static replaceaNameSpace(text) {
+        //console.log('BEFORE:' + text);
+        var res = text.replace(new RegExp('%name-space%', 'g'),this.namespace);
+        //console.log('AFTER:' + res);
+        return res;
+    }
+
     public static logInitial(command: string) {
         this.log3('Vlocity Tools v' + AppUtils.appVersion);
         this.log3('Command: ' + command);
