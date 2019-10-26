@@ -1,24 +1,25 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
-import { AppUtils } from '../../../utils/AppUtils';
+import { AppUtils } from '../../../../utils/AppUtils';
+import remote from './remote';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('vlocityestools', 'reportdependencies');
+const messages = Messages.loadMessages('vlocityestools', 'reportdependencieslocal');
 
 var dependenciesFound = 0;
 
-export default class dependencies extends SfdxCommand {
+export default class local extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:report:dependencies -f vlocity
+  `$ sfdx vlocityestools:report:dependencies:local -f vlocity
   `,
-  `$ sfdx vlocityestools:report:dependencies --folder vlocity
+  `$ sfdx vlocityestools:report:dependencies:local --folder vlocity
   `
   ];
 
@@ -49,7 +50,7 @@ export default class dependencies extends SfdxCommand {
       throw new Error("Folder '" + folder+ "' not found");
     }
 
-    var resultsFile = './Dependencies_Report.csv';
+    var resultsFile = './Dependencies_Report_Local.csv';
 
     AppUtils.log2('Results File: ' + resultsFile ); 
 
@@ -127,7 +128,12 @@ export default class dependencies extends SfdxCommand {
         AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
         var files = fs.readdirSync(dataPacksFolder)
         var dataPackMainFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + '_DataPack.json';
+        var propertySetFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + 'PropertySet.json';
         if(fs.existsSync(dataPackMainFile)){
+          if(fs.existsSync(propertySetFile)){
+            var remoteResult = remote.getPropertySetValues(CreateFiles,propertySetFile,dataPackType,dataPack,isReusable);
+            dependenciesFound = dependenciesFound + remoteResult;
+          }
           numberOfDPFound = numberOfDPFound + 1;
           var jsonString = fs.readFileSync(dataPackMainFile, 'utf8');
           var jsonStringObjects = JSON.parse(jsonString);
@@ -138,50 +144,9 @@ export default class dependencies extends SfdxCommand {
             if((fs.statSync(filePath)).isFile() && file.includes("_Element_")){
               var jsonString = fs.readFileSync(filePath)
               var jsonStringObjects = JSON.parse(jsonString);
-
-              var bundle = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].bundle
-              if(bundle != undefined && bundle != ''){
-                //console.log('bundle: ' + bundle);
-                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',DataRaptor/' +  bundle + ',DataRaptor,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n');   
-                dependenciesFound = dependenciesFound + 1;
-              }
-
-              var type = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].Type;
-              var subType = jsonStringObjects["%vlocity_namespace%__PropertySet__c"]["Sub Type"];
-              var language = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].Language;
-              var omniScriptcompleteName = type + '_' + subType + '_' + language;
-              if(type != undefined && type != ''){
-                //console.log('completeName: ' + completeName);
-                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',OmniScript/' +  omniScriptcompleteName + ',OmniScript,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n');   
-                dependenciesFound = dependenciesFound + 1;
-              }
-
-              var vipKey = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].integrationProcedureKey
-              if(vipKey != undefined && vipKey != ''){
-                //console.log('vipKey: ' + vipKey);
-                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',IntegrationProcedure/' +  vipKey + ',IntegrationProcedure,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n'); 
-                dependenciesFound = dependenciesFound + 1;  
-              }
-
-              var remoteClass = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteClass
-              var remoteMethod = jsonStringObjects["%vlocity_namespace%__PropertySet__c"].remoteMethod
-              if(remoteClass != undefined && remoteClass != ''){
-                //console.log('remoteClass.remoteClass: ' + remoteClass + '.' + remoteMethod);
-                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',' + remoteClass + '.' + remoteMethod + ',REMOTE CALL,' + remoteClass + ',' + remoteMethod;
-                CreateFiles.write(dependencyRecord+'\r\n');   
-                dependenciesFound = dependenciesFound + 1;
-              }
-
-              var templateID = jsonStringObjects['%vlocity_namespace%__PropertySet__c'].HTMLTemplateId
-              if(templateID != undefined && templateID != ''){
-                //console.log('templateID: ' + templateID);
-                var dependencyRecord =  dataPackType + '/' + dataPack + ',' + isReusable + ',VlocityUITemplate/' +  templateID + ',VlocityUITemplate,None,None';
-                CreateFiles.write(dependencyRecord+'\r\n');  
-                dependenciesFound = dependenciesFound + 1; 
-              }
+              var propertySet = JSON.stringify(jsonStringObjects['%vlocity_namespace%__PropertySet__c']);
+              var remoteResult2 = remote.getPropertySetValues(CreateFiles,propertySet,dataPackType,dataPack,isReusable);
+              dependenciesFound = dependenciesFound + remoteResult2;
             }
           })
         }

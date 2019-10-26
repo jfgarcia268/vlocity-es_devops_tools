@@ -1,0 +1,5 @@
+{
+  "commandDescription": "Get Dependencies report for Local Folder",
+  "folder": "Folder to get  Dependencies",
+  "command":"local"
+}
