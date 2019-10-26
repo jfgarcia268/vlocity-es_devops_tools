@@ -163,7 +163,7 @@ export default class remote extends SfdxCommand {
       dependenciesFound = dependenciesFound + 1;  
     }
 
-    var remoteClass = jsonStringObjects[remoteClass];
+    var remoteClass = jsonStringObjects['remoteClass'];
     var remoteMethod = jsonStringObjects['remoteMethod'];
     if(remoteClass != undefined && remoteClass != ''){
       //console.log('remoteClass.remoteClass: ' + remoteClass + '.' + remoteMethod);
