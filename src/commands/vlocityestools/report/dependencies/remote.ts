@@ -61,26 +61,33 @@ export default class remote extends SfdxCommand {
     var isProcedureField  = AppUtils.replaceaNameSpace('%name-space%IsProcedure__c');
     var isResusableField  = AppUtils.replaceaNameSpace('%name-space%IsReusable__c');
     var elementsRelation  = AppUtils.replaceaNameSpace('%name-space%Elements__r');
+    var propertySetOSField  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
     //////// Element 
     var elementPropertySetObject  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
      
     const conn = this.org.getConnection();
     var initialQuery = 'SELECT ID, Name';
-    initialQuery = initialQuery + ', ' + languageField + ' '
-    initialQuery = initialQuery + ', ' + typeField + ' ' 
-    initialQuery = initialQuery + ', ' + subTypeField + ' ' 
-    initialQuery = initialQuery + ', ' + isActiveField + ' ' 
-    initialQuery = initialQuery + ', ' + isProcedureField + ' ' 
-    initialQuery = initialQuery + ', ' + versionField + ' ' 
-    initialQuery = initialQuery + ', ' + isResusableField + ' ' 
-    initialQuery = initialQuery + ', (SELECT Name, ' + elementPropertySetObject + ' FROM ' + elementsRelation + ') ';
+    initialQuery = initialQuery + ', ' + languageField 
+    initialQuery = initialQuery + ', ' + typeField 
+    initialQuery = initialQuery + ', ' + subTypeField 
+    initialQuery = initialQuery + ', ' + isActiveField 
+    initialQuery = initialQuery + ', ' + isProcedureField  
+    initialQuery = initialQuery + ', ' + versionField  
+    initialQuery = initialQuery + ', ' + isResusableField 
+    initialQuery = initialQuery + ', ' + propertySetOSField
+    initialQuery = initialQuery + ', (SELECT Id, ' + elementPropertySetObject + ' FROM ' + elementsRelation + ')';
     initialQuery = initialQuery + ' FROM %name-space%OmniScript__c ';
-    initialQuery = initialQuery + ' WHERE ' + isActiveField + ' = TRUE';
-    
-    const query = AppUtils.replaceaNameSpace(initialQuery);
+    initialQuery = initialQuery + ' WHERE ' + isActiveField + ' = true';
+
+    var query = AppUtils.replaceaNameSpace(initialQuery);
+
+    console.log("///// Query /////");
+    console.log(query);
+    console.log("///// Query /////");
+
     // Query the org
     AppUtils.log3('Looking for OmniScripts and IntegrationProcedures in the environmemt'); 
-    const result = await conn.query(query);
+    var result = await conn.query(query);
 
     // The output and --json will automatically be handled for you.
     if (!result.records || result.records.length <= 0) {
@@ -104,12 +111,19 @@ export default class remote extends SfdxCommand {
 
     for (var i=0; i<result.records.length; i++) {
       var record = result.records[i];
+
+      var omniScriptPropertySet = record[propertySetOSField];
+      if( omniScriptPropertySet != '') {
+        var resultDepPS = remote.getPropertySetValues(CreateFiles,omniScriptPropertySet,dataPackType,dataPack,isReusableValue);
+        totalDependenciesFound = totalDependenciesFound + resultDepPS;
+      }
+
       var elements = record[elementsRelation].records;
       var dataPackType = 'OmniScript'
       if(record[isProcedureField]){
         dataPackType = 'IntegrationProcedure'
       }
-
+      
       var omniScriptType = record[typeField];
       var omniScriptSubType = record[subTypeField];
       var omniScriptLanguage = record[languageField];
