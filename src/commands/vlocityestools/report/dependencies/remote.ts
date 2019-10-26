@@ -145,7 +145,7 @@ export default class remote extends SfdxCommand {
     }
 
     var type = jsonStringObjects['Type'];
-    var subType = jsonStringObjects["Sub Type"];
+    var subType = jsonStringObjects['Sub Type'];
     var language = jsonStringObjects['Language'];
     var omniScriptcompleteName = type + '_' + subType + '_' + language;
     if(type != undefined && type != ''){

@@ -128,10 +128,10 @@ export default class local extends SfdxCommand {
         AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
         var files = fs.readdirSync(dataPacksFolder)
         var dataPackMainFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + '_DataPack.json';
-        var propertySetFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + 'PropertySet.json';
+        var propertySetFile = folder + '/' + dataPackType + '/' + dataPack + '/' + dataPack + '_PropertySet.json';
         if(fs.existsSync(dataPackMainFile)){
           if(fs.existsSync(propertySetFile)){
-            var remoteResult = remote.getPropertySetValues(CreateFiles,propertySetFile,dataPackType,dataPack,isReusable);
+            var remoteResult = remote.getPropertySetValues(CreateFiles,fs.readFileSync(propertySetFile, 'utf8'),dataPackType,dataPack,isReusable);
             dependenciesFound = dependenciesFound + remoteResult;
           }
           numberOfDPFound = numberOfDPFound + 1;
