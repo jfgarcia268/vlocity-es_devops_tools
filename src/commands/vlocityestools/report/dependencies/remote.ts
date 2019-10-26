@@ -1,10 +1,25 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
 import { AppUtils } from '../../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
+
+    //////// OmniScrits
+    var languageField;
+    var typeField;
+    var subTypeField;
+    var isActiveField;
+    var versionField;
+    var isProcedureField;
+    var isResusableField;
+    var elementsRelation;
+    var propertySetOSField;
+    //////// Element 
+    var elementPropertySetObject;
+    var elementOSIDField;
+
+
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
@@ -51,101 +66,167 @@ export default class remote extends SfdxCommand {
     
     AppUtils.logInitial(messages.getMessage('command'));
 
-
-    //////// OmniScritp
-    var languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
-    var typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
-    var subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
-    var isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
-    var versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
-    var isProcedureField  = AppUtils.replaceaNameSpace('%name-space%IsProcedure__c');
-    var isResusableField  = AppUtils.replaceaNameSpace('%name-space%IsReusable__c');
-    var elementsRelation  = AppUtils.replaceaNameSpace('%name-space%Elements__r');
-    var propertySetOSField  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
-    //////// Element 
-    var elementPropertySetObject  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
-     
     const conn = this.org.getConnection();
-    var initialQuery = 'SELECT ID, Name';
-    initialQuery = initialQuery + ', ' + languageField 
-    initialQuery = initialQuery + ', ' + typeField 
-    initialQuery = initialQuery + ', ' + subTypeField 
-    initialQuery = initialQuery + ', ' + isActiveField 
-    initialQuery = initialQuery + ', ' + isProcedureField  
-    initialQuery = initialQuery + ', ' + versionField  
-    initialQuery = initialQuery + ', ' + isResusableField 
-    initialQuery = initialQuery + ', ' + propertySetOSField
-    initialQuery = initialQuery + ', (SELECT Id, ' + elementPropertySetObject + ' FROM ' + elementsRelation + ')';
-    initialQuery = initialQuery + ' FROM %name-space%OmniScript__c ';
-    initialQuery = initialQuery + ' WHERE ' + isActiveField + ' = true';
 
-    var query = AppUtils.replaceaNameSpace(initialQuery);
+    ////// GET OS VALUES
 
-    console.log("///// Query /////");
-    console.log(query);
-    console.log("///// Query /////");
+    languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
+    typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
+    subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
+    isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
+    versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
+    isProcedureField  = AppUtils.replaceaNameSpace('%name-space%IsProcedure__c');
+    isResusableField  = AppUtils.replaceaNameSpace('%name-space%IsReusable__c');
+    ////
+    propertySetOSField  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
+    elementOSIDField =  AppUtils.replaceaNameSpace('%name-space%OmniScriptId__c');
 
-    // Query the org
-    AppUtils.log3('Looking for OmniScripts and IntegrationProcedures in the environmemt'); 
-    var result = await conn.query(query);
+    var oSValuesQuery = 'SELECT ID, Name';
+    oSValuesQuery = oSValuesQuery + ', ' + languageField 
+    oSValuesQuery = oSValuesQuery + ', ' + typeField 
+    oSValuesQuery = oSValuesQuery + ', ' + subTypeField 
+    oSValuesQuery = oSValuesQuery + ', ' + isActiveField 
+    oSValuesQuery = oSValuesQuery + ', ' + isProcedureField  
+    oSValuesQuery = oSValuesQuery + ', ' + versionField  
+    oSValuesQuery = oSValuesQuery + ', ' + isResusableField 
+    oSValuesQuery = oSValuesQuery + ', ' + propertySetOSField
+    oSValuesQuery = oSValuesQuery + ' FROM %name-space%OmniScript__c ';
+    oSValuesQuery = oSValuesQuery + ' WHERE ' + isActiveField + ' = true';
+    var oSValuesQueryFinal = AppUtils.replaceaNameSpace(oSValuesQuery);
 
-    // The output and --json will automatically be handled for you.
-    if (!result.records || result.records.length <= 0) {
-      throw new SfdxError(messages.getMessage('errorNoOrgResults', [this.org.getOrgId()]));
-    }
-    AppUtils.log3('Found: ' + result.records.length + ' Active OmniScripts and IntegrationProcedures'); 
+    var oSValuesResults = await conn.query(oSValuesQueryFinal);
 
-    var resultsFile = './Dependencies_Report_Local.csv'; 
-    AppUtils.log2('Results File: ' + resultsFile ); 
-    if (fs.existsSync(resultsFile)) {
-      fs.unlinkSync(resultsFile);
-    }
 
-    const CreateFiles = fs.createWriteStream(resultsFile, {flags: 'a'});
-    var initialHeader = 'DataPack Name,Is Reusable,Dependency,Dependency Type,Remote Class,Remote Method';
-    CreateFiles.write(initialHeader+'\r\n');   
+    let oSValuesPap = new Map();
 
-    var totalDependenciesFound = 0;
-
-    AppUtils.log3('Finding Dependencies...'); 
-
-    for (var i=0; i<result.records.length; i++) {
-      var record = result.records[i];
-
-      var omniScriptPropertySet = record[propertySetOSField];
-      if( omniScriptPropertySet != '') {
-        var resultDepPS = remote.getPropertySetValues(CreateFiles,omniScriptPropertySet,dataPackType,dataPack,isReusableValue);
-        totalDependenciesFound = totalDependenciesFound + resultDepPS;
-      }
-
-      var elements = record[elementsRelation].records;
-      var dataPackType = 'OmniScript'
-      if(record[isProcedureField]){
-        dataPackType = 'IntegrationProcedure'
-      }
-      
-      var omniScriptType = record[typeField];
-      var omniScriptSubType = record[subTypeField];
-      var omniScriptLanguage = record[languageField];
-      var dataPack = omniScriptType + '_' + omniScriptSubType + '_' + omniScriptLanguage;
-      var isReusableValue = record[isResusableField];
-
-      AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
-      for (var j=0; j<elements.length; j++) {
-        var propertySet = elements[j][elementPropertySetObject];
-        var resultDep = remote.getPropertySetValues(CreateFiles,propertySet,dataPackType,dataPack,isReusableValue);
-        totalDependenciesFound = totalDependenciesFound + resultDep;
-      }
+    for (var i=0; i<oSValuesResults.records.length; i++) {
+      var element = oSValuesResults.records[i];
+      //console.log('///////' + Object.keys(element) + ' ///' + element['Id'])
+      oSValuesPap.set(element['Id'], element); 
     }
 
-        ////////// Report
-        console.log('')
-        AppUtils.log3('Donde Finding Dependencies'); 
-        AppUtils.log3('Number of OmniScripts and IntegrationProcedures Scanned: ' + result.records.length); 
-        AppUtils.log3('Number of Total Dependencies Found: ' + totalDependenciesFound); 
-        AppUtils.log3('CSV File Generated: ' + resultsFile); 
-        console.log('')
+    ////// Create Maps
+    var initialQuery = AppUtils.replaceaNameSpace('SELECT %name-space%OmniScriptId__c , COUNT(Id) Total ');
+    initialQuery = initialQuery + AppUtils.replaceaNameSpace('FROM %name-space%Element__c ');
+    initialQuery = initialQuery + AppUtils.replaceaNameSpace('GROUP BY %name-space%OmniScriptId__c');
+    var queryString = AppUtils.replaceaNameSpace(initialQuery);
+
+    var resultFirst = await conn.query(queryString);
+
+    var currentCount = 0
+    var batches = new Array<string>();
+    var currentBatch = '';
+    for (var i=0; i<resultFirst.records.length; i++) {
+      var record = resultFirst.records[i];
+      var numberOfElements = record['Total'];
+      var dataPackId = record[AppUtils.replaceaNameSpace('%name-space%OmniScriptId__c')];
+
+      var dataPackRecord = oSValuesPap.get(dataPackId);
+      var shouldBeIncluded = (oSValuesPap.get(dataPackId)!= undefined);
+
+      //console.log('//////shouldBeIncluded: ' + shouldBeIncluded);
+
+      if((i == (+resultFirst.records.length - 1)) && ((currentCount+numberOfElements)>10000) ){
+        batches.push(currentBatch);
+        if(shouldBeIncluded == true){
+          currentBatch = dataPackId;
+          currentCount = numberOfElements;
+          batches.push(currentBatch);
+        } 
+      }else if((i == (+resultFirst.records.length - 1)) && ((currentCount+numberOfElements)<10000) ){
+        if(shouldBeIncluded == true){
+          currentBatch = currentBatch + ', ' + dataPackId;
+          currentCount =  currentCount + numberOfElements;
+        }
+        batches.push(currentBatch);
+      }
+      else {
+        if(shouldBeIncluded == true ){
+          if(currentBatch != ''){
+            currentBatch = currentBatch + ', ' + dataPackId;
+            currentCount =  currentCount + numberOfElements;
+          } else { 
+            currentBatch =  dataPackId;
+            currentCount =  numberOfElements;
+          }
+        } else {
+          currentBatch = '';
+          currentCount = 0;
+        }
+      }
+
+    }
+
+    ////// 
+
+    remote.lauchBatches(conn, batches,fs);
+
   }
+
+
+  static lauchBatches(conn,batches,fs){
+    var elementsQuery = 'SELECT id, %name-space%OmniScriptId__c, %name-space%PropertySet__c '
+    elementsQuery = elementsQuery +  'FROM %name-space%Element__c '
+
+    AppUtils.log3('Looking for OmniScripts and IntegrationProcedures in the environmemt'); 
+    
+    
+    batches.forEach(batch => {
+
+      var queryWithIds = elementsQuery 
+      var queryString2 = AppUtils.replaceaNameSpace(queryWithIds);
+
+      console.log('/////QUERY: ' +queryString2)
+  
+      conn.bulk.query(queryString2)
+      .on('record', function(result) { 
+        if(result!=undefined){
+        console.log('/////RECORD: ' + Object.keys(result));
+        console.log(record[propertySetOSField]);
+        console.log('/////');
+        AppUtils.log3('Found: ' + result.records.length + ' Active OmniScripts and IntegrationProcedures'); 
+
+        var totalDependenciesFound = 0;
+
+        AppUtils.log3('Finding Dependencies...'); 
+
+        for (var i=0; i<result.records.length; i++) {
+          var record = result.records[i];
+
+          var omniScriptPropertySet = record[propertySetOSField];
+          if( omniScriptPropertySet != '') {
+            var resultDepPS = remote.getPropertySetValues(CreateFiles,omniScriptPropertySet,dataPackType,dataPack,isReusableValue);
+            totalDependenciesFound = totalDependenciesFound + resultDepPS;
+          }
+
+          var elements = record[elementsRelation].records;
+          var dataPackType = 'OmniScript'
+          if(record[isProcedureField]){
+            dataPackType = 'IntegrationProcedure'
+          }
+          
+          var omniScriptType = record[typeField];
+          var omniScriptSubType = record[subTypeField];
+          var omniScriptLanguage = record[languageField];
+          var dataPack = omniScriptType + '_' + omniScriptSubType + '_' + omniScriptLanguage;
+          var isReusableValue = record[isResusableField];
+
+          AppUtils.log2('Finding Dependencies for ' + dataPackType + ': ' + dataPack); 
+          for (var j=0; j<elements.length; j++) {
+            var propertySet = elements[j][elementPropertySetObject];
+            var resultDep = remote.getPropertySetValues(CreateFiles,propertySet,dataPackType,dataPack,isReusableValue);
+            totalDependenciesFound = totalDependenciesFound + resultDep;
+          }
+        }
+        }
+      })
+      .on('error', function(err) { 
+        console.error(err); 
+      });
+
+  });
+  }
+
 
   static getPropertySetValues(CreateFiles,propertySetObject,dataPackType,dataPack,isReusable) {
     var dependenciesFound = 0;
