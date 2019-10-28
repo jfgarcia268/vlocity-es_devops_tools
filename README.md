@@ -1,9 +1,9 @@
 Vlocity ES Tools (Beta)
 ==============
 
-###### Disclaimer: This tool is not an offical tool from Vlocity. It was created with the intent of distributing certain uitlility tools, Use it at your own risk.
+##### Disclaimer: This tool is not an offical tool from Vlocity. It was created with the intent of distributing certain uitlility tools, Use it at your own risk.
 
-<!-- install -->
+
 # Install
 ```sh-session
 $ sfdx plugins:install vlocityestools # Requires SFDX-CLI
@@ -19,7 +19,16 @@ USAGE
   $ sfdx COMMAND
 ```
 
-# Commands
+# Commands:
+
+### vlocityestools:clean:omniscrtips - test
+### vlocityestools:compare:folders
+### vlocityestools:report:dependencies:local
+### vlocityestools:report:dependencies:remote
+  
+'    '
+
+# Commands Info:
 
 ## vlocityestools:clean:omniscrtips
 
