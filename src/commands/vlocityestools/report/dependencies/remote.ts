@@ -1,11 +1,11 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AppUtils } from '../../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
-//////// OmniScrits
+//////// OmniScrits Fields
 var languageField;
 var typeField;
 var subTypeField;
@@ -14,12 +14,14 @@ var versionField;
 var isProcedureField;
 var isResusableField;
 var propertySetOSField;
-//////// Element 
+
+//////// Element Fields
 var elementOSIDField;
 
+
+//////// var
 var totalDependenciesFound;
 var numberofOSandVIP;
-
 var resultsFile = './Dependencies_Report_Remote.csv'; 
 
 
@@ -32,9 +34,9 @@ export default class remote extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:report:dependencies:remote -u SIT
+  `$ sfdx vlocityestools:report:dependencies:remote -u SIT -p cmt
   `,
-  `$ sfdx vlocityestools:report:dependencies:remote --targetusername myOrg@example.com
+  `$ sfdx vlocityestools:report:dependencies:remote --targetusername myOrg@example.com --packageType ins
   `
   ];
 
@@ -81,8 +83,7 @@ export default class remote extends SfdxCommand {
 
     const conn = this.org.getConnection();
 
-    ////// GET OS VALUES
-
+    ////// Field Values
     languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
     typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
     subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
@@ -90,7 +91,6 @@ export default class remote extends SfdxCommand {
     versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
     isProcedureField  = AppUtils.replaceaNameSpace('%name-space%IsProcedure__c');
     isResusableField  = AppUtils.replaceaNameSpace('%name-space%IsReusable__c');
-    ////
     propertySetOSField  = AppUtils.replaceaNameSpace('%name-space%PropertySet__c');
     elementOSIDField =  AppUtils.replaceaNameSpace('%name-space%OmniScriptId__c');
 
@@ -110,7 +110,6 @@ export default class remote extends SfdxCommand {
     AppUtils.log3('Looking for OmniScripts and IntegrationProcedures in the environmemt');
     var oSValuesResults = await conn.query(oSValuesQueryFinal);
 
-
     let oSValuesMap = new Map<string,Object>();
 
     for (var i=0; i<oSValuesResults.records.length; i++) {
@@ -123,13 +122,14 @@ export default class remote extends SfdxCommand {
     numberofOSandVIP = oSValuesResults.records.length;
 
     ////// 
-    AppUtils.log3('Looking for Dependencies in DataPacks');
-    remote.OmniScriptPropertySet(conn,fs,oSValuesResults,CreateFiles);    
-    AppUtils.log3('Looking for Dependencies in Elements');
+    AppUtils.log3('Looking for Dependencies in Main DataPack');
+    remote.OmniScriptPropertySet(conn,fs,oSValuesResults,CreateFiles);  
+    
+    ////// 
+    AppUtils.log3('Looking for Dependencies in All Elements');
+    conn.bulk.pollInterval = 5000; // 5 sec
+    conn.bulk.pollTimeout = 60000; // 60 sec
     remote.queryElements(conn,fs,oSValuesMap,CreateFiles);
-
-    //while(!done){};
-
 
 
   }
@@ -157,10 +157,11 @@ export default class remote extends SfdxCommand {
       if(element[isProcedureField]==true){
         var dataPackType = 'IntegrationProcedure'
       }
-      var resultDep = remote.getPropertySetValues(CreateFiles,propertySet,dataPackType,dataPack,isReusableValue);
-      totalDep = totalDep + resultDep;
+      if(propertySet != undefined){
+        var resultDep = remote.getPropertySetValues(CreateFiles,propertySet,dataPackType,dataPack,isReusableValue);
+        totalDep = totalDep + resultDep;
+      }
     });
-
     totalDependenciesFound = totalDependenciesFound + totalDep;
   }
 
@@ -178,7 +179,6 @@ export default class remote extends SfdxCommand {
       var elementPropertySet = result[propertySetOSField];
       var omniScripId = result[elementOSIDField];
       var omniScripRecord = omniScripRecords.get(omniScripId);
-    
       if (omniScripRecord!=undefined){ 
         var dataPackType = 'OmniScript'
         if(omniScripRecord[isProcedureField]==true){
@@ -257,7 +257,5 @@ export default class remote extends SfdxCommand {
 
     return dependenciesFound;
   }
-
-
 
 }

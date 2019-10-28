@@ -39,7 +39,7 @@ OPTIONS
                                                             OmniScrits to keep for each one.
                                                             Has to be greater than 0.
 
-  -p, --package                                             Vlocity Package Type, Options:
+  -p, --package=package                                     Vlocity Package Type, Options:
                                                             'cmt' or 'ins' 
 
 EXAMPLES
@@ -78,9 +78,11 @@ EXAMPLES
 ```
 
 
-## Vlocityestools:report:dependencies
+## vlocityestools:report:dependencies:local
 
-For Both OmniScript and VIP, 1st Level of dependencies: 
+
+From a local DataPack export foler, for Both OmniScript and VIP, 1st Level of dependencies: 
+
 - DataRaptors
 - OmniScripts
 - VIPS
@@ -89,10 +91,11 @@ For Both OmniScript and VIP, 1st Level of dependencies:
 
 The output will be a CSV file with the results
 
+
 ```
 USAGE
 
-  $ sfdx vlocityestools:report:dependencies -f <string>
+  $ sfdx vlocityestools:report:dependencies:local -f <string>
 
 OPTIONS
 
@@ -102,8 +105,43 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:report:dependencies -f vlocity
+  $ sfdx vlocityestools:report:dependencies:local -f vlocity
   
-  $ sfdx vlocityestools:report:dependencies -folder vlocity
+  $ sfdx vlocityestools:report:dependencies:local --folder vlocity
+
+```
+
+## vlocityestools:report:dependencies:remote
+
+From remote Alias connection, for Both OmniScript and VIP, 1st Level of dependencies: 
+
+- DataRaptors
+- OmniScripts
+- VIPS
+- Remote Calls
+- VlocityUITemplate
+
+The output will be a CSV file with the results
+
+
+```
+USAGE
+
+  $ sfdx vlocityestools:report:dependencies:remote -f <string> -p <string>
+
+OPTIONS
+
+  -f, --folder=folder                                  Vlocity Folder Name
+
+  -p, --package=package                                Vlocity Package Type, Options:
+                                                       'cmt' or 'ins' 
+                                                
+  
+
+EXAMPLES
+
+  $ sfdx vlocityestools:report:dependencies:remote -u SIT -p cmt
+  
+  $ sfdx vlocityestools:report:dependencies:remote --targetusername myOrg@example.com  --packageType ins
 
 ```
