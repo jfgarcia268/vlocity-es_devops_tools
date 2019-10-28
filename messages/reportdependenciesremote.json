@@ -1,0 +1,5 @@
+{
+  "commandDescription": "Get Dependencies report for environment",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "command":"remote"
+}
