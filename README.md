@@ -21,7 +21,7 @@ USAGE
 
 # Commands:
 
-### vlocityestools:clean:omniscrtips - test
+### vlocityestools:clean:omniscrtips
 ### vlocityestools:compare:folders
 ### vlocityestools:report:dependencies:local
 ### vlocityestools:report:dependencies:remote
