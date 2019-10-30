@@ -136,14 +136,15 @@ The output will be a CSV file with the results
 ```
 USAGE
 
-  $ sfdx vlocityestools:report:dependencies:remote -f <string> -p <string>
+  $ sfdx vlocityestools:report:dependencies:remote -u <string> -p <string>
 
 OPTIONS
 
-  -f, --folder=folder                                  Vlocity Folder Name
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
 
-  -p, --package=package                                Vlocity Package Type, Options:
-                                                       'cmt' or 'ins' 
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
                                                 
   
 
