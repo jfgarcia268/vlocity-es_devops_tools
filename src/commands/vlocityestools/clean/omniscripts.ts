@@ -15,9 +15,9 @@ export default class deleteOldOS extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5 -p cmt
+  `$ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 5 -p cmt
   `,
-  `$ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5 --package ins
+  `$ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 5 --package ins
   `
   ];
 
@@ -104,7 +104,7 @@ export default class deleteOldOS extends SfdxCommand {
 
       if(OStoDetele.length > 0) {
         await new Promise((resolveBatch) => {
-            var job = conn.bulk.createJob("%name-space%OmniScript__c", "delete");
+            var job = conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%OmniScript__c"), "delete");
             var batch = job.createBatch();
             batch.execute(OStoDetele);
 

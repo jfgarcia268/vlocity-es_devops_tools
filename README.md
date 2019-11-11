@@ -21,7 +21,7 @@ USAGE
 
 # Commands:
 
-### vlocityestools:clean:omniscrtips
+### vlocityestools:clean:omniscripts
 ### vlocityestools:compare:folders
 ### vlocityestools:report:dependencies:local
 ### vlocityestools:report:dependencies:remote
@@ -37,7 +37,7 @@ Delete old verions of OmniScritps and leave X amount of latest verions
 ```
 USAGE
 
-  $ sfdx vlocityestools:clean:omniscrtips -u <string> -v <integer> -p <string>
+  $ sfdx vlocityestools:clean:omniscripts -u <string> -v <integer> -p <string>
 
 OPTIONS
 
@@ -53,9 +53,59 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:clean:omniscrtips -u myOrg@example.com -n 5 -p cmt
+  $ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 5 -p cmt
   
-  $ sfdx vlocityestools:clean:omniscrtips --targetusername myOrg@example.com --numberversions 5 --package ins
+  $ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 5 --package ins
+
+```
+
+## vlocityestools:clean:datapacks
+
+Delete old DataPacks Used by Vlocity Build Tool
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:datapacks -u <string> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:datapacks -u myOrg@example.com  -p cmt
+  
+  $ sfdx vlocityestools:clean:datapacks --targetusername myOrg@example.com  --package ins
+
+```
+
+## vlocityestools:clean:savedomniscripts
+
+Delete old Saved OmniScripts
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:savedomniscripts -u <string> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:savedomniscripts -u myOrg@example.com  -p cmt
+  
+  $ sfdx vlocityestools:clean:savedomniscripts --targetusername myOrg@example.com  --package ins
 
 ```
 
