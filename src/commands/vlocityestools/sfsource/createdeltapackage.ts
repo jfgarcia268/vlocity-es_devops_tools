@@ -48,44 +48,40 @@ export default class deltaPackage extends SfdxCommand {
     const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = 'VBTDeployKey'";
     const query = AppUtils.replaceaNameSpace(initialQuery);
     const result = await conn.query(query);
+    const repoPath = './';
+    const simpleGit = require('simple-git')(repoPath);
 
     if(result.records.length < 1){
       AppUtils.log2('Hash not found in the environment, Coping full Paackage');
+    }
+    else if(!simpleGit.checkIsRepo()){
+      AppUtils.log2('Current directory is not a repository');
     }
     else {
       var previousHash = result.records[0][AppUtils.replaceaNameSpace('%name-space%Value__c')];
       AppUtils.log2('Hash found in the environment: ' + previousHash);
       
       AppUtils.log2('Creating delta Package');
-      var NodeGit = require("nodegit");
-      var pathToRepo = require("path").resolve("./");
-      var repo = await NodeGit.Repository.open(pathToRepo);
       
-      var newCommit = await repo.getHeadCommit();
-      var currentTree = await newCommit.getTree();
-
-      var oldCommit =  await repo.getCommit(previousHash);
-      var oldTree = await oldCommit.getTree();
-
-      var diffList = await currentTree.diff(oldTree);
-      AppUtils.log2('Num Deltas: ' + diffList.numDeltas());
       var deltaPackageFolder = sourceFolder + '_delta';
-
       const fsExtra = require('fs-extra');
       if(fsExtra.existsSync(deltaPackageFolder)){
         fsExtra.removeSync(deltaPackageFolder);
       }
-      await deltaPackage.doDelta(diffList,sourceFolder,deltaPackageFolder,fsExtra);
+
+      deltaPackage.doDelta(simpleGit,sourceFolder,deltaPackageFolder,fsExtra,previousHash);
+       
     }
   }
 
-  static doDelta(diffList,sourceFolder,deltaPackageFolder,fsExtra) {
+  static doDelta(simpleGit,sourceFolder,deltaPackageFolder,fsExtra,previousHash) {
     AppUtils.log2('Deltas: ');
-    for (var i = 0; i < diffList.numDeltas(); i++) {
-      var diffDelta = diffList.getDelta(i);
-      if(diffDelta.status() == 1 || diffDelta.status() == 3 ){
-        var filePath = diffDelta.newFile().path();
-        if(filePath.includes(sourceFolder)) {
+    simpleGit.diffSummary([previousHash],(err, status) => {
+      //console.log(status.files);
+      status.files.forEach(files => {
+        //console.log('File: ' + files.file);
+        var filePath = files.file;       
+        if(fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
           var newfilePath = filePath.replace(sourceFolder, deltaPackageFolder);
           AppUtils.log1('File: ' + filePath ) //+ ' /////// newfilePath: ' + newfilePath);
 
@@ -107,10 +103,9 @@ export default class deltaPackage extends SfdxCommand {
             var newMetaXMLFile = newfilePath + '-meta.xml';
             fsExtra.copySync(metaXMLFile,newMetaXMLFile);
           }
-
-        }
-      }
-      
-    }
+        } 
+     });
+    });
   }
+
 }
