@@ -27,6 +27,7 @@ USAGE
 ### vlocityestools:clean:savedomniscripts
 ### vlocityestools:report:dependencies:local
 ### vlocityestools:report:dependencies:remote
+### vlocityestools:sfsource:createdeltapackage
   
 '    '
 
