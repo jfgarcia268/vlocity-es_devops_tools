@@ -23,6 +23,8 @@ USAGE
 
 ### vlocityestools:clean:omniscripts
 ### vlocityestools:compare:folders
+### vlocityestools:clean:datapacks
+### vlocityestools:clean:savedomniscripts
 ### vlocityestools:report:dependencies:local
 ### vlocityestools:report:dependencies:remote
   
@@ -203,5 +205,36 @@ EXAMPLES
   $ sfdx vlocityestools:report:dependencies:remote -u SIT -p cmt
   
   $ sfdx vlocityestools:report:dependencies:remote --targetusername myOrg@example.com  --packageType ins
+
+```
+
+
+## vlocityestools:sfsource:createdeltapackage
+
+Based on Vlocity Build Tool saved Hash in the Environment, Create Delta package for salforce.
+Note: Only works for SFDX Source Format
+
+```
+USAGE
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+  -d, --sourcefolder=sourcefolder                           Salesfroce sorce folder name
+                                                           
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage -u myOrg@example.com -p cmt -d force-app
+  
+  $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
 
 ```

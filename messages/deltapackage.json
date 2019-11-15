@@ -1,0 +1,7 @@
+{
+  "commandDescription": "Create Source delta Package",
+  "packageType": "Package Type (ins or cmt)",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"deltapackage",
+  "sourcefolder":"Source Folder to create Delta Package"
+}

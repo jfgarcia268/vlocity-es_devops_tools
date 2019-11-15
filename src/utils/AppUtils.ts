@@ -13,7 +13,7 @@ export class AppUtils {
     }
 
     public static logInitial(command: string) {
-        this.log3('Vlocity Tools v' + AppUtils.appVersion);
+        this.log3('Vlocity ES Tools v' + AppUtils.appVersion);
         this.log3('Command: ' + command);
     }  
 
