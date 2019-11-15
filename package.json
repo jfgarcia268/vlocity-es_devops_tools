@@ -27,8 +27,7 @@
     "mocha": "^5",
     "nyc": "^14",
     "ts-node": "^8",
-    "tslint": "^5",
-    "dir-compare":"1.7.3"
+    "tslint": "^5"
   },
   "engines": {
     "node": ">=10.10.0"
