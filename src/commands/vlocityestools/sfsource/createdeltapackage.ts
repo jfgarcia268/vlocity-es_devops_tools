@@ -56,8 +56,6 @@ export default class deltaPackage extends SfdxCommand {
       var previousHash = result.records[0][AppUtils.replaceaNameSpace('%name-space%Value__c')];
       AppUtils.log2('Hash found in the environment: ' + previousHash);
       
-      const fs = require('fs');
-
       AppUtils.log2('Creating delta Package');
       var NodeGit = require("nodegit");
       var pathToRepo = require("path").resolve("./");
