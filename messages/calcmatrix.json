@@ -1,0 +1,7 @@
+{
+  "commandDescription": "Delete Calculation Matrices",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"calcmatrix",
+  "numberRecentVersions":"Calculation Matrix Version ID to delete"
+}

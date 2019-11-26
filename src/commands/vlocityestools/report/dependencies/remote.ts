@@ -172,6 +172,8 @@ export default class remote extends SfdxCommand {
     elementsQuery = elementsQuery +  'FROM %name-space%Element__c '
     var queryString2 = AppUtils.replaceaNameSpace(elementsQuery);
     var totalDependenciesFound2 = 0; 
+
+    // LIMIT 5 OFFSET 2
     
     conn.bulk.query(queryString2)
     .on('record', function(result) { 
