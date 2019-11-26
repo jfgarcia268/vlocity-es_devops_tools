@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Check All OmniScrips are Active",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"activeOmniScripts"
+}

@@ -27,6 +27,7 @@ USAGE
 ### vlocityestools:clean:savedomniscripts
 ### vlocityestools:report:dependencies:local
 ### vlocityestools:report:dependencies:remote
+### vlocityestools:report:activeomniscript
 ### vlocityestools:sfsource:createdeltapackage
   
 '    '
@@ -209,6 +210,32 @@ EXAMPLES
 
 ```
 
+## vlocityestools:report:activeomniscript
+
+Check All OmniScrips are Active
+
+```
+USAGE
+
+  $ sfdx vlocityestools:report:activeomniscript -u <string> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+                                                
+  
+
+EXAMPLES
+
+  $ sfdx vlocityestools:report:activeomniscript -u myOrg@example.com -p cmt
+  
+  $ sfdx vlocityestools:report:activeomniscript  --targetusername myOrg@example.com --package ins
+
+```
 
 ## vlocityestools:sfsource:createdeltapackage
 
