@@ -58,7 +58,7 @@ export default class deleteCalMatrix extends SfdxCommand {
 
     const initialQuery = "SELECT Name, Id FROM %name-space%CalculationMatrixRow__c WHERE %name-space%CalculationMatrixVersionId__c = '" + matrixid + "'";
     var query = AppUtils.replaceaNameSpace(initialQuery);
-    await deleteCalMatrix.deleteMatrixAndRows(query,conn,matrixid);
+    deleteCalMatrix.deleteMatrixAndRows(query,conn,matrixid);
   }
 
   static async deleteCalMatrixVersion(matrixid,conn) {
@@ -74,11 +74,11 @@ export default class deleteCalMatrix extends SfdxCommand {
       job.close();
     })
     .on("queue", function(batchInfo) { // fired when batch request is queued in server.
-      AppUtils.log2('Waiting for batch to complete');
+      AppUtils.log1('Waiting for batch to complete');
       batch.poll(1000 /* interval(ms) */, 100000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
     })
-    .on("response", function() { // fired when batch finished and result retrieved
-      AppUtils.log2('Batch Finished ');
+    .on("response", function(res) { // fired when batch finished and result retrieved
+      AppUtils.log1('Batch Finished: ' + JSON.stringify(res.success));
       job.close();
     });
 
@@ -101,7 +101,8 @@ export default class deleteCalMatrix extends SfdxCommand {
           deleteCalMatrix.deleteRows(records,conn,matrixid)
         }
         else {
-          AppUtils.log3('No Rows where found for Matriz version with ID: ' + matrixid );
+          AppUtils.log3('No Rows where found for Matrix version with ID: ' + matrixid );
+          deleteCalMatrix.deleteCalMatrixVersion(matrixid,conn);
         }
 
       })
@@ -113,14 +114,14 @@ export default class deleteCalMatrix extends SfdxCommand {
 
   static async deleteRows(records,conn,matrixid) {
     var job = await conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),'delete');
-    console.log('job: ' + job);
     var numOfComonents = records.length;
     var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
+    var numberOfBatchesDone = 0;
     AppUtils.log2('Number Of Batches to be created to delete Rows: ' + numberOfBatches);
     var promises = [];
     for (var i=0; i<numberOfBatches; i++) {
       var newp = new Promise(async(resolve) => {
-        AppUtils.log2('Creating Batch #: ' + i );
+        AppUtils.log1('Creating Batch #: ' + i );
         var ArraytoDelete = records;
         if(i<(numberOfBatches-1)) {
           ArraytoDelete = records.splice(0,this.batchSize);
@@ -130,14 +131,16 @@ export default class deleteCalMatrix extends SfdxCommand {
         batch.execute(ArraytoDelete)
         .on("error", function(err) { // fired when batch request is queued in server.
           console.log('Error, batch #: ' + batchNumber + 'Info:', err);
+          numberOfBatchesDone = numberOfBatchesDone +1;
           resolve();
         })
         .on("queue", function(batchInfo) { // fired when batch request is queued in server.
-          AppUtils.log2('Waiting for batch #: ' + batchNumber + ' to finish');
+          AppUtils.log1('Waiting for batch #: ' + batchNumber + ' to finish');
           batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
         })
         .on("response", function(rets) { // fired when batch finished and result retrieved
-          AppUtils.log2('Batch #: ' + batchNumber + ' Finished');
+          numberOfBatchesDone = numberOfBatchesDone +1;
+          AppUtils.log1('Batch #: ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
           resolve();
         });
       });

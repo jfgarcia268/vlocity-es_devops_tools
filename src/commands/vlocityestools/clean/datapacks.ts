@@ -59,9 +59,7 @@ export default class deleteOldDataPacks extends SfdxCommand {
 
     const dataPacksQuery = AppUtils.replaceaNameSpace(dataPacksQueryInitial);
     const dataPacksAttachmentsQuery = AppUtils.replaceaNameSpace(dataPacksAttachmentsQueryInitial);
-    
-    
-    
+  
     // Delete Attachmets
     const resultDataPacksAttachments = await conn.query(dataPacksAttachmentsQuery);
     if (resultDataPacksAttachments == undefined || resultDataPacksAttachments.records.length <= 0) {
