@@ -56,7 +56,7 @@ export default class deleteCalMatrix extends SfdxCommand {
     const conn = this.org.getConnection();
 
 
-    const initialQuery = "SELECT Name, Id FROM %name-space%CalculationMatrixRow__c WHERE %name-space%CalculationMatrixVersionId__c = '" + matrixid + "'";
+    const initialQuery = "SELECT Id FROM %name-space%CalculationMatrixRow__c WHERE %name-space%CalculationMatrixVersionId__c = '" + matrixid + "'";
     var query = AppUtils.replaceaNameSpace(initialQuery);
     deleteCalMatrix.deleteMatrixAndRows(query,conn,matrixid);
   }
@@ -65,7 +65,7 @@ export default class deleteCalMatrix extends SfdxCommand {
     var initialQuery = "SELECT Id FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var query = AppUtils.replaceaNameSpace(initialQuery);
     var result =  await conn.query(query);
-    var job = conn.bulk.createJob(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c'),'delete');
+    var job = conn.bulk.createJob(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c'),'hardDelete');
     var batch = job.createBatch();
     AppUtils.log2('Creatin Job to delete Matrix version' );
     batch.execute(result.records)
@@ -113,7 +113,8 @@ export default class deleteCalMatrix extends SfdxCommand {
   
 
   static async deleteRows(records,conn,matrixid) {
-    var job = await conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),'delete');
+    var job = await conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),'hardDelete');
+    console.log('job: ' + job);
     var numOfComonents = records.length;
     var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
     var numberOfBatchesDone = 0;
@@ -127,6 +128,7 @@ export default class deleteCalMatrix extends SfdxCommand {
           ArraytoDelete = records.splice(0,this.batchSize);
         }
         var batch = job.createBatch();
+        console.log('batch: ' + batch );
         var batchNumber = i + 1;
         batch.execute(ArraytoDelete)
         .on("error", function(err) { // fired when batch request is queued in server.
