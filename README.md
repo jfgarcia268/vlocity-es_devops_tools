@@ -29,6 +29,7 @@ USAGE
 ### vlocityestools:report:dependencies:remote
 ### vlocityestools:report:activeomniscript
 ### vlocityestools:sfsource:createdeltapackage
+### vlocityestools:clean:calcmatrix
   
 '    '
 
@@ -264,5 +265,38 @@ EXAMPLES
   $ sfdx vlocityestools:sfsource:createdeltapackage -u myOrg@example.com -p cmt -d force-app
   
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
+
+```
+
+
+
+## vlocityestools:clean:calcmatrix
+
+This command will delete all rows of the Calculation Matrix Version based on the given ID as input. Then, it will update the version record with Dummy data so any other version can be Deployed. The Calculation Matrix Version can be delete after 24 hors due to Salesforce sweeper restrictions.
+You can assign the user used to run this comnad a Permisison set or a profile that has the Bulk API hard delte to avoid the need of deleting the rows from the recycle bin.
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:calcmatrix -u <string> -i <string> -P<string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -i, --matrixid=matrixid                                   Matrix Version ID to be clean 
+
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+                                                           
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:calcmatrix -u myOrg@example.com -i a0dR000000kxD4qIAE -p ins
+  
+  $ sfdx vlocityestools:clean:calcmatrix --targetusername myOrg@example.com --matrixid a0dR000000kxD4qIAE --package cmt
 
 ```
