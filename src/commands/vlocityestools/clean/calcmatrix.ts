@@ -67,7 +67,7 @@ export default class deleteCalMatrix extends SfdxCommand {
     var result =  await conn.query(query);
     var job = conn.bulk.createJob(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c'),'hardDelete');
     var batch = job.createBatch();
-    AppUtils.log2('Creatin Job to delete Matrix version' );
+    AppUtils.log2('Creating Job to delete Matrix version' );
     batch.execute(result.records)
     .on("error", function(err) { // fired when batch request is queued in server.
       console.log('Error Deteting Matrix version: ', err);
@@ -128,7 +128,7 @@ export default class deleteCalMatrix extends SfdxCommand {
           ArraytoDelete = records.splice(0,this.batchSize);
         }
         var batch = job.createBatch();
-        console.log('batch: ' + batch );
+        //console.log('batch: ' + batch );
         var batchNumber = i + 1;
         batch.execute(ArraytoDelete)
         .on("error", function(err) { // fired when batch request is queued in server.
