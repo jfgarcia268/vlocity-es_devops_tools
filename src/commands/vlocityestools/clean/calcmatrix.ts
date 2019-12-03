@@ -61,25 +61,33 @@ export default class deleteCalMatrix extends SfdxCommand {
     deleteCalMatrix.deleteMatrixAndRows(query,conn,matrixid);
   }
 
-  static async deleteCalMatrixVersion(matrixid,conn) {
-    var initialQuery = "SELECT Id FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
+  static async updateOldCalMatrixVersion(matrixid,conn) {
+    //var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c, %name-space%EndDateTime__c, %name-space%StartDateTime__c, %name-space%Priority__c, %name-space%VersionNumber__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
+    var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var query = AppUtils.replaceaNameSpace(initialQuery);
-    var result =  await conn.query(query);
-    var job = conn.bulk.createJob(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c'),'hardDelete');
-    var batch = job.createBatch();
-    AppUtils.log2('Creating Job to delete Matrix version' );
-    batch.execute(result.records)
-    .on("error", function(err) { // fired when batch request is queued in server.
-      console.log('Error Deteting Matrix version: ', err);
-      job.close();
-    })
-    .on("queue", function(batchInfo) { // fired when batch request is queued in server.
-      AppUtils.log1('Waiting for batch to complete');
-      batch.poll(1000 /* interval(ms) */, 100000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-    })
-    .on("response", function(res) { // fired when batch finished and result retrieved
-      AppUtils.log1('Batch Finished: ' + JSON.stringify(res.success));
-      job.close();
+    var result = await conn.query(query);
+    var mainMatrixID = await result.records[0][AppUtils.replaceaNameSpace('%name-space%CalculationMatrixId__c')];
+
+    var initialQueryForAllVersions = "SELECT Id, Name FROM %name-space%CalculationMatrixVersion__c WHERE %name-space%CalculationMatrixId__c = '" + mainMatrixID + "'";
+    var queryForAllVersions = AppUtils.replaceaNameSpace(initialQueryForAllVersions);
+    const result2 = await conn.query(queryForAllVersions);
+    var numOfTodelte = result2.records.
+    length;
+
+    conn.sobject(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c')).update({ 
+      Id : matrixid,
+      Name : 'TO_DELETE_' + result.records[0].Name,
+      [AppUtils.replaceaNameSpace('%name-space%EndDateTime__c')] : '2200-12-30T13:39:00.000+0000',
+      [AppUtils.replaceaNameSpace('%name-space%StartDateTime__c')] : '2200-01-30T13:39:00.000+0000',
+      [AppUtils.replaceaNameSpace('%name-space%Priority__c')] : 1000 + numOfTodelte + '',
+      [AppUtils.replaceaNameSpace('%name-space%VersionNumber__c')] : 1000 + numOfTodelte + ''
+    }, function(err, ret) {
+      if (err) {
+        AppUtils.log2('Error Updating Version: ' + err);
+      }
+      else {
+        AppUtils.log2('Matrix Version Updated Succesfully');
+      }
     });
 
   }
@@ -102,7 +110,7 @@ export default class deleteCalMatrix extends SfdxCommand {
         }
         else {
           AppUtils.log3('No Rows where found for Matrix version with ID: ' + matrixid );
-          deleteCalMatrix.deleteCalMatrixVersion(matrixid,conn);
+          deleteCalMatrix.updateOldCalMatrixVersion(matrixid,conn);
         }
 
       })
@@ -150,7 +158,7 @@ export default class deleteCalMatrix extends SfdxCommand {
     }
     Promise.all(promises).then(values => {
       job.close();
-      this.deleteCalMatrixVersion(matrixid,conn);
+      this.updateOldCalMatrixVersion(matrixid,conn);
     });
   }
 
