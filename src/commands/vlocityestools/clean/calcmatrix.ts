@@ -122,7 +122,6 @@ export default class deleteCalMatrix extends SfdxCommand {
 
   static async deleteRows(records,conn,matrixid) {
     var job = await conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),'hardDelete');
-    console.log('job: ' + job);
     var numOfComonents = records.length;
     var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
     var numberOfBatchesDone = 0;
