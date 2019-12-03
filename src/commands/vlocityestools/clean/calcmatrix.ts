@@ -62,7 +62,7 @@ export default class deleteCalMatrix extends SfdxCommand {
   }
 
   static async updateOldCalMatrixVersion(matrixid,conn) {
-    AppUtils.log3('Updating Matrix Version with Dummny Data to be delted later');
+    AppUtils.log3('Updating Matrix Version with Dummny Data to be delete later');
     //var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c, %name-space%EndDateTime__c, %name-space%StartDateTime__c, %name-space%Priority__c, %name-space%VersionNumber__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var query = AppUtils.replaceaNameSpace(initialQuery);
