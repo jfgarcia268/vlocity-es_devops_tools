@@ -62,6 +62,7 @@ export default class deleteCalMatrix extends SfdxCommand {
   }
 
   static async updateOldCalMatrixVersion(matrixid,conn) {
+    AppUtils.log3('Updating Matrix Version with Dummny Data to be delted later');
     //var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c, %name-space%EndDateTime__c, %name-space%StartDateTime__c, %name-space%Priority__c, %name-space%VersionNumber__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var query = AppUtils.replaceaNameSpace(initialQuery);
@@ -83,10 +84,11 @@ export default class deleteCalMatrix extends SfdxCommand {
       [AppUtils.replaceaNameSpace('%name-space%VersionNumber__c')] : 1000 + numOfTodelte + ''
     }, function(err, ret) {
       if (err) {
-        AppUtils.log2('Error Updating Version: ' + err);
+        AppUtils.log3('Error Updating Version: ' + err);
       }
       else {
-        AppUtils.log2('Matrix Version Updated Succesfully');
+        AppUtils.log3('Matrix Version Updated Succesfully');
+        AppUtils.log3("Please wait 24 Hours to delete Matrix versions with the tag 'TO_DELETE_'");
       }
     });
 
@@ -129,7 +131,8 @@ export default class deleteCalMatrix extends SfdxCommand {
     var promises = [];
     for (var i=0; i<numberOfBatches; i++) {
       var newp = new Promise(async(resolve) => {
-        AppUtils.log1('Creating Batch #: ' + i );
+        var batchNumber = i + 1;
+        AppUtils.log1('Creating Batch # ' + batchNumber );
         var ArraytoDelete = records;
         if(i<(numberOfBatches-1)) {
           ArraytoDelete = records.splice(0,this.batchSize);
@@ -139,17 +142,17 @@ export default class deleteCalMatrix extends SfdxCommand {
         var batchNumber = i + 1;
         batch.execute(ArraytoDelete)
         .on("error", function(err) { // fired when batch request is queued in server.
-          console.log('Error, batch #: ' + batchNumber + 'Info:', err);
+          console.log('Error, batch # ' + batchNumber + 'Info:', err);
           numberOfBatchesDone = numberOfBatchesDone +1;
           resolve();
         })
         .on("queue", function(batchInfo) { // fired when batch request is queued in server.
-          AppUtils.log1('Waiting for batch #: ' + batchNumber + ' to finish');
+          AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
           batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
         })
         .on("response", function(rets) { // fired when batch finished and result retrieved
           numberOfBatchesDone = numberOfBatchesDone +1;
-          AppUtils.log1('Batch #: ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+          AppUtils.log1('Batch # ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
           resolve();
         });
       });
