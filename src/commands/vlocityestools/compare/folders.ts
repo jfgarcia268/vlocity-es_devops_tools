@@ -89,7 +89,7 @@ export default class compareFolders extends SfdxCommand {
                   if (!fs.existsSync(pathLevel2_folderB) && !component.startsWith(".") && fs.lstatSync(pathLevel2_folderA).isDirectory()){
                     //console.log('NO: ' + pathLevel2_folderB);
                     //VLOCITY_KEY,COMP_TYPE,COMP_NAME,INPUT1,INPUT2,DIFF
-                    var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',Yes,No,N/A';
+                    var notFoundResult = FolderLevel1 + '/' + component + ',' + FolderLevel1 + ',' + component + ',No,Yes,N/A';
                     CreateFiles.write(notFoundResult+'\r\n');   
                   } else if (withDiffs && fs.existsSync(pathLevel2_folderB) && !pathLevel2_folderB.startsWith(".")) {
                     //console.log('YES: ' + pathLevel2_folderB);
