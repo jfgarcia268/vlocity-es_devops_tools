@@ -31,6 +31,8 @@ export default class deltaPackage extends SfdxCommand {
 
 
   public async run(){
+    const fsExtra = require('fs-extra');
+    
     var packageType = this.flags.package;
     var sourceFolder = this.flags.sourcefolder;
 
@@ -53,6 +55,7 @@ export default class deltaPackage extends SfdxCommand {
 
     if(result.records.length < 1){
       AppUtils.log2('Hash not found in the environment, Coping full Paackage');
+      deltaPackage.copyCompleteFolder(sourceFolder,deltaPackageFolder,fsExtra);
     }
     else if(!simpleGit.checkIsRepo()){
       AppUtils.log2('Current directory is not a repository');
@@ -64,20 +67,31 @@ export default class deltaPackage extends SfdxCommand {
       AppUtils.log2('Creating delta Package');
       
       var deltaPackageFolder = sourceFolder + '_delta';
-      const fsExtra = require('fs-extra');
       if(fsExtra.existsSync(deltaPackageFolder)){
         fsExtra.removeSync(deltaPackageFolder);
       }
-
       deltaPackage.doDelta(simpleGit,sourceFolder,deltaPackageFolder,fsExtra,previousHash);
-       
     }
   }
 
+  static copyCompleteFolder(sourceFolder,deltaPackageFolder,fsExtra){
+    if (fsExtra.existsSync(deltaPackageFolder)) {
+      fsExtra.removeSync(deltaPackageFolder); 
+    }
+    fsExtra.mkdirSync(deltaPackageFolder);
+    fsExtra.copySync(sourceFolder, deltaPackageFolder);
+
+  }
   static doDelta(simpleGit,sourceFolder,deltaPackageFolder,fsExtra,previousHash) {
     AppUtils.log2('Deltas: ');
     simpleGit.diffSummary([previousHash],(err, status) => {
-      //console.log(status.files);
+      if (err){
+        AppUtils.log1('Error with GitDiff, Coping full Package.. Try to reset the hash in the Env - Error: ' + err );
+        deltaPackage.copyCompleteFolder(sourceFolder,deltaPackageFolder,fsExtra);
+      }
+      else {
+      console.log('err: ' + err);
+      console.log(status.files);
       status.files.forEach(files => {
         //console.log('File: ' + files.file);
         var filePath = files.file;       
@@ -105,6 +119,7 @@ export default class deltaPackage extends SfdxCommand {
           }
         } 
      });
+    }
     });
   }
 
