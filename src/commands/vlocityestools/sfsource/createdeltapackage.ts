@@ -63,9 +63,7 @@ export default class deltaPackage extends SfdxCommand {
     else {
       var previousHash = result.records[0][AppUtils.replaceaNameSpace('%name-space%Value__c')];
       AppUtils.log2('Hash found in the environment: ' + previousHash);
-      
-      AppUtils.log2('Creating delta Package');
-      
+            
       var deltaPackageFolder = sourceFolder + '_delta';
       if(fsExtra.existsSync(deltaPackageFolder)){
         fsExtra.removeSync(deltaPackageFolder);
@@ -83,40 +81,45 @@ export default class deltaPackage extends SfdxCommand {
 
   }
   static doDelta(simpleGit,sourceFolder,deltaPackageFolder,fsExtra,previousHash) {
-    AppUtils.log2('Deltas: ');
     simpleGit.diffSummary([previousHash],(err, status) => {
       if (err){
-        AppUtils.log1('Error with GitDiff, Coping full Package.. Try to reset the hash in the Env - Error: ' + err );
+        AppUtils.log2('Error with GitDiff, Coping full Package.. Try to reset the hash in the Env - Error: ' + err );
         deltaPackage.copyCompleteFolder(sourceFolder,deltaPackageFolder,fsExtra);
       }
       else {
-      status.files.forEach(files => {
-        //console.log('File: ' + files.file);
-        var filePath = files.file;       
-        if(fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
-          var newfilePath = filePath.replace(sourceFolder, deltaPackageFolder);
-          AppUtils.log1('File: ' + filePath ) //+ ' /////// newfilePath: ' + newfilePath);
-
-          if(filePath.includes("/aura/") || filePath.includes("/lwc/")){
-            var splitResult = filePath.split("/");
-            var CompPath = splitResult[0] + '/' + splitResult[1] + '/' + splitResult[2] + '/' + splitResult[3] + '/' + splitResult[4] 
-            var newCompPath = CompPath.replace(sourceFolder, deltaPackageFolder);
-            //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
-            if(fsExtra.existsSync(newCompPath) == false){ 
-              fsExtra.copySync(CompPath,newCompPath);
+      var numOfDiffs = status.files.length;
+      if(numOfDiffs > 0){
+        AppUtils.log2('Creating delta Package...');
+        AppUtils.log2('Deltas: ');
+        status.files.forEach(files => {
+          //console.log('File: ' + files.file);
+          var filePath = files.file;       
+          if(fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
+            var newfilePath = filePath.replace(sourceFolder, deltaPackageFolder);
+            AppUtils.log1('File: ' + filePath ) //+ ' /////// newfilePath: ' + newfilePath);
+            if(filePath.includes("/aura/") || filePath.includes("/lwc/")){
+              var splitResult = filePath.split("/");
+              var CompPath = splitResult[0] + '/' + splitResult[1] + '/' + splitResult[2] + '/' + splitResult[3] + '/' + splitResult[4] 
+              var newCompPath = CompPath.replace(sourceFolder, deltaPackageFolder);
+              //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
+              if(fsExtra.existsSync(newCompPath) == false){ 
+                fsExtra.copySync(CompPath,newCompPath);
+              }
             }
-          }
-          else {
-            fsExtra.copySync(filePath,newfilePath);
-          }
+            else {
+              fsExtra.copySync(filePath,newfilePath);
+            }
 
-          var metaXMLFile = filePath + '-meta.xml';
-          if(fsExtra.existsSync(metaXMLFile)){
-            var newMetaXMLFile = newfilePath + '-meta.xml';
-            fsExtra.copySync(metaXMLFile,newMetaXMLFile);
-          }
-        } 
-     });
+            var metaXMLFile = filePath + '-meta.xml';
+            if(fsExtra.existsSync(metaXMLFile)){
+              var newMetaXMLFile = newfilePath + '-meta.xml';
+              fsExtra.copySync(metaXMLFile,newMetaXMLFile);
+            }
+          } 
+      });
+      } else {
+        AppUtils.log2('No Diffs Found' );
+      }
     }
     });
   }
