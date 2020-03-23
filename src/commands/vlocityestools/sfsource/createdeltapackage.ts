@@ -32,7 +32,7 @@ export default class deltaPackage extends SfdxCommand {
 
   public async run(){
     const fsExtra = require('fs-extra');
-    
+
     var packageType = this.flags.package;
     var sourceFolder = this.flags.sourcefolder;
 
@@ -90,8 +90,6 @@ export default class deltaPackage extends SfdxCommand {
         deltaPackage.copyCompleteFolder(sourceFolder,deltaPackageFolder,fsExtra);
       }
       else {
-      console.log('err: ' + err);
-      console.log(status.files);
       status.files.forEach(files => {
         //console.log('File: ' + files.file);
         var filePath = files.file;       
