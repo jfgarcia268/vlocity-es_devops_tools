@@ -33,7 +33,7 @@ export default class deltaPackage extends SfdxCommand {
 
     var packageType = this.flags.package;
     var sourceFolder = this.flags.sourcefolder;
-    var deltaPackageFolder = sourceFolder + 'delta';
+    var deltaPackageFolder = sourceFolder + '_delta';
 
     if (packageType == "cmt") {
       AppUtils.namespace = "vlocity_cmt__";
