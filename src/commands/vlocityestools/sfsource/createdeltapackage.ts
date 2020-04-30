@@ -101,7 +101,7 @@ export default class deltaPackage extends SfdxCommand {
                 if (fsExtra.existsSync(newCompPath) == false) {
                   fsExtra.copySync(CompPath, newCompPath);
                 }
-              } else {
+              } else if(!filePath.includes("-meta.xml")) {
                 fsExtra.copySync(filePath, newfilePath);
               }
               var metaXMLFile = filePath + "-meta.xml";
