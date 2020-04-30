@@ -88,10 +88,7 @@ export default class deltaPackage extends SfdxCommand {
             //console.log('File: ' + files.file);
             var filePath = files.file;
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
-              var newfilePath = filePath.replace(
-                sourceFolder,
-                deltaPackageFolder
-              );
+              var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log1("File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
               if (filePath.includes("/aura/") || filePath.includes("/lwc/")) {
                 var splitResult = filePath.split("/");
@@ -101,7 +98,12 @@ export default class deltaPackage extends SfdxCommand {
                 if (fsExtra.existsSync(newCompPath) == false) {
                   fsExtra.copySync(CompPath, newCompPath);
                 }
-              } else if(!filePath.includes("-meta.xml")) {
+              } else {
+                if(filePath.includes("-meta.xml")) {
+                  var nonMetaFilePath = filePath.substring(0, filePath.length - 9);
+                  var nonMetaFileNewfilePath = newfilePath.substring(0, filePath.length - 9);
+                  fsExtra.copySync(nonMetaFilePath, nonMetaFileNewfilePath);
+                } 
                 fsExtra.copySync(filePath, newfilePath);
               }
               var metaXMLFile = filePath + "-meta.xml";
