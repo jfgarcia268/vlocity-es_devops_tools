@@ -89,28 +89,35 @@ export default class deltaPackage extends SfdxCommand {
             var filePath = files.file;
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
-              AppUtils.log2("File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
+              AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
               if (filePath.includes("/aura/") || filePath.includes("/lwc/")) {
                 var splitResult = filePath.split("/");
                 var CompPath = splitResult[0] + "/" + splitResult[1] + "/" + splitResult[2] + "/" + splitResult[3] + "/" + splitResult[4];
                 var newCompPath = CompPath.replace( sourceFolder, deltaPackageFolder);
                 //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
                 if (fsExtra.existsSync(newCompPath) == false) {
+                  AppUtils.log1("Moving changed file. New path: " + newCompPath);
                   fsExtra.copySync(CompPath, newCompPath);
+                }
+                else {
+                  AppUtils.log1("MetaData alredy moved: " + newCompPath);
                 }
               } else {
                 if(filePath.includes("-meta.xml")) {
                   var nonMetaFilePath = filePath.substring(0, filePath.length - 9);
                   var nonMetaFileNewfilePath = newfilePath.substring(0, newfilePath.length - 9);
                   if (fsExtra.existsSync(nonMetaFilePath)) {
+                    AppUtils.log1("Moving changed file. New path: " + nonMetaFileNewfilePath);
                     fsExtra.copySync(nonMetaFilePath, nonMetaFileNewfilePath);
                   }
                 } 
+                AppUtils.log1("Moving changed file. New path: " + newfilePath);
                 fsExtra.copySync(filePath, newfilePath);
               }
               var metaXMLFile = filePath + "-meta.xml";
               if (fsExtra.existsSync(metaXMLFile)) {
                 var newMetaXMLFile = newfilePath + "-meta.xml";
+                AppUtils.log1("Moving changed file. New path: " + newMetaXMLFile);
                 fsExtra.copySync(metaXMLFile, newMetaXMLFile);
               }
             }
