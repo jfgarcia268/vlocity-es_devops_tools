@@ -90,7 +90,7 @@ export default class deltaPackage extends SfdxCommand {
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
-              if (filePath.includes("/aura/") || filePath.includes("/lwc/")) {
+              if (filePath.includes("/aura/") || filePath.includes("/lwc/") || filePath.includes("/experiences/")) {
                 var splitResult = filePath.split("/");
                 var CompPath = splitResult[0] + "/" + splitResult[1] + "/" + splitResult[2] + "/" + splitResult[3] + "/" + splitResult[4];
                 var newCompPath = CompPath.replace( sourceFolder, deltaPackageFolder);
@@ -98,6 +98,14 @@ export default class deltaPackage extends SfdxCommand {
                 if (fsExtra.existsSync(newCompPath) == false) {
                   AppUtils.log1("Moving changed file. New path: " + newCompPath);
                   fsExtra.copySync(CompPath, newCompPath);
+                  if (filePath.includes("/experiences/")) {
+                    var CompPathXML = CompPath + ".site-meta.xml";
+                    var newCompPathXML = newCompPath + ".site-meta.xml";
+                    if (fsExtra.existsSync(CompPathXML)) {
+                      AppUtils.log1("Moving changed file. New path: " + newCompPathXML);
+                      fsExtra.copySync(CompPathXML, newCompPathXML);
+                    }
+                  }
                 }
                 else {
                   AppUtils.log1("MetaData alredy moved: " + newCompPath);
