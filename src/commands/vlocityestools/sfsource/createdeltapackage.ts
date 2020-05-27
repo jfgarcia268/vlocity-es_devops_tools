@@ -111,14 +111,16 @@ export default class deltaPackage extends SfdxCommand {
                     fsExtra.copySync(nonMetaFilePath, nonMetaFileNewfilePath);
                   }
                 } 
+        
                 AppUtils.log1("Moving changed file. New path: " + newfilePath);
                 fsExtra.copySync(filePath, newfilePath);
-              }
-              var metaXMLFile = filePath + "-meta.xml";
-              if (fsExtra.existsSync(metaXMLFile)) {
-                var newMetaXMLFile = newfilePath + "-meta.xml";
-                AppUtils.log1("Moving changed file. New path: " + newMetaXMLFile);
-                fsExtra.copySync(metaXMLFile, newMetaXMLFile);
+
+                var metaXMLFile = filePath + "-meta.xml";
+                if (fsExtra.existsSync(metaXMLFile)) {
+                  var newMetaXMLFile = newfilePath + "-meta.xml";
+                  AppUtils.log1("Moving changed file. New path: " + newMetaXMLFile);
+                  fsExtra.copySync(metaXMLFile, newMetaXMLFile);
+                }
               }
             }
           });
