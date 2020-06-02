@@ -77,8 +77,8 @@ export default class deltaPackage extends SfdxCommand {
   static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash) {
     simpleGit.diffSummary([previousHash], (err, status) => {
       if (err) {
-        AppUtils.log2( "Error with GitDiff, Coping full Package.. Try to reset the hash in the Env - Error: " + err );
-        deltaPackage.copyCompleteFolder( sourceFolder, deltaPackageFolder, fsExtra);
+        AppUtils.log2( "Error with GitDiff, Nothing was copied - Error: " + err );
+        //deltaPackage.copyCompleteFolder( sourceFolder, deltaPackageFolder, fsExtra);
       } else {
         var numOfDiffs = status.files.length;
         if (numOfDiffs > 0) {
