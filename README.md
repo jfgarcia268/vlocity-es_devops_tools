@@ -246,7 +246,7 @@ Note: Only works for SFDX Source Format
 ```
 USAGE
 
-  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string>
+  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string> [-k <gitCheckKey>]
 
 OPTIONS
 
@@ -257,6 +257,8 @@ OPTIONS
                                                             'cmt' or 'ins' 
 
   -d, --sourcefolder=sourcefolder                           Salesfroce sorce folder name
+
+  -k, --gitcheckkey=gitcheckkey                             (Optional) Key when using gitCheckKey with Build Tool
                                                            
                           
 
@@ -265,6 +267,8 @@ EXAMPLES
   $ sfdx vlocityestools:sfsource:createdeltapackage -u myOrg@example.com -p cmt -d force-app
   
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
 
 ```
 

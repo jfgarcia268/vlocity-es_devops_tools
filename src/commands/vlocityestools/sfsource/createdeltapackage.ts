@@ -13,9 +13,11 @@ export default class deltaPackage extends SfdxCommand {
   public static description = messages.getMessage("commandDescription");
 
   public static examples = [
-    `$ sfdx vlocityestools:sfsource:createdeltapackage -u myOrg@example.com -p cmt -d 'force-app'
+    `$ sfdx vlocityestools:sfsource:createdeltapackage -u myOrg@example.com -p cmt -d force-app
   `,
-    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder 'force-app'
+    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
+  `,
+    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
   `
   ];
 
@@ -23,7 +25,8 @@ export default class deltaPackage extends SfdxCommand {
 
   protected static flagsConfig = {
     package: flags.string({char: "p", description: messages.getMessage("packageType")}),
-    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")})
+    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
+    gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")})
   };
 
   protected static requiresUsername = true;
@@ -31,8 +34,18 @@ export default class deltaPackage extends SfdxCommand {
   public async run() {
     const fsExtra = require("fs-extra");
 
+    AppUtils.logInitial(messages.getMessage("command"));
+
     var packageType = this.flags.package;
     var sourceFolder = this.flags.sourcefolder;
+    var deployKey = "VBTDeployKey";
+    //console.log("this.flags.gitcheckkey: " + this.flags.gitcheckkey);
+
+    if(this.flags.gitcheckkey != undefined) {
+      deployKey = deployKey + this.flags.gitcheckkey;
+    }
+    //console.log("deployKey: " + deployKey);
+    
     var deltaPackageFolder = sourceFolder + '_delta';
 
     if (packageType == "cmt") {
@@ -43,11 +56,10 @@ export default class deltaPackage extends SfdxCommand {
       throw new Error("Error: -p, --package has to be either cmt or ins ");
     }
 
-    AppUtils.logInitial(messages.getMessage("command"));
-
     const conn = this.org.getConnection();
-    const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = 'VBTDeployKey'";
+    const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
     const query = AppUtils.replaceaNameSpace(initialQuery);
+    //console.log("query: " + query);
     const result = await conn.query(query);
     const repoPath = "./";
     const simpleGit = require("simple-git")(repoPath);
