@@ -33,6 +33,7 @@ export default class deltaPackage extends SfdxCommand {
 
   public async run() {
     const fsExtra = require("fs-extra");
+    const path = require('path');
 
     AppUtils.logInitial(messages.getMessage("command"));
 
@@ -61,7 +62,7 @@ export default class deltaPackage extends SfdxCommand {
     const query = AppUtils.replaceaNameSpace(initialQuery);
     //console.log("query: " + query);
     const result = await conn.query(query);
-    const repoPath = "./";
+    const repoPath = path.normalize("./");
     const simpleGit = require("simple-git")(repoPath);
     if (result.records.length < 1) {
       AppUtils.log2("Hash not found in the environment, Coping full Paackage");
@@ -75,7 +76,7 @@ export default class deltaPackage extends SfdxCommand {
       if (fsExtra.existsSync(deltaPackageFolder)) {
         fsExtra.removeSync(deltaPackageFolder);
       }
-      deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash);
+      deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);
     }
   }
 
@@ -86,7 +87,7 @@ export default class deltaPackage extends SfdxCommand {
     fsExtra.mkdirSync(deltaPackageFolder);
     fsExtra.copySync(sourceFolder, deltaPackageFolder);
   }
-  static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash) {
+  static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
     simpleGit.diffSummary([previousHash], (err, status) => {
       if (err) {
         AppUtils.log2( "Error with GitDiff, Nothing was copied - Error: " + err );
@@ -102,15 +103,15 @@ export default class deltaPackage extends SfdxCommand {
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
-              if (filePath.includes("/aura/") || filePath.includes("/lwc/") || filePath.includes("/experiences/")) {
-                var splitResult = filePath.split("/");
-                var CompPath = splitResult[0] + "/" + splitResult[1] + "/" + splitResult[2] + "/" + splitResult[3] + "/" + splitResult[4];
-                var newCompPath = CompPath.replace( sourceFolder, deltaPackageFolder);
+              if (filePath.includes(path.sep + "aura" + path.sep) || filePath.includes(path.sep + "lwc" + path.sep) || filePath.includes(path.sep + "experiences" + path.sep)) {
+                var splitResult = filePath.split(path.sep);
+                var CompPath = splitResult[0] + path.sep + splitResult[1] + path.sep + splitResult[2] + path.sep + splitResult[3] + path.sep + splitResult[4];
+                var newCompPath = CompPath.replace(sourceFolder, deltaPackageFolder);
                 //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
                 if (fsExtra.existsSync(newCompPath) == false) {
                   AppUtils.log1("Moving changed file. New path: " + newCompPath);
                   fsExtra.copySync(CompPath, newCompPath);
-                  if (filePath.includes("/experiences/")) {
+                  if (filePath.includes(path.sep + "experiences" + path.sep)) {
                     var CompPathXML = CompPath + ".site-meta.xml";
                     var newCompPathXML = newCompPath + ".site-meta.xml";
                     if (fsExtra.existsSync(CompPathXML)) {
@@ -123,7 +124,7 @@ export default class deltaPackage extends SfdxCommand {
                   AppUtils.log1("MetaData alredy moved: " + newCompPath);
                 }
               } else {
-                if(filePath.includes("-meta.xml")) {
+                if(filePath.includes("-meta.xml") && !filePath.includes("staticresources") ) {
                   var nonMetaFilePath = filePath.substring(0, filePath.length - 9);
                   var nonMetaFileNewfilePath = newfilePath.substring(0, newfilePath.length - 9);
                   if (fsExtra.existsSync(nonMetaFilePath)) {
@@ -141,6 +142,18 @@ export default class deltaPackage extends SfdxCommand {
                   AppUtils.log1("Moving changed file. New path: " + newMetaXMLFile);
                   fsExtra.copySync(metaXMLFile, newMetaXMLFile);
                 }
+
+                if(filePath.includes("staticresources")) {
+                  var splitResultSR = filePath.split(path.sep);
+                  var staticResourceMetaFile = splitResultSR[0] + path.sep + splitResultSR[1] + path.sep + splitResultSR[2] + path.sep + splitResultSR[3] + path.sep + splitResultSR[4] + ".resource-meta.xml";
+                  var newStaticResourceMetaFile = staticResourceMetaFile.replace(sourceFolder, deltaPackageFolder);
+                  //console.log("////// CompPath: " + newStaticResourceMetaFile);
+                  if (fsExtra.existsSync(staticResourceMetaFile)) {
+                    AppUtils.log1("Moving changed file. New path: " + newStaticResourceMetaFile);
+                    fsExtra.copySync(staticResourceMetaFile, newStaticResourceMetaFile);
+                  }
+
+                } 
               }
             }
           });
