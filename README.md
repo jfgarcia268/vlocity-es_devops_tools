@@ -35,14 +35,14 @@ USAGE
 
 # Commands Info:
 
-## vlocityestools:clean:omniscrtips
+## vlocityestools:clean:omniscrtipsGot it.. t
 
 Delete old verions of OmniScritps and leave X amount of latest verions
 
 ```
 USAGE
 
-  $ sfdx vlocityestools:clean:omniscripts -u <string> -v <integer> -p <string>
+  $ sfdx vlocityestools:clean:omniscripts -u <string> -n <integer> -p <string>
 
 OPTIONS
 
