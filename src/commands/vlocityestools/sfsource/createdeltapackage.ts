@@ -65,7 +65,7 @@ export default class deltaPackage extends SfdxCommand {
     const repoPath = path.normalize("./");
     const simpleGit = require("simple-git")(repoPath);
     if (result.records.length < 1) {
-      AppUtils.log2("Hash not found in the environment, Coping full Paackage");
+      AppUtils.log2("Hash not found in the environment, Coping full Package");
       deltaPackage.copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra);
     } else if (!simpleGit.checkIsRepo()) {
       AppUtils.log2("Current directory is not a repository");

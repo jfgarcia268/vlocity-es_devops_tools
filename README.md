@@ -35,7 +35,7 @@ USAGE
 
 # Commands Info:
 
-## vlocityestools:clean:omniscrtips
+## vlocityestools:clean:omniscripts
 
 Delete old verions of OmniScritps and leave X amount of latest verions
 
