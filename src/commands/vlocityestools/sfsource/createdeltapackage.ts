@@ -110,13 +110,13 @@ export default class deltaPackage extends SfdxCommand {
                 var newCompPath = CompPath.replace(sourceFolder, deltaPackageFolder);
                 //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
                 if (fsExtra.existsSync(newCompPath) == false) {
-                  AppUtils.log1("Moving folder for changed file. New path: " + newCompPath);
+                  AppUtils.log1("Moving complete folder for changed file. New path: " + newCompPath);
                   fsExtra.copySync(CompPath, newCompPath);
                   if (filePath.includes(path.sep + "experiences" + path.sep)) {
                     var CompPathXML = CompPath + ".site-meta.xml";
                     var newCompPathXML = newCompPath + ".site-meta.xml";
                     if (fsExtra.existsSync(CompPathXML)) {
-                      AppUtils.log1("Moving changed file. New path: " + newCompPathXML);
+                      AppUtils.log1("Moving Meta File for folder. New path: " + newCompPathXML);
                       fsExtra.copySync(CompPathXML, newCompPathXML);
                     }
                   }
