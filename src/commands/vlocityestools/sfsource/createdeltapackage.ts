@@ -70,13 +70,18 @@ export default class deltaPackage extends SfdxCommand {
     } else if (!simpleGit.checkIsRepo()) {
       AppUtils.log2("Current directory is not a repository");
     } else {
-      var previousHash =
-        result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
-      AppUtils.log2("Hash found in the environment: " + previousHash);
-      if (fsExtra.existsSync(deltaPackageFolder)) {
-        fsExtra.removeSync(deltaPackageFolder);
+      var previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
+      if( previousHash == undefined || previousHash == null ){
+        AppUtils.log2("Custom Setting record found but Hash is empty.. Nothing was copied  ");
       }
-      deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);
+      else {
+        AppUtils.log2("Hash found in the environment: " + previousHash);
+        if (fsExtra.existsSync(deltaPackageFolder)) {
+          AppUtils.log2("Old delta folder was found... deleting before creating new delta: " + deltaPackageFolder );
+          fsExtra.removeSync(deltaPackageFolder);
+        }
+        deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);
+      }
     }
   }
 
@@ -95,7 +100,7 @@ export default class deltaPackage extends SfdxCommand {
       } else {
         var numOfDiffs = status.files.length;
         if (numOfDiffs > 0) {
-          AppUtils.log2("Creating delta Package...");
+          AppUtils.log2("Creating delta Folder: " + deltaPackageFolder);
           AppUtils.log2("Deltas: ");
           status.files.forEach(files => {
             //console.log('File: ' + files.file);
