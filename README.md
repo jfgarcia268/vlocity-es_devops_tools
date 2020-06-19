@@ -243,8 +243,11 @@ EXAMPLES
 Based on Vlocity Build Tool saved Hash in the Environment, Create Delta package for salforce.
 Note: Only works for SFDX Source Format
 
+--gitcheckkeycustom and --customsettingcustom can be used to use a Custom "Custom Settings". For this: Create a new Custom Setting, the API name will be --customsettingcustom. This Custom Setting will have two fields "Name" and the value of it will be the "--gitcheckkeycustom" and a field "Value__c" that will contain tha hash.
+
+
 ```
-USAGE
+USAGE,
 
   $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string> [-k <gitCheckKey>]
 
@@ -259,6 +262,13 @@ OPTIONS
   -d, --sourcefolder=sourcefolder                           Salesfroce sorce folder name
 
   -k, --gitcheckkey=gitcheckkey                             (Optional) Key when using gitCheckKey with Build Tool
+
+OPTIONS IF USING a Custom "Custom Settings"
+
+  -c, --customsettingcustom=customsettingcustom             (Optional) Optional Custom Setting API Name when using custom one
+
+  -v, --gitcheckkeycustom=gitcheckkeycustom                 (Optional) Custom Setting record Name when using --customsettingcustom, -c 
+
                                                            
                           
 
@@ -269,6 +279,8 @@ EXAMPLES
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
 
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeykustom VBTDeployKey --customsettingcustom DevOpsSettings__c
 
 ```
 

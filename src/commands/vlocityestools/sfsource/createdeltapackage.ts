@@ -18,6 +18,8 @@ export default class deltaPackage extends SfdxCommand {
     `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app
   `,
     `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
+  `,
+    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeycustom VBTDeployKey --customsettingcustom DevOpsSettings__c
   `
   ];
 
@@ -26,7 +28,9 @@ export default class deltaPackage extends SfdxCommand {
   protected static flagsConfig = {
     package: flags.string({char: "p", description: messages.getMessage("packageType")}),
     sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
-    gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")})
+    gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")}),
+    gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
+    customsettingcustom: flags.string({ char: "c", description: messages.getMessage("customsettingcustom")})
   };
 
   protected static requiresUsername = true;
@@ -40,6 +44,17 @@ export default class deltaPackage extends SfdxCommand {
     var packageType = this.flags.package;
     var sourceFolder = this.flags.sourcefolder;
     var deployKey = "VBTDeployKey";
+    var gitcheckkeycustom = this.flags.gitcheckkeycustom;
+    var customsettingcustom = this.flags.customsettingcustom;
+
+    if(customsettingcustom != undefined && gitcheckkeycustom == undefined) {
+      throw new Error("Error: -v, --gitcheckkeycustom needs to passed when using customsettingcustom");
+    }
+
+    if(gitcheckkeycustom != undefined && customsettingcustom == undefined) {
+      throw new Error("Error: -c, --customsettingcustom needs to passed when using gitcheckkeycustom");
+    }
+
     //console.log("this.flags.gitcheckkey: " + this.flags.gitcheckkey);
 
     if(this.flags.gitcheckkey != undefined) {
@@ -49,17 +64,28 @@ export default class deltaPackage extends SfdxCommand {
     
     var deltaPackageFolder = sourceFolder + '_delta';
 
-    if (packageType == "cmt") {
-      AppUtils.namespace = "vlocity_cmt__";
-    } else if (packageType == "ins") {
-      AppUtils.namespace = "vlocity_ins__";
-    } else {
-      throw new Error("Error: -p, --package has to be either cmt or ins ");
+    if (customsettingcustom == undefined) {
+      if (packageType == "cmt") {
+        AppUtils.namespace = "vlocity_cmt__";
+      } else if (packageType == "ins") {
+        AppUtils.namespace = "vlocity_ins__";
+      } else {
+        throw new Error("Error: -p, --package has to be either cmt or ins ");
+      }
     }
 
     const conn = this.org.getConnection();
-    const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
-    const query = AppUtils.replaceaNameSpace(initialQuery);
+
+    var query;
+
+    if(customsettingcustom != undefined) {
+      query = "SELECT Name, Value__c FROM " + customsettingcustom + " WHERE Name = '" + gitcheckkeycustom + "'";
+    }
+    else {
+      const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
+      query = AppUtils.replaceaNameSpace(initialQuery);
+    }
+
     //console.log("query: " + query);
     const result = await conn.query(query);
     const repoPath = path.normalize("./");
@@ -70,7 +96,13 @@ export default class deltaPackage extends SfdxCommand {
     } else if (!simpleGit.checkIsRepo()) {
       AppUtils.log2("Current directory is not a repository");
     } else {
-      var previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
+      var previousHash;
+      if(customsettingcustom != undefined) {
+        previousHash = result.records[0][AppUtils.replaceaNameSpace("Value__c")];
+      }
+      else {
+        previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
+      }
       if( previousHash == undefined || previousHash == null ){
         AppUtils.log2("Custom Setting record found but Hash is empty.. Nothing was copied  ");
       }

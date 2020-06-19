@@ -4,5 +4,7 @@
   "errorNoOrgResults": "No results found for the org '%s'.",
   "command":"deltapackage",
   "sourcefolder":"Source Folder to create Delta Package",
-  "gitcheckkey":"Optional Key when using gitCheckKey with Build Tool"
+  "gitcheckkey":"Optional Key when using gitCheckKey with Build Tool",
+  "gitcheckkeycustom":"Custom Setting record name when using --customsettingcustom, -c ",
+  "customsettingcustom":"Optional Custom Setting API name when using custom one"
 }
