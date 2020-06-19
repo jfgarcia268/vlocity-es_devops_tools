@@ -1,7 +1,7 @@
 Vlocity ES Tools (Beta)
 ==============
 
-##### Disclaimer: This tool is not an offical tool from Vlocity. It was created with the intent of distributing certain uitlility tools, Use it at your own risk.
+##### Disclaimer: This tool is not an offical tool from Vlocity or Salesforce. It was created with the intent of distributing certain uitlility tools, Use it at your own risk.
 
 
 # Install
