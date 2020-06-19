@@ -19,7 +19,7 @@ export default class deltaPackage extends SfdxCommand {
   `,
     `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
   `,
-    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeycustom VBTDeployKey --customsettingcustom DevOpsSettings__c
+    `$ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeycustom VBTDeployKey --customsettingobject DevOpsSettings__c
   `
   ];
 
@@ -30,7 +30,7 @@ export default class deltaPackage extends SfdxCommand {
     sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
     gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")}),
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
-    customsettingcustom: flags.string({ char: "c", description: messages.getMessage("customsettingcustom")})
+    customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")})
   };
 
   protected static requiresUsername = true;
@@ -45,14 +45,14 @@ export default class deltaPackage extends SfdxCommand {
     var sourceFolder = this.flags.sourcefolder;
     var deployKey = "VBTDeployKey";
     var gitcheckkeycustom = this.flags.gitcheckkeycustom;
-    var customsettingcustom = this.flags.customsettingcustom;
+    var customsettingobject = this.flags.customsettingobject;
 
-    if(customsettingcustom != undefined && gitcheckkeycustom == undefined) {
-      throw new Error("Error: -v, --gitcheckkeycustom needs to passed when using customsettingcustom");
+    if(customsettingobject != undefined && gitcheckkeycustom == undefined) {
+      throw new Error("Error: -v, --gitcheckkeycustom needs to passed when using customsettingobject");
     }
 
-    if(gitcheckkeycustom != undefined && customsettingcustom == undefined) {
-      throw new Error("Error: -c, --customsettingcustom needs to passed when using gitcheckkeycustom");
+    if(gitcheckkeycustom != undefined && customsettingobject == undefined) {
+      throw new Error("Error: -c, --customsettingobject needs to passed when using gitcheckkeycustom");
     }
 
     //console.log("this.flags.gitcheckkey: " + this.flags.gitcheckkey);
@@ -64,7 +64,7 @@ export default class deltaPackage extends SfdxCommand {
     
     var deltaPackageFolder = sourceFolder + '_delta';
 
-    if (customsettingcustom == undefined) {
+    if (customsettingobject == undefined) {
       if (packageType == "cmt") {
         AppUtils.namespace = "vlocity_cmt__";
       } else if (packageType == "ins") {
@@ -78,8 +78,8 @@ export default class deltaPackage extends SfdxCommand {
 
     var query;
 
-    if(customsettingcustom != undefined) {
-      query = "SELECT Name, Value__c FROM " + customsettingcustom + " WHERE Name = '" + gitcheckkeycustom + "'";
+    if(customsettingobject != undefined) {
+      query = "SELECT Name, Value__c FROM " + customsettingobject + " WHERE Name = '" + gitcheckkeycustom + "'";
     }
     else {
       const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
@@ -94,17 +94,17 @@ export default class deltaPackage extends SfdxCommand {
       AppUtils.log2("Hash not found in the environment, Coping full Package");
       deltaPackage.copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra);
     } else if (!simpleGit.checkIsRepo()) {
-      AppUtils.log2("Current directory is not a repository");
+      throw new Error("Error: Current directory is not a repository");
     } else {
       var previousHash;
-      if(customsettingcustom != undefined) {
+      if(customsettingobject != undefined) {
         previousHash = result.records[0][AppUtils.replaceaNameSpace("Value__c")];
       }
       else {
         previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
       }
       if( previousHash == undefined || previousHash == null ){
-        AppUtils.log2("Custom Setting record found but Hash is empty.. Nothing was copied  ");
+        throw new Error("Custom Setting record found but Hash is empty.. Nothing was copied  ");
       }
       else {
         AppUtils.log2("Hash found in the environment: " + previousHash);
@@ -114,7 +114,7 @@ export default class deltaPackage extends SfdxCommand {
         }
         deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);
       }
-    }
+    }    
   }
 
   static copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra) {
@@ -127,7 +127,7 @@ export default class deltaPackage extends SfdxCommand {
   static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
     simpleGit.diffSummary([previousHash], (err, status) => {
       if (err) {
-        AppUtils.log2( "Error with GitDiff, Nothing was copied - Error: " + err );
+        throw new Error( "Error with GitDiff, Nothing was copied - Error: " + err );
         //deltaPackage.copyCompleteFolder( sourceFolder, deltaPackageFolder, fsExtra);
       } else {
         var numOfDiffs = status.files.length;

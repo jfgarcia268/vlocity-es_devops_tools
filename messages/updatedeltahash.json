@@ -1,0 +1,7 @@
+{
+  "commandDescription": "Update Hash in the environment for delta Package Creation based on the HEAD",
+  "command":"updatedeltahash",
+  "gitcheckkeycustom":"Custom Setting record Name",
+  "customsettingobject":"Custom Setting API Name",
+  "customhash":"(Optional) Custom Hash to Update"
+}

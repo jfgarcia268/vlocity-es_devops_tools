@@ -29,6 +29,7 @@ USAGE
 ### vlocityestools:report:dependencies:remote
 ### vlocityestools:report:activeomniscript
 ### vlocityestools:sfsource:createdeltapackage
+### vlocityestools:sfsource:updatedeltahash
 ### vlocityestools:clean:calcmatrix
   
 '    '
@@ -243,20 +244,20 @@ EXAMPLES
 Based on Vlocity Build Tool saved Hash in the Environment, Create Delta package for salforce.
 Note: Only works for SFDX Source Format
 
---gitcheckkeycustom and --customsettingcustom can be used to use a Custom "Custom Settings". For this: Create a new Custom Setting, the API name will be --customsettingcustom. This Custom Setting will have two fields "Name" and the value of it will be the "--gitcheckkeycustom" and a field "Value__c" that will contain tha hash.
+--gitcheckkeycustom and --customsettingobject can be used to use a Custom "Custom Settings". For this: Create a new Custom Setting, the API name will be --customsettingobject. This Custom Setting will have two fields "Name" and the value of it will be the "--gitcheckkeycustom" and a field "Value__c" that will contain tha hash.
 
 
 ```
 USAGE,
 
-  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string> [-k <gitCheckKey>]
+  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -d<string> [-k <string>] [-p <string>] [-c <string> -v <string>]
 
 OPTIONS
 
   -u, --targetusername=targetusername                       username or alias for the target
                                                             org; overrides default target org
 
-  -p, --package=package                                     Vlocity Package Type, Options:
+  -p, --package=package                                     (Optional) Vlocity Package Type, Options:
                                                             'cmt' or 'ins' 
 
   -d, --sourcefolder=sourcefolder                           Salesfroce sorce folder name
@@ -265,9 +266,9 @@ OPTIONS
 
 OPTIONS IF USING a Custom "Custom Settings"
 
-  -c, --customsettingcustom=customsettingcustom             (Optional) Optional Custom Setting API Name when using custom one
+  -c, --customsettingobject=customsettingobject             (Optional) Optional Custom Setting API Name when using custom one
 
-  -v, --gitcheckkeycustom=gitcheckkeycustom                 (Optional) Custom Setting record Name when using --customsettingcustom, -c 
+  -v, --gitcheckkeycustom=gitcheckkeycustom                 (Optional) Custom Setting record Name when using --customsettingobject, -c 
 
                                                            
                           
@@ -280,11 +281,42 @@ EXAMPLES
 
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
 
-  $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeykustom VBTDeployKey --customsettingcustom DevOpsSettings__c
+  $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeykustom VBTDeployKey --customsettingobject DevOpsSettings__c
 
 ```
 
+## vlocityestools:sfsource:updatedeltahash
 
+When using a Custom "Custom Setting" Object for delta Package. You can update the hash in the environment using this command.
+
+```
+USAGE,
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage -u <string> -p <string> -d<string> [-h <string>]
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -c, --customsettingobject=customsettingobject             Custom Setting Object API Name 
+
+  -v, --gitcheckkeycustom=gitcheckkeycustom                 Custom Setting record Name
+
+  -h, --customhash=customhash                               (Optional) Custom Hash Value to be updated
+
+                                                           
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:sfsource:updatedeltahash  -c DevOpsSettings__c -v DeployKey -u myOrg@example.com
+
+  $ sfdx vlocityestools:sfsource:updatedeltahash  --customsettingobject DevOpsSettings__c --gitcheckkeycustom DeployKey --targetusername myOrg@example.com
+   
+  $ sfdx vlocityestools:sfsource:updatedeltahash  --customsettingobject DevOpsSettings__c --gitcheckkeycustom DeployKey --targetusername myOrg@example.com -- 0603ab92ff7cf9adf7ca10228807f6bb6b57a894
+
+```
 
 ## vlocityestools:clean:calcmatrix
 
