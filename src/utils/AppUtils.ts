@@ -22,11 +22,11 @@ export class AppUtils {
     }
 
     public static log2(message) {
-        console.log('>> ' + message);
+        console.log(' >> ' + message);
     }
 
     public static log1(message) {
-        console.log('> ' + message);
+        console.log('  > ' + message);
     }
 
 }

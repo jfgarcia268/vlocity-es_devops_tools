@@ -91,7 +91,7 @@ export default class deltaPackage extends SfdxCommand {
     const repoPath = path.normalize("./");
     const simpleGit = require("simple-git")(repoPath);
     if (result.records.length < 1) {
-      AppUtils.log2("Hash not found in the environment, Coping full Package");
+      AppUtils.log3("Hash not found in the environment, Coping full Package");
       deltaPackage.copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra);
     } else if (!simpleGit.checkIsRepo()) {
       throw new Error("Error: Current directory is not a repository");
@@ -132,22 +132,48 @@ export default class deltaPackage extends SfdxCommand {
       } else {
         var numOfDiffs = status.files.length;
         if (numOfDiffs > 0) {
-          AppUtils.log2("Creating delta Folder: " + deltaPackageFolder);
-          AppUtils.log2("Deltas: ");
+          AppUtils.log3("Creating delta Folder: " + deltaPackageFolder);
+          AppUtils.log3("Deltas: ");
           status.files.forEach(files => {
             //console.log('File: ' + files.file);
             var filePath = files.file;
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
-              if (filePath.includes(path.sep + "aura" + path.sep) || filePath.includes(path.sep + "lwc" + path.sep) || filePath.includes(path.sep + "experiences" + path.sep)) {
-                var splitResult = filePath.split(path.sep);
-                var compFileName = splitResult[splitResult.length-1];
-                var CompPath = filePath.substring(0, filePath.length - compFileName.length);
+              var splitResult = filePath.split(path.sep);
+              /**
+               *  Cases when we need to copy the complete folder
+               */
+              if (filePath.includes(path.sep + "aura" + path.sep) 
+               || filePath.includes(path.sep + "lwc" + path.sep) 
+               ||(filePath.includes(path.sep + "experiences" + path.sep))
+               ||(filePath.includes(path.sep + "staticresources" + path.sep) && splitResult[splitResult.length-2] != 'staticresources')
+              ) {
+
+                var CompPath;
+                if (filePath.includes(".site-meta.xml")) {
+                  CompPath = filePath.substring(0, filePath.length - 14);
+                  var newMetaFileForSite = filePath.replace(sourceFolder, deltaPackageFolder);
+                  AppUtils.log1("Moving Meta File for Experience Bundle: " + newMetaFileForSite);
+                  fsExtra.copySync(filePath, newMetaFileForSite);
+                } else if (filePath.includes(".resource-meta.xml")) {
+                  CompPath = filePath.substring(0, filePath.length - 18);
+                  var newMetaFileForSR = filePath.replace(sourceFolder, deltaPackageFolder);
+                  AppUtils.log1("Moving Meta File for Static Resources: " + newMetaFileForSite);
+                  fsExtra.copySync(filePath, newMetaFileForSR);
+                } else if (filePath.includes(path.sep + "experiences" + path.sep)){
+                  var compFileName = splitResult[splitResult.length - 1];
+                  var compFileName2 = splitResult[splitResult.length - 2];
+                  CompPath = filePath.substring(0, filePath.length - compFileName.length - compFileName2.length - 2);
+                } else {
+                  var compFileName = splitResult[splitResult.length - 1];
+                  var CompPath = filePath.substring(0, filePath.length - compFileName.length - 1);
+                }
+
                 var newCompPath = CompPath.replace(sourceFolder, deltaPackageFolder);
-                //console.log('CompPath: ' + CompPath + ' /////// newCompPath: ' + newCompPath);
+
                 if (fsExtra.existsSync(newCompPath) == false) {
-                  AppUtils.log1("Moving complete folder for changed file. New path: " + newCompPath);
+                  AppUtils.log1("Moving Complete folder for changed file... New path: " + newCompPath);
                   fsExtra.copySync(CompPath, newCompPath);
                   if (filePath.includes(path.sep + "experiences" + path.sep)) {
                     var CompPathXML = CompPath + ".site-meta.xml";
@@ -156,24 +182,40 @@ export default class deltaPackage extends SfdxCommand {
                       AppUtils.log1("Moving Meta File for folder. New path: " + newCompPathXML);
                       fsExtra.copySync(CompPathXML, newCompPathXML);
                     }
-                  }
-                }
-                else {
-                  AppUtils.log1("MetaData alredy moved: " + newCompPath);
-                }
-              } else {
-                if(filePath.includes("-meta.xml") && !filePath.includes("staticresources") ) {
-                  var nonMetaFilePath = filePath.substring(0, filePath.length - 9);
-                  var nonMetaFileNewfilePath = newfilePath.substring(0, newfilePath.length - 9);
-                  if (fsExtra.existsSync(nonMetaFilePath)) {
-                    AppUtils.log1("Moving changed file. New path: " + nonMetaFileNewfilePath);
-                    fsExtra.copySync(nonMetaFilePath, nonMetaFileNewfilePath);
+                  } else if (filePath.includes(path.sep + "staticresources" + path.sep)) {
+                    var CompPathXML = CompPath + ".resource-meta.xml";
+                    var newCompPathXML = newCompPath + ".resource-meta.xml";
+                    if (fsExtra.existsSync(CompPathXML)) {
+                      AppUtils.log1("Moving Meta File for folder. New path: " + newCompPathXML);
+                      fsExtra.copySync(CompPathXML, newCompPathXML);
+                    }
                   }
                 } 
-        
+                else {
+                  AppUtils.log1("Skiped - MetaData alredy moved: " + newCompPath);
+                }
+              } else {
+
+                /**
+                 *  Generic Copy for all changed Files
+                 */
                 AppUtils.log1("Moving changed file. New path: " + newfilePath);
                 fsExtra.copySync(filePath, newfilePath);
 
+                /**
+                 *  If a Meta File has chaged, look for the actual Metadata
+                 */
+                if(filePath.includes("-meta.xml") && !filePath.includes("experiences") && !filePath.includes("staticresources") ) {
+                  var nonMetaFilePath = filePath.substring(0, filePath.length - 9);
+                  var nonMetaFileNewfilePath = newfilePath.substring(0, newfilePath.length - 9);
+                  if (fsExtra.existsSync(nonMetaFilePath)) {
+                    AppUtils.log1("Moving File for Changed Meta. New path: " + nonMetaFileNewfilePath);
+                    fsExtra.copySync(nonMetaFilePath, nonMetaFileNewfilePath);
+                  }
+                } 
+                /**
+                 * Look if the Metada needs a Meta File 
+                 */
                 var metaXMLFile = filePath + "-meta.xml";
                 if (fsExtra.existsSync(metaXMLFile)) {
                   var newMetaXMLFile = newfilePath + "-meta.xml";
@@ -181,17 +223,26 @@ export default class deltaPackage extends SfdxCommand {
                   fsExtra.copySync(metaXMLFile, newMetaXMLFile);
                 }
 
-                if(filePath.includes("staticresources")) {
-                  var splitResultSR = filePath.split(path.sep);
-                  var staticResourceMetaFile = splitResultSR[0] + path.sep + splitResultSR[1] + path.sep + splitResultSR[2] + path.sep + splitResultSR[3] + path.sep + splitResultSR[4] + ".resource-meta.xml";
-                  var newStaticResourceMetaFile = staticResourceMetaFile.replace(sourceFolder, deltaPackageFolder);
-                  //console.log("////// CompPath: " + newStaticResourceMetaFile);
-                  if (fsExtra.existsSync(staticResourceMetaFile)) {
-                    AppUtils.log1("Moving changed file. New path: " + newStaticResourceMetaFile);
-                    fsExtra.copySync(staticResourceMetaFile, newStaticResourceMetaFile);
-                  }
+                /**
+                 * Static Resources Scenario
+                 */
+                if (filePath.includes(path.sep + "staticresources" + path.sep)) {
+                  var compFileName = splitResult[splitResult.length-1];
+                  var staticResourcesFolder = filePath.substring(0, filePath.length - compFileName.length);
+                  var compFileNameNoExt = compFileName.split(".")[0];
+                  var compFileSR = staticResourcesFolder + compFileNameNoExt + ".";
+                  var files = fsExtra.readdirSync(staticResourcesFolder);
+                  AppUtils.log1("Lookin for Files to move for Static Resources Change: " + compFileSR + "<xxx>....");
+                  files.forEach(fileInStaticResourcesFolder => {
+                    if(fileInStaticResourcesFolder.includes(compFileNameNoExt + ".")){
+                      var compFileSRFounded = staticResourcesFolder + fileInStaticResourcesFolder;
+                      var newFileInStaticResourcesFolder = compFileSRFounded.replace(sourceFolder, deltaPackageFolder);
+                      AppUtils.log1("Moving File for Static Resources Change. New path: " + newFileInStaticResourcesFolder);
+                      fsExtra.copySync(compFileSRFounded, newFileInStaticResourcesFolder);
+                    }  
+                  });
+                }
 
-                } 
               }
             }
           });
