@@ -166,7 +166,8 @@ export default class deltaPackage extends SfdxCommand {
                   var compFileName2 = splitResult[splitResult.length - 2];
                   CompPath = filePath.substring(0, filePath.length - compFileName.length - compFileName2.length - 2);
                 } else if (filePath.includes(path.sep + "staticresources" + path.sep)){
-                  CompPath = filePath.match(/.*\/staticresources\/.*?\//)[0];
+                  var folder = filePath.match(/.*\/staticresources\/.*?\//)[0];
+                  CompPath = folder.slice(0, -1); 
                   //console.log('////// CompPath: ' + CompPath);
                 } else {
                   var compFileName = splitResult[splitResult.length - 1];
