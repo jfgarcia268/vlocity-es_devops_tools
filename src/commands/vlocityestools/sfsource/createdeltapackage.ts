@@ -165,6 +165,9 @@ export default class deltaPackage extends SfdxCommand {
                   var compFileName = splitResult[splitResult.length - 1];
                   var compFileName2 = splitResult[splitResult.length - 2];
                   CompPath = filePath.substring(0, filePath.length - compFileName.length - compFileName2.length - 2);
+                } else if (filePath.includes(path.sep + "staticresources" + path.sep)){
+                  CompPath = filePath.match(/.*\/staticresources\/.*?\//)[0];
+                  //console.log('////// CompPath: ' + CompPath);
                 } else {
                   var compFileName = splitResult[splitResult.length - 1];
                   var CompPath = filePath.substring(0, filePath.length - compFileName.length - 1);
@@ -219,7 +222,7 @@ export default class deltaPackage extends SfdxCommand {
                 var metaXMLFile = filePath + "-meta.xml";
                 if (fsExtra.existsSync(metaXMLFile)) {
                   var newMetaXMLFile = newfilePath + "-meta.xml";
-                  AppUtils.log1("Moving changed file. New path: " + newMetaXMLFile);
+                  AppUtils.log1("Moving meta File for changed file. New path: " + newMetaXMLFile);
                   fsExtra.copySync(metaXMLFile, newMetaXMLFile);
                 }
 
@@ -232,7 +235,7 @@ export default class deltaPackage extends SfdxCommand {
                   var compFileNameNoExt = compFileName.split(".")[0];
                   var compFileSR = staticResourcesFolder + compFileNameNoExt + ".";
                   var files = fsExtra.readdirSync(staticResourcesFolder);
-                  AppUtils.log1("Lookin for Files to move for Static Resources Change: " + compFileSR + "<xxx>....");
+                  AppUtils.log1("Looking for Files to move for Static Resources Change: " + compFileSR + "<xxx>....");
                   files.forEach(fileInStaticResourcesFolder => {
                     if(fileInStaticResourcesFolder.includes(compFileNameNoExt + ".")){
                       var compFileSRFounded = staticResourcesFolder + fileInStaticResourcesFolder;
