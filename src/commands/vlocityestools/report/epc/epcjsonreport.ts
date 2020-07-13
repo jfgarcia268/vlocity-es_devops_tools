@@ -60,49 +60,20 @@ export default class epcJsonExport extends SfdxCommand {
       AppUtils.log3( "EPC Json Report: " + 'Starting Report');
 
       var AAHeader = 'Id,ObjectId,AttributeId,ruleType,ruleExpression';
-      var AAFields = `{ 
-        {
-          "FieldName" : "Id", 
-          "Callback" : null
-        },
-        {
-          "ObjectId" : "%name-space%ObjectId__c", 
-          "Callback" : null
-        },
-        {
-          "AttributeId" : "%name-space%AttributeId__c", 
-          "Callback" : null
-        },
-        {
-          "AttributeId" : "%name-space%RuleData__c", 
-          "Fields" : [
-            {
-              "Name" : "expression"
-            },
-            {
-              "Name" : "ruleType"
-            }
-          ]
-        }
-        
-
-      }`
-
+      var AAFields ='%name-space%ObjectId__c,%name-space%AttributeId__c,%name-space%RuleData__c';
       var resultAAFile = 'AAResults.csv';
-      var resultAA = await epcJsonExport.ExportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c',AAHeader);
+      var resultAA = await epcJsonExport.exportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c',AAHeader ,epcJsonExport.formatAttributeAssigment ,AAFields);
 
 
-      //var resultAAFile = 'AAResults.csv';
-      //var resultAA = await epcJsonExport.attributeAssigment(conn,resultAAFile);
-
-
-      //var resultProduct2File = 'Product2Results.csv';
-      //var resultProduct2 = await epcJsonExport.product2(conn,resultProduct2File);
+      var product2lHeader = 'Id,Name,ProductCode';
+      var product2Fields ='Name,ProductCode';
+      var resultproduct2File = 'AAResults.csv';
+      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader ,epcJsonExport.formatProduct2 ,product2Fields);
 
 
       AppUtils.log3('Final Report:');
       AppUtils.log3(resultAA + ' File: ' + resultAAFile);
-      //AppUtils.log3(resultProduct2 + ' File: ' + resultProduct2File);
+      AppUtils.log3(resultproduct2 + ' File: ' + resultproduct2File);
 
     } catch (e) {
         console.log(e); 
@@ -110,160 +81,43 @@ export default class epcJsonExport extends SfdxCommand {
 
   }
 
-  static async attributeAssigment(conn, resultsFile) {
 
+  static formatAttributeAssigment(result,createFiles,fieldsArray) {
     var splitChararter = ','
 
-    AppUtils.log3( 'AttributeAssigment Report, File: ' + resultsFile);
-
-    if (fsExtra.existsSync(resultsFile)) {
-      fsExtra.unlinkSync(resultsFile);
-    }
-
-    AppUtils.startSpinner('Exporting AttributeAssigment');
-
-    const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
-    var initialHeader = 'Id,ObjectId,AttributeId,ruleType,ruleExpression';
-    createFiles.write(initialHeader+'\r\n');  
-
-    var objectIdF = AppUtils.replaceaNameSpace('%name-space%ObjectId__c');
-    var attributeIdF = AppUtils.replaceaNameSpace('%name-space%AttributeId__c');
-    var ruleDataF= AppUtils.replaceaNameSpace('%name-space%RuleData__c');
-
-    var queryString= 'SELECT Id, '
-                   + objectIdF + ', '
-                   + attributeIdF + ', '
-                   + ruleDataF +  ' '
-                   + 'FROM %name-space%AttributeAssignment__c ';
-    var queryString2 = AppUtils.replaceaNameSpace(queryString);
-
-    //console.log('queryString: ' + queryString2);
-
-    var cont = 0;
-
-    let promise = new Promise((resolve, reject) => {
-        conn.query(queryString2)
-        .on('record',  function(result) { 
-        cont ++;
-        var Id = result['Id'];
-        var objectId = result[objectIdF];
-        var attributeId = result[attributeIdF];
-        var ruleDataJson = result[ruleDataF];
-
-        //AppUtils.log1('Exporting AttributeAssigment: ' + Id);
-
-        if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-            var ruleData = JSON.parse(ruleDataJson);
-            for( var i = 0 ; i < ruleData.length ; i++){
-                var rule = ruleData[i];
-                var ruleExpression = rule['expression'];
-                var ruleType = rule['ruleType'];
-                //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-                var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
-                createFiles.write(newLine+'\r\n');  
-            }
-        } else {
-            var newLine = Id + splitChararter + objectId + splitChararter + attributeId;
-            createFiles.write(newLine+'\r\n');    
+    var Id = result['Id'];
+    var objectId = result[fieldsArray[0]];
+    var attributeId = result[fieldsArray[1]];
+    var ruleDataJson = result[fieldsArray[2]];
+    
+    if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
+        var ruleData = JSON.parse(ruleDataJson);
+        for( var i = 0 ; i < ruleData.length ; i++){
+            var rule = ruleData[i];
+            var ruleExpression = rule['expression'];
+            var ruleType = rule['ruleType'];
+            //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
+            var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
+            createFiles.write(newLine+'\r\n');  
         }
-        })
-        .on("queue",  function(batchInfo) {
-            AppUtils.log2( 'AttributeAssigment - queue' );
-        })
-        .on("end",  function() {
-            AppUtils.log2( 'AttributeAssigment - Report Done');
-            resolve('Number of AttributeAssigment: ' + cont);
-        })
-        .on('error',  function(err) { 
-            AppUtils.log2( 'AttributeAssigment - Report Error');
-            reject('AttributeAssigment - Error: ' + err );
-        })
-        .run({ autoFetch : true, maxFetch : 1000000 });     
-    });
-
-    var value = await promise;
-    AppUtils.stopSpinnerMessage('Done, ' + cont + ' Exported');
-    return value;
-  }
-
-  static async product2(conn, resultsFile) {
-    AppUtils.log3( 'Product2 Report, File: ' + resultsFile);
-
-    var splitChararter = ','
-
-    if (fsExtra.existsSync(resultsFile)) {
-      fsExtra.unlinkSync(resultsFile);
+    } else {
+        var newLine = Id + splitChararter + objectId + splitChararter + attributeId;
+        createFiles.write(newLine+'\r\n');    
     }
-
-    const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
-
-    var idF = 'Id';
-    var nameF = 'Name';
-    var productCodeF= 'ProductCode';
-
-    var initialHeader = 'Id,Name,ProductCode';
-
-    createFiles.write(initialHeader+'\r\n');  
-
-    var queryString= 'SELECT '
-                    + idF + ', '
-                    + nameF + ', '
-                    + productCodeF + ' '
-                    + 'FROM  Product2';
-    var queryString2 = AppUtils.replaceaNameSpace(queryString);
-
-    //console.log('queryString: ' + queryString2);
-    AppUtils.startSpinner('Exporting Product2');
-
-    var cont = 0;
-
-    let promise = new Promise((resolve, reject) => {
-        conn.query(queryString2)
-        .on('record', function(result) { 
-          cont ++;
-          var Id = result['Id'];
-          var name = result['Name'];
-          var productCode= result['ProductCode'];
-
-         //AppUtils.log1('Exporting Product2: ' + Id);
-
-          // if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-          //     ruleData = JSON.parse(ruleDataJson);
-          //     for( i = 0 ; i < ruleData.length ; i++){
-          //         var rule = ruleData[i];
-          //         var ruleExpression = rule['expression'];
-          //         var ruleType = rule['ruleType'];
-          //         //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-          //         var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleExpression + splitChararter + ruleType;
-          //         createFiles.write(newLine+'\r\n');  
-          //     }
-          // } else {
-          var newLine = Id + splitChararter + name + splitChararter + productCode;
-          createFiles.write(newLine+'\r\n');    
-          // }
-        })
-        .on("queue",  function(batchInfo) {
-          AppUtils.log2( 'Product2 - queue' );
-        })
-        .on("end",  function() {
-            AppUtils.log2( 'Product2 - Report Done');
-            resolve('Number of Product2: ' + cont);
-        })
-        .on('error',  function(err) { 
-            AppUtils.log2( 'Product2 - Report Error');
-            reject('Product2 - Error: ' + err );
-        })
-        .run({ autoFetch : true, maxFetch : 1000000 });     
-    });
-
-      var value = await promise;
-      AppUtils.stopSpinnerMessage('Done, ' + cont + ' Exported');
-      return value;
   }
 
-  static async ExportObject(conn, resultsFile, Object, header) {
-
+  static formatProduct2(result,createFiles,fieldsArray) {
     var splitChararter = ','
+    var Id = result['Id'];
+    var name = result[fieldsArray[0]];
+    var productCode= result[fieldsArray[1]];
+
+    var newLine = Id + splitChararter + name + splitChararter + productCode;
+    createFiles.write(newLine+'\r\n'); 
+  }
+
+  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields) {
+
     var objectAPIName = AppUtils.replaceaNameSpace(Object);
 
     AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
@@ -277,15 +131,14 @@ export default class epcJsonExport extends SfdxCommand {
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
     createFiles.write(header+'\r\n');  
 
-    var objectIdF = AppUtils.replaceaNameSpace('%name-space%ObjectId__c');
-    var attributeIdF = AppUtils.replaceaNameSpace('%name-space%AttributeId__c');
-    var ruleDataF= AppUtils.replaceaNameSpace('%name-space%RuleData__c');
+    var fieldsArray = fields.split(',')
 
-    var queryString= 'SELECT Id, '
-                   + objectIdF + ', '
-                   + attributeIdF + ', '
-                   + ruleDataF +  ' '
-                   + 'FROM %name-space%AttributeAssignment__c';
+    var queryString= 'SELECT ID'
+    fieldsArray.forEach(element => {
+      queryString += ',' + element;
+    });
+    queryString += ' FROM ' + Object; 
+
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
 
     //console.log('queryString: ' + queryString2);
@@ -296,38 +149,20 @@ export default class epcJsonExport extends SfdxCommand {
         conn.query(queryString2)
         .on('record',  function(result) { 
         cont ++;
-        var Id = result['Id'];
-        var objectId = result[objectIdF];
-        var attributeId = result[attributeIdF];
-        var ruleDataJson = result[ruleDataF];
 
-        //AppUtils.log1('Exporting AttributeAssigment: ' + Id);
-
-        if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-            var ruleData = JSON.parse(ruleDataJson);
-            for( var i = 0 ; i < ruleData.length ; i++){
-                var rule = ruleData[i];
-                var ruleExpression = rule['expression'];
-                var ruleType = rule['ruleType'];
-                //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-                var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
-                createFiles.write(newLine+'\r\n');  
-            }
-        } else {
-            var newLine = Id + splitChararter + objectId + splitChararter + attributeId;
-            createFiles.write(newLine+'\r\n');    
-        }
+        formatFuntion(result,createFiles,fieldsArray);
+        
         })
         .on("queue",  function(batchInfo) {
-            AppUtils.log2( 'AttributeAssigment - queue' );
+            AppUtils.log2( Object + ' - queue' );
         })
         .on("end",  function() {
-            AppUtils.log2( 'AttributeAssigment - Report Done');
-            resolve('Number of AttributeAssigment: ' + cont);
+            AppUtils.log2( Object + ' - Report Done');
+            resolve('Number of' + Object + ': ' + cont);
         })
         .on('error',  function(err) { 
-            AppUtils.log2( 'AttributeAssigment - Report Error');
-            reject('AttributeAssigment - Error: ' + err );
+            AppUtils.log2( Object + ' - Report Error');
+            reject(Object + ' - Error: ' + err );
         })
         .run({ autoFetch : true, maxFetch : 1000000 });     
     });
