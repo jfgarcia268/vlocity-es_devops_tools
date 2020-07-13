@@ -55,7 +55,6 @@ export default class epcJsonExport extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage("command"));
 
     try {
-
       const conn = this.org.getConnection();
 
       AppUtils.log3( "EPC Json Report: " + 'Starting Report');
@@ -148,7 +147,7 @@ export default class epcJsonExport extends SfdxCommand {
     });
 
     var value = await promise;
-    AppUtils.stopSpinner();
+    AppUtils.stopSpinnerMessage('Done, ' + cont + ' Exported');
     return value;
   }
 
@@ -223,7 +222,7 @@ export default class epcJsonExport extends SfdxCommand {
     });
 
       var value = await promise;
-      AppUtils.stopSpinner();
+      AppUtils.stopSpinnerMessage('Done, ' + cont + ' Exported');
       return value;
   }
     

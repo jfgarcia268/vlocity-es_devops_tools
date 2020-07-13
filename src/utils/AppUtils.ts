@@ -20,23 +20,36 @@ export class AppUtils  {
     }  
 
     public static log3(message) {
-        console.log(' >>> ' + message);
+        this.log(' >>> ' + message);
     }
 
     public static log2(message) {
-        console.log('  >> ' + message);
+        this.log('  >> ' + message);
     }
 
     public static log1(message) {
-        console.log('   > ' + message);
+        this.log('   > ' + message);
     }
 
     public static startSpinner(message) {
-        this.ux.startSpinner(message);
+        this.ux.startSpinner('   > ' + message);
+    }
+
+    public static stopSpinnerMessage(message) {
+        this.ux.stopSpinner(message);
     }
 
     public static stopSpinner() {
         this.ux.stopSpinner();
+    }
+
+    private static log(message){
+        if(this.ux != undefined){
+            this.ux.log(message); 
+        }
+        else {
+            console.log(message); 
+        }
     }
 
 }
