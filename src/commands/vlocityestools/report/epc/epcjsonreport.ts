@@ -1,4 +1,4 @@
-import { flags, SfdxCommand} from '@salesforce/command';
+import { flags, SfdxCommand, SfdxResult} from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AppUtils } from '../../../../utils/AppUtils';
 
@@ -64,16 +64,35 @@ export default class epcJsonExport extends SfdxCommand {
       var resultAAFile = 'AAResults.csv';
       var resultAA = await epcJsonExport.exportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c', AAHeader, epcJsonExport.formatAttributeAssigment, AAFields);
 
-
       var product2lHeader = 'Id,Name,ProductCode';
       var product2Fields ='Name,ProductCode';
       var resultproduct2File = 'Product2Results.csv';
       var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields);
 
+      var pcilHeader = 'Id,Name,ParentProductId__c,ChildProductId__c,ParentProductChildItemId__c';
+      var pciFields ='Name,%name-space%ParentProductId__c,%name-space%ChildProductId__c,%name-space%ParentProductChildItemId__c';
+      var resultpciFile = 'PCIResults.csv';
+      var resultpci = await epcJsonExport.exportObject(conn, resultpciFile, '%name-space%ProductChildItem__c', pcilHeader, epcJsonExport.formatPCI, pciFields);
 
       AppUtils.log3('Final Report:');
       AppUtils.log3(resultAA + ' File: ' + resultAAFile);
       AppUtils.log3(resultproduct2 + ' File: ' + resultproduct2File);
+      AppUtils.log3(resultpci + ' File: ' + resultpciFile);
+
+
+      var tableColumnData = ['ObjectName', 'NumberOfRecords', 'ReportFile'];
+
+      var resultData = [
+            { ObjectName: 'Attribute Assignment', NumberOfRecords: resultAA , ReportFile: resultAAFile },
+            { ObjectName: 'Product', NumberOfRecords: resultproduct2 , ReportFile: resultproduct2File },
+            { ObjectName: 'Product Child Item', NumberOfRecords: resultpci , ReportFile: resultpciFile }
+      ];
+
+      AppUtils.ux.log(' ');
+      AppUtils.ux.log('RESULT:');
+      AppUtils.ux.log(' ');
+      AppUtils.ux.table(resultData, tableColumnData);
+      AppUtils.ux.log(' ');
 
     } catch (e) {
         console.log(e); 
@@ -81,6 +100,30 @@ export default class epcJsonExport extends SfdxCommand {
 
   }
 
+  static formatPCI(result,createFiles,fieldsArray) {
+    var splitChararter = ','
+
+    var Id = result['Id'];
+    var f2 = result[fieldsArray[0]];
+    var f3 = result[fieldsArray[1]];
+    var f4 = result[fieldsArray[2]];
+    var f5 = result[fieldsArray[2]];
+
+    // if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
+    //     var ruleData = JSON.parse(ruleDataJson);
+    //     for( var i = 0 ; i < ruleData.length ; i++){
+    //         var rule = ruleData[i];
+    //         var ruleExpression = rule['expression'];
+    //         var ruleType = rule['ruleType'];
+    //         //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
+    //         var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
+    //         createFiles.write(newLine+'\r\n');  
+    //     }
+    // } else {
+    var newLine = Id + splitChararter + f2 + splitChararter + f3 + splitChararter + f4  + splitChararter + f5 ;
+    createFiles.write(newLine+'\r\n');    
+    //}
+  }
 
   static formatAttributeAssigment(result,createFiles,fieldsArray) {
     var splitChararter = ','
@@ -157,8 +200,7 @@ export default class epcJsonExport extends SfdxCommand {
             AppUtils.log2( objectAPIName + ' - queue' );
         })
         .on("end",  function() {
-            AppUtils.log2( objectAPIName + ' - Report Done');
-            resolve('Number of' + objectAPIName + ': ' + cont);
+            resolve(cont);
         })
         .on('error',  function(err) { 
             AppUtils.log2( objectAPIName + ' - Report Error');

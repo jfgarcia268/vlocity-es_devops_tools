@@ -15,6 +15,8 @@ export class AppUtils  {
     }
 
     public static logInitial(command: string) {
+        this.log('────────────────────────────────────────');
+        this.log(' ');
         this.log3('Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA)');
         this.log3('Command: ' + command);
     }  
@@ -24,15 +26,15 @@ export class AppUtils  {
     }
 
     public static log2(message) {
-        this.log('  >> ' + message);
+        this.log('   >> ' + message);
     }
 
     public static log1(message) {
-        this.log('   > ' + message);
+        this.log('     > ' + message);
     }
 
     public static startSpinner(message) {
-        this.ux.startSpinner('   > ' + message);
+        this.ux.startSpinner('   >> ' + message);
     }
 
     public static stopSpinnerMessage(message) {
