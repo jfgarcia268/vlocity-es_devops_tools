@@ -62,13 +62,13 @@ export default class epcJsonExport extends SfdxCommand {
       var AAHeader = 'Id,ObjectId,AttributeId,ruleType,ruleExpression';
       var AAFields ='%name-space%ObjectId__c,%name-space%AttributeId__c,%name-space%RuleData__c';
       var resultAAFile = 'AAResults.csv';
-      var resultAA = await epcJsonExport.exportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c',AAHeader ,epcJsonExport.formatAttributeAssigment ,AAFields);
+      var resultAA = await epcJsonExport.exportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c', AAHeader, epcJsonExport.formatAttributeAssigment, AAFields);
 
 
       var product2lHeader = 'Id,Name,ProductCode';
       var product2Fields ='Name,ProductCode';
-      var resultproduct2File = 'AAResults.csv';
-      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader ,epcJsonExport.formatProduct2 ,product2Fields);
+      var resultproduct2File = 'Product2Results.csv';
+      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields);
 
 
       AppUtils.log3('Final Report:');
@@ -89,7 +89,7 @@ export default class epcJsonExport extends SfdxCommand {
     var objectId = result[fieldsArray[0]];
     var attributeId = result[fieldsArray[1]];
     var ruleDataJson = result[fieldsArray[2]];
-    
+
     if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
         var ruleData = JSON.parse(ruleDataJson);
         for( var i = 0 ; i < ruleData.length ; i++){
@@ -131,13 +131,13 @@ export default class epcJsonExport extends SfdxCommand {
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
     createFiles.write(header+'\r\n');  
 
-    var fieldsArray = fields.split(',')
+    var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',')
 
     var queryString= 'SELECT ID'
     fieldsArray.forEach(element => {
       queryString += ',' + element;
     });
-    queryString += ' FROM ' + Object; 
+    queryString += ' FROM ' + objectAPIName; 
 
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
 
@@ -154,15 +154,15 @@ export default class epcJsonExport extends SfdxCommand {
         
         })
         .on("queue",  function(batchInfo) {
-            AppUtils.log2( Object + ' - queue' );
+            AppUtils.log2( objectAPIName + ' - queue' );
         })
         .on("end",  function() {
-            AppUtils.log2( Object + ' - Report Done');
-            resolve('Number of' + Object + ': ' + cont);
+            AppUtils.log2( objectAPIName + ' - Report Done');
+            resolve('Number of' + objectAPIName + ': ' + cont);
         })
         .on('error',  function(err) { 
-            AppUtils.log2( Object + ' - Report Error');
-            reject(Object + ' - Error: ' + err );
+            AppUtils.log2( objectAPIName + ' - Report Error');
+            reject(objectAPIName + ' - Error: ' + err );
         })
         .run({ autoFetch : true, maxFetch : 1000000 });     
     });
