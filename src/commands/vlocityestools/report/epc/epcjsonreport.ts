@@ -1,5 +1,5 @@
-import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError } from '@salesforce/core';
+import { flags, SfdxCommand} from '@salesforce/command';
+import { Messages } from '@salesforce/core';
 import { AppUtils } from '../../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
@@ -50,6 +50,8 @@ export default class epcJsonExport extends SfdxCommand {
       throw new Error("Error: -p, --package has to be either cmt or ins ");
     }
     
+    AppUtils.ux = this.ux;
+    
     AppUtils.logInitial(messages.getMessage("command"));
 
     try {
@@ -57,10 +59,16 @@ export default class epcJsonExport extends SfdxCommand {
       const conn = this.org.getConnection();
 
       AppUtils.log3( "EPC Json Report: " + 'Starting Report');
-     
-      await epcJsonExport.attributeAssigment(conn,'AAResults.csv');
-    
-      await epcJsonExport.product2(conn,'Product2Results.csv');
+
+      var resultAAFile = 'AAResults.csv';
+      var resultAA = await epcJsonExport.attributeAssigment(conn,resultAAFile);
+      var resultProduct2File = 'Product2Results.csv';
+      var resultProduct2 = await epcJsonExport.product2(conn,resultProduct2File);
+
+
+      AppUtils.log3('Final Report:');
+      AppUtils.log3(resultAA + ' File: ' + resultAAFile);
+      AppUtils.log3(resultProduct2 + ' File: ' + resultProduct2File);
 
     } catch (e) {
         console.log(e); 
@@ -77,6 +85,8 @@ export default class epcJsonExport extends SfdxCommand {
     if (fsExtra.existsSync(resultsFile)) {
       fsExtra.unlinkSync(resultsFile);
     }
+
+    AppUtils.startSpinner('Exporting AttributeAssigment');
 
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
     var initialHeader = 'Id,ObjectId,AttributeId,ruleType,ruleExpression';
@@ -106,6 +116,8 @@ export default class epcJsonExport extends SfdxCommand {
         var attributeId = result[attributeIdF];
         var ruleDataJson = result[ruleDataF];
 
+        //AppUtils.log1('Exporting AttributeAssigment: ' + Id);
+
         if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
             var ruleData = JSON.parse(ruleDataJson);
             for( var i = 0 ; i < ruleData.length ; i++){
@@ -125,17 +137,19 @@ export default class epcJsonExport extends SfdxCommand {
             AppUtils.log2( 'AttributeAssigment - queue' );
         })
         .on("end",  function() {
-            AppUtils.log2( 'AttributeAssigment - Number of AttributeAssigment Exported: ' + cont );
-            resolve(true);
+            AppUtils.log2( 'AttributeAssigment - Report Done');
+            resolve('Number of AttributeAssigment: ' + cont);
         })
         .on('error',  function(err) { 
-            AppUtils.log3( 'AttributeAssigment - Error: ' + err );
-            reject(false);
+            AppUtils.log2( 'AttributeAssigment - Report Error');
+            reject('AttributeAssigment - Error: ' + err );
         })
         .run({ autoFetch : true, maxFetch : 1000000 });     
     });
 
-    await promise;
+    var value = await promise;
+    AppUtils.stopSpinner();
+    return value;
   }
 
   static async product2(conn, resultsFile) {
@@ -165,47 +179,52 @@ export default class epcJsonExport extends SfdxCommand {
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
 
     //console.log('queryString: ' + queryString2);
+    AppUtils.startSpinner('Exporting Product2');
 
     var cont = 0;
 
     let promise = new Promise((resolve, reject) => {
         conn.query(queryString2)
-        .on('record',  function(result) { 
-        cont ++;
+        .on('record', function(result) { 
+          cont ++;
+          var Id = result['Id'];
+          var name = result['Name'];
+          var productCode= result['ProductCode'];
 
-        var Id = result['Id'];
-        var name = result['Name'];
-        var productCode= result['ProductCode'];
-        // if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-        //     ruleData = JSON.parse(ruleDataJson);
-        //     for( i = 0 ; i < ruleData.length ; i++){
-        //         var rule = ruleData[i];
-        //         var ruleExpression = rule['expression'];
-        //         var ruleType = rule['ruleType'];
-        //         //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-        //         var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleExpression + splitChararter + ruleType;
-        //         createFiles.write(newLine+'\r\n');  
-        //     }
-        // } else {
-        var newLine = Id + splitChararter + name + splitChararter + productCode;
-        createFiles.write(newLine+'\r\n');    
-        // }
+         //AppUtils.log1('Exporting Product2: ' + Id);
+
+          // if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
+          //     ruleData = JSON.parse(ruleDataJson);
+          //     for( i = 0 ; i < ruleData.length ; i++){
+          //         var rule = ruleData[i];
+          //         var ruleExpression = rule['expression'];
+          //         var ruleType = rule['ruleType'];
+          //         //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
+          //         var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleExpression + splitChararter + ruleType;
+          //         createFiles.write(newLine+'\r\n');  
+          //     }
+          // } else {
+          var newLine = Id + splitChararter + name + splitChararter + productCode;
+          createFiles.write(newLine+'\r\n');    
+          // }
         })
         .on("queue",  function(batchInfo) {
           AppUtils.log2( 'Product2 - queue' );
         })
         .on("end",  function() {
-            AppUtils.log2( 'Product2 - Number of Products Exported: ' + cont );
-            resolve(true);
+            AppUtils.log2( 'Product2 - Report Done');
+            resolve('Number of Product2: ' + cont);
         })
         .on('error',  function(err) { 
-            AppUtils.log3( 'Product2 - Error: ' + err );
-            reject(false);
+            AppUtils.log2( 'Product2 - Report Error');
+            reject('Product2 - Error: ' + err );
         })
-        .run({ autoFetch : true, maxFetch : 1000000 }); 
-      });
+        .run({ autoFetch : true, maxFetch : 1000000 });     
+    });
 
-    await promise;
+      var value = await promise;
+      AppUtils.stopSpinner();
+      return value;
   }
     
 }

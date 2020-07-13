@@ -1,9 +1,11 @@
 
-export class AppUtils {
+export class AppUtils  {
 
     public static appVersion = require('../../package.json').version;
 
     public static namespace;
+
+    public static ux;
 
     public static replaceaNameSpace(text) {
         //console.log('BEFORE:' + text);
@@ -27,6 +29,14 @@ export class AppUtils {
 
     public static log1(message) {
         console.log('   > ' + message);
+    }
+
+    public static startSpinner(message) {
+        this.ux.startSpinner(message);
+    }
+
+    public static stopSpinner() {
+        this.ux.stopSpinner();
     }
 
 }
