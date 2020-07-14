@@ -340,7 +340,7 @@ export default class epcJsonExport extends SfdxCommand {
             cont += formatFuntion(result,createFiles,fieldsArray);
           }
           cont2++;
-          AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Recors Created: ' + cont);
+          AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Records Created: ' + cont);
                 
         })
         .on("queue",  function(batchInfo) {
