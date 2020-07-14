@@ -15,9 +15,9 @@ export class AppUtils  {
     }
 
     public static logInitial(command: string) {
-        this.log('────────────────────────────────────────');
-        this.log(' ');
-        this.log3('Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA)');
+        this.log('');
+        this.log(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA)  <<<<');
+        this.log('');
         this.log3('Command: ' + command);
     }  
 

@@ -1,4 +1,4 @@
-import { flags, SfdxCommand, SfdxResult} from '@salesforce/command';
+import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AppUtils } from '../../../../utils/AppUtils';
 
@@ -10,6 +10,8 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('vlocityestools', 'epcjsonreport');
 
 const fsExtra = require("fs-extra");
+
+const splitChararter = ',';
 
 export default class epcJsonExport extends SfdxCommand {
 
@@ -58,38 +60,99 @@ export default class epcJsonExport extends SfdxCommand {
       const conn = this.org.getConnection();
 
       AppUtils.log3( "EPC Json Report: " + 'Starting Report');
+      AppUtils.ux.log(' ');
 
-      var AAHeader = 'Id,ObjectId,AttributeId,ruleType,ruleExpression';
-      var AAFields ='%name-space%ObjectId__c,%name-space%AttributeId__c,%name-space%RuleData__c';
-      var resultAAFile = 'AAResults.csv';
-      var resultAA = await epcJsonExport.exportObject(conn, resultAAFile, '%name-space%AttributeAssignment__c', AAHeader, epcJsonExport.formatAttributeAssigment, AAFields);
+      // -------- AttributeAssignment ---------
 
-      var product2lHeader = 'Id,Name,ProductCode';
-      var product2Fields ='Name,ProductCode';
+      var AAFields = 'Name,'  
+      + '%name-space%AttributeCategoryId__c,'
+      + '%name-space%AttributeCategorySubType__c,'
+      + '%name-space%AttributeDisplayName__c,'
+      + '%name-space%AttributeGroupType__c,'
+      + '%name-space%AttributeId__c,'
+      + '%name-space%CategoryCode__c,'
+      + '%name-space%CategoryName__c,'
+      + '%name-space%GlobalKey__c,'
+      + '%name-space%HasRule__c,'
+      + '%name-space%IsActiveAssignment__c,'
+      + '%name-space%IsActive__c,'
+      + '%name-space%IsConfigurable__c,'
+      + '%name-space%IsDynamic__c,'
+      + '%name-space%IsEligibilityAttribute__c,'
+      + '%name-space%IsRatingAttribute__c,'
+      + '%name-space%IsRequired__c,'
+      + '%name-space%ObjectId__c,'
+      + '%name-space%Value__c'
+      var AAHeaderBase = 'Id,' + AppUtils.replaceaNameSpace(AAFields)
+      var AAHeaderBaseRuleData = AAHeaderBase + ',rule.expression,rule.ruleType,rule.sourceType,rule.validation'
+      var resultAAFileRuleData = 'AttributeAssignmentResultsRuleData.csv';
+      var resultAARuleData = await epcJsonExport.exportObject(conn, resultAAFileRuleData, '%name-space%AttributeAssignment__c', AAHeaderBaseRuleData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%RuleData__c');
+      AppUtils.ux.log(' ');
+      
+      var AAHeaderBaseValidValuesData = AAHeaderBase + ',ValidValues.displayText,ValidValues.id,ValidValues.isDefault,ValidValues.value'
+      var resultAAFileValidValuesData = 'AttributeAssignmentValidValuesData.csv';
+      var resultAAValidValuesData = await epcJsonExport.exportObject(conn, resultAAFileValidValuesData, '%name-space%AttributeAssignment__c', AAHeaderBaseValidValuesData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%ValidValuesData__c');
+      AppUtils.ux.log(' ');
+
+      // -------- Product2 ---------
+
+      var product2Fields = 'Name,'   
+      //+ 'Exclude_From_Rating__c,'
+      + 'IsActive,'
+      + 'ProductCode,'
+      + '%name-space%Availability__c,'
+      + '%name-space%EligibilityCriteria__c,'
+      + '%name-space%EffectiveDate__c,'
+      + '%name-space%IsOrderable__c,'
+      + '%name-space%RecordTypeName__c,'
+      + '%name-space%SellingStartDate__c,'
+      + '%name-space%Status__c,'
+      + '%name-space%SubType__c,'
+      + '%name-space%Term__c,'
+      + '%name-space%Type__c'
+      var product2BaselHeader = 'Id,'+ AppUtils.replaceaNameSpace(product2Fields);
+      var product2lHeader = product2BaselHeader + ',term.Objectid, term.attributeid, term.attributecategoryid, term.attributeuniquecode,term.id'
       var resultproduct2File = 'Product2Results.csv';
-      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields);
+      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields,'%name-space%JSONAttribute__c');
+      AppUtils.ux.log(' ');
 
-      var pcilHeader = 'Id,Name,ParentProductId__c,ChildProductId__c,ParentProductChildItemId__c';
-      var pciFields ='Name,%name-space%ParentProductId__c,%name-space%ChildProductId__c,%name-space%ParentProductChildItemId__c';
-      var resultpciFile = 'PCIResults.csv';
-      var resultpci = await epcJsonExport.exportObject(conn, resultpciFile, '%name-space%ProductChildItem__c', pcilHeader, epcJsonExport.formatPCI, pciFields);
+      // -------- Product Child Item ---------
 
-      AppUtils.log3('Final Report:');
-      AppUtils.log3(resultAA + ' File: ' + resultAAFile);
-      AppUtils.log3(resultproduct2 + ' File: ' + resultproduct2File);
-      AppUtils.log3(resultpci + ' File: ' + resultpciFile);
+      var pciFields = 'Name,'  
+      + '%name-space%ChildLineNumber__c,'
+      + '%name-space%ChildProductId__c,'
+      + '%name-space%ChildRecordType__c,'
+      + '%name-space%EligibilityCriteria__c,'
+      + '%name-space%GlobalKey__c,'
+      + '%name-space%IsRootProductChildItem__c,'
+      + '%name-space%MaximumChildItemQuantity__c,'
+      + '%name-space%MaxQuantity__c,'
+      + '%name-space%MinimumChildItemQuantity__c,'
+      + '%name-space%MinMaxDefaultQty__c,'
+      + '%name-space%MinQuantity__c,'
+      + '%name-space%ParentProductId__c,'
+      + '%name-space%Quantity__c,'
+      + '%name-space%RelationshipType__c,'
+      + '%name-space%SeqNumber__c,'
+      + '%name-space%SubParentSpecId__c'
 
+      var pcilHeader = 'Id,'+ AppUtils.replaceaNameSpace(pciFields);
 
-      var tableColumnData = ['ObjectName', 'NumberOfRecords', 'ReportFile'];
+      var resultpciFile = 'ProductChildItemResults.csv';
+      var resultpci = await epcJsonExport.exportObject(conn, resultpciFile, '%name-space%ProductChildItem__c', pcilHeader, epcJsonExport.formatPCI, pciFields,null);
 
+      // -------- Results ---------
+
+      var tableColumnData = ['ObjectName', 'NumberOfRecordsCreated', 'ReportFile'];
       var resultData = [
-            { ObjectName: 'Attribute Assignment', NumberOfRecords: resultAA , ReportFile: resultAAFile },
+            { ObjectName: 'Attribute Assignment - RuleData', NumberOfRecords: resultAARuleData , ReportFile: resultAAFileRuleData },
+            { ObjectName: 'Attribute Assignment - ValuesData', NumberOfRecords: resultAAValidValuesData , ReportFile: resultAAFileValidValuesData },
             { ObjectName: 'Product', NumberOfRecords: resultproduct2 , ReportFile: resultproduct2File },
             { ObjectName: 'Product Child Item', NumberOfRecords: resultpci , ReportFile: resultpciFile }
       ];
 
       AppUtils.ux.log(' ');
-      AppUtils.ux.log('RESULT:');
+      AppUtils.ux.log('RESULTS:');
       AppUtils.ux.log(' ');
       AppUtils.ux.table(resultData, tableColumnData);
       AppUtils.ux.log(' ');
@@ -100,101 +163,182 @@ export default class epcJsonExport extends SfdxCommand {
 
   }
 
-  static formatPCI(result,createFiles,fieldsArray) {
-    var splitChararter = ','
-
+  static formatGeneric(result,createFiles,fieldsArray) {
     var Id = result['Id'];
-    var f2 = result[fieldsArray[0]];
-    var f3 = result[fieldsArray[1]];
-    var f4 = result[fieldsArray[2]];
-    var f5 = result[fieldsArray[2]];
-
-    // if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-    //     var ruleData = JSON.parse(ruleDataJson);
-    //     for( var i = 0 ; i < ruleData.length ; i++){
-    //         var rule = ruleData[i];
-    //         var ruleExpression = rule['expression'];
-    //         var ruleType = rule['ruleType'];
-    //         //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-    //         var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
-    //         createFiles.write(newLine+'\r\n');  
-    //     }
-    // } else {
-    var newLine = Id + splitChararter + f2 + splitChararter + f3 + splitChararter + f4  + splitChararter + f5 ;
-    createFiles.write(newLine+'\r\n');    
-    //}
-  }
-
-  static formatAttributeAssigment(result,createFiles,fieldsArray) {
-    var splitChararter = ','
-
-    var Id = result['Id'];
-    var objectId = result[fieldsArray[0]];
-    var attributeId = result[fieldsArray[1]];
-    var ruleDataJson = result[fieldsArray[2]];
-
-    if(ruleDataJson != undefined && ruleDataJson != "" && ruleDataJson != "[]" ) {
-        var ruleData = JSON.parse(ruleDataJson);
-        for( var i = 0 ; i < ruleData.length ; i++){
-            var rule = ruleData[i];
-            var ruleExpression = rule['expression'];
-            var ruleType = rule['ruleType'];
-            //console.log('ruleExpression: ' + ruleExpression + '  ruleType: ' + ruleType);
-            var newLine = Id + splitChararter + objectId + splitChararter + attributeId + splitChararter + ruleType + splitChararter + ruleExpression;
-            createFiles.write(newLine+'\r\n');  
-        }
-    } else {
-        var newLine = Id + splitChararter + objectId + splitChararter + attributeId;
-        createFiles.write(newLine+'\r\n');    
+    var baseline = Id + splitChararter;
+    for(var i = 0; i < fieldsArray.length; i++){
+      var newValue = result[fieldsArray[i]];
+      if(newValue != null){
+        baseline += newValue + splitChararter;
+      } else {
+        baseline += splitChararter;
+      }
     }
+    createFiles.write(baseline+'\r\n');  
+    return 1; 
   }
 
-  static formatProduct2(result,createFiles,fieldsArray) {
-    var splitChararter = ','
+  static formatPCI(result,createFiles,fieldsArray) {
     var Id = result['Id'];
-    var name = result[fieldsArray[0]];
-    var productCode= result[fieldsArray[1]];
-
-    var newLine = Id + splitChararter + name + splitChararter + productCode;
-    createFiles.write(newLine+'\r\n'); 
+    var baseline = Id + splitChararter;
+    for(var i = 0; i < fieldsArray.length; i++){
+      var newValue = result[fieldsArray[i]];
+      //console.log(fieldsArray[i] + ': ' + newValue)
+      if(newValue != null){
+        if(fieldsArray[i].includes('MinMaxDefaultQty__c') ) {
+          baseline += '"' + newValue + '"' + splitChararter;
+        } else {
+          baseline += newValue + splitChararter;
+        }
+      } else {
+        baseline += splitChararter;
+      }
+    }
+    createFiles.write(baseline+'\r\n');  
+    return 1; 
   }
 
-  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields) {
+  static formatAttributeAssigment(result,createFiles,fieldsArray,JsonField) {
+    var Id = result['Id'];
+    var baseline = Id + splitChararter;
+    for(var i = 0; i < fieldsArray.length; i++){
+      var newValue = result[fieldsArray[i]];
+      //console.log(fieldsArray[i] + ': ' + newValue)
+      if(newValue != null){
+        baseline += newValue + splitChararter;
+      } else {
+        baseline += splitChararter;
+      }
+    }
 
-    var objectAPIName = AppUtils.replaceaNameSpace(Object);
+    var cont = 0;
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
 
+    if(jsonData != null && jsonData != '[]' && JsonField == '%name-space%RuleData__c') {
+      var ruleData = JSON.parse(jsonData);
+      for( var i = 0 ; i < ruleData.length ; i++){
+        cont++;
+        var rule = ruleData[i];
+        //console.log('rule: ' + JSON.stringify(rule));
+        var ruleExpression = rule['expression'] != null ? rule['expression'] : '';
+        var ruleType = rule['ruleType'] != null ? rule['ruleType'] : '';
+        var sourceType = rule['sourceType'] != null ? rule['sourceType'] : '';
+        //var validation = rule['validation'] != null ? true : false;
+        var validation = rule['validation'] != null;
+        var newLine = baseline;
+        newLine += ruleExpression + splitChararter;
+        newLine += ruleType + splitChararter;
+        newLine += sourceType + splitChararter;
+        newLine += validation + splitChararter;
+        createFiles.write(newLine+'\r\n'); 
+      }
+    } else if (jsonData != null && jsonData != '[]' &&  JsonField == '%name-space%ValidValuesData__c' ) {
+      var validValuesData = JSON.parse(jsonData);
+      for( var i = 0 ; i < validValuesData.length ; i++){
+        cont++;
+        var validValue = validValuesData[i];
+        //console.log('validValuesData: ' + JSON.stringify(validValue));
+        var displayText = validValue['displayText'] != null ? '"' + validValue['displayText'] + '"': '';
+        var id = validValue['id'] != null ? validValue['id'] : '';
+        var isDefault = validValue['isDefault'] != null ? validValue['isDefault'] : '';
+        var value = validValue['value'] != null ? validValue['value'] : '';  
+        var newLine = baseline;
+        newLine += displayText + splitChararter;
+        newLine += id + splitChararter;
+        newLine += isDefault + splitChararter;
+        newLine += value + splitChararter;
+        createFiles.write(newLine+'\r\n'); 
+      }
+    } else {
+        cont++;
+        createFiles.write(baseline+'\r\n');    
+    }
+    //console.log('/////END ');
+    return cont;
+  }
+
+  static formatProduct2(result,createFiles,fieldsArray,JsonField) {
+    var Id = result['Id'];
+    var baseline = Id + splitChararter;
+    for(var i = 0; i < fieldsArray.length; i++){
+      var newValue = result[fieldsArray[i]];
+      //console.log(fieldsArray[i] + ': ' + newValue)
+      if(newValue != null){
+        baseline += newValue + splitChararter;
+      } else {
+        baseline += splitChararter;
+      }
+    }
+    var cont = 0;
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
+    if(jsonData != null && jsonData != '[]' && JsonField == '%name-space%JSONAttribute__c') {
+      var ruleData = JSON.parse(jsonData);
+      var terms = ruleData['terms'];
+
+      for( var i = 0 ; i < terms.length ; i++){
+        cont++;
+        var term = terms[i];
+        var objectid = term['objectid__c'] != null ? term['objectid__c'] : '';
+        var attributeid = term['attributeid__c'] != null ? term['attributeid__c'] : '';
+        var attributecategoryid = term['attributecategoryid__c'] != null ? term['attributecategoryid__c'] : '';
+        var attributeuniquecode = term['attributeuniquecode__c'] != null ? term['attributeuniquecode__c'] : '';
+        var termid = term['id'] != null ? term['id'] : '';
+
+        var newLine = baseline;
+        newLine += objectid + splitChararter;
+        newLine += attributeid + splitChararter;
+        newLine += attributecategoryid + splitChararter;
+        newLine += attributeuniquecode + splitChararter;
+        newLine += termid + splitChararter;
+
+        createFiles.write(newLine+'\r\n'); 
+      }
+
+    } else {
+        cont++;
+        createFiles.write(baseline+'\r\n');    
+    }
+    //console.log('/////END ');
+    return cont;
+  }
+
+  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,JsonField) {
+    var objectAPIName = AppUtils.replaceaNameSpace(Object)
     AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
 
     if (fsExtra.existsSync(resultsFile)) {
       fsExtra.unlinkSync(resultsFile);
     }
 
-    AppUtils.startSpinner('Exporting ' + objectAPIName);
-
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
     createFiles.write(header+'\r\n');  
-
     var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',')
 
     var queryString= 'SELECT ID'
     fieldsArray.forEach(element => {
       queryString += ',' + element;
     });
+
+    if(JsonField != null) {
+      queryString += ',' + AppUtils.replaceaNameSpace(JsonField);
+    }
     queryString += ' FROM ' + objectAPIName; 
-
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
-
-    //console.log('queryString: ' + queryString2);
-
+    //console.log('queryString2: ' + queryString2);
     var cont = 0;
+
+    AppUtils.startSpinner('Exporting ' + objectAPIName);
 
     let promise = new Promise((resolve, reject) => {
         conn.query(queryString2)
         .on('record',  function(result) { 
-        cont ++;
-
-        formatFuntion(result,createFiles,fieldsArray);
-        
+        if(JsonField != null) {
+          cont += formatFuntion(result,createFiles,fieldsArray,JsonField);
+        }
+        else {
+          cont += formatFuntion(result,createFiles,fieldsArray);
+        }
+                
         })
         .on("queue",  function(batchInfo) {
             AppUtils.log2( objectAPIName + ' - queue' );
@@ -210,7 +354,7 @@ export default class epcJsonExport extends SfdxCommand {
     });
 
     var value = await promise;
-    AppUtils.stopSpinnerMessage('Done, ' + cont + ' Exported');
+    AppUtils.stopSpinnerMessage('Done, ' + value + ' Exported');
     return value;
   }
     
