@@ -45,6 +45,10 @@ export class AppUtils  {
         this.ux.stopSpinner();
     }
 
+    public static updateSpinnerMessage(message){
+        this.ux.setSpinnerStatus(message);
+    }
+
     private static log(message){
         if(this.ux != undefined){
             this.ux.log(message); 

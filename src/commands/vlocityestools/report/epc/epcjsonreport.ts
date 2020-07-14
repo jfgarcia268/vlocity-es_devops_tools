@@ -97,7 +97,7 @@ export default class epcJsonExport extends SfdxCommand {
       // -------- Product2 ---------
 
       var product2Fields = 'Name,'   
-      //+ 'Exclude_From_Rating__c,'
+      + 'Exclude_From_Rating__c,'
       + 'IsActive,'
       + 'ProductCode,'
       + '%name-space%Availability__c,'
@@ -143,12 +143,12 @@ export default class epcJsonExport extends SfdxCommand {
 
       // -------- Results ---------
 
-      var tableColumnData = ['ObjectName', 'NumberOfRecordsCreated', 'ReportFile'];
+      var tableColumnData = ['ObjectName', 'RecordsExportedCreated', 'NumberOfRecordsCreated', 'ReportFile'];
       var resultData = [
-            { ObjectName: 'Attribute Assignment - RuleData', NumberOfRecords: resultAARuleData , ReportFile: resultAAFileRuleData },
-            { ObjectName: 'Attribute Assignment - ValuesData', NumberOfRecords: resultAAValidValuesData , ReportFile: resultAAFileValidValuesData },
-            { ObjectName: 'Product', NumberOfRecords: resultproduct2 , ReportFile: resultproduct2File },
-            { ObjectName: 'Product Child Item', NumberOfRecords: resultpci , ReportFile: resultpciFile }
+            { ObjectName: 'Attribute Assignment - RuleData', NumberOfRecordsCreated: resultAARuleData , ReportFile: resultAAFileRuleData },
+            { ObjectName: 'Attribute Assignment - ValuesData', NumberOfRecordsCreated: resultAAValidValuesData , ReportFile: resultAAFileValidValuesData },
+            { ObjectName: 'Product', NumberOfRecordsCreated: resultproduct2 , ReportFile: resultproduct2File },
+            { ObjectName: 'Product Child Item', NumberOfRecordsCreated: resultpci , ReportFile: resultpciFile }
       ];
 
       AppUtils.ux.log(' ');
@@ -326,29 +326,32 @@ export default class epcJsonExport extends SfdxCommand {
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
     //console.log('queryString2: ' + queryString2);
     var cont = 0;
+    var cont2 = 0;
 
     AppUtils.startSpinner('Exporting ' + objectAPIName);
 
     let promise = new Promise((resolve, reject) => {
         conn.query(queryString2)
         .on('record',  function(result) { 
-        if(JsonField != null) {
-          cont += formatFuntion(result,createFiles,fieldsArray,JsonField);
-        }
-        else {
-          cont += formatFuntion(result,createFiles,fieldsArray);
-        }
+          if(JsonField != null) {
+            cont += formatFuntion(result,createFiles,fieldsArray,JsonField);
+          }
+          else {
+            cont += formatFuntion(result,createFiles,fieldsArray);
+          }
+          cont2++;
+          AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Recors Created: ' + cont);
                 
         })
         .on("queue",  function(batchInfo) {
-            AppUtils.log2( objectAPIName + ' - queue' );
+          AppUtils.log2( objectAPIName + ' - queue' );
         })
         .on("end",  function() {
-            resolve(cont);
+          resolve(cont2+' / '+cont);
         })
         .on('error',  function(err) { 
-            AppUtils.log2( objectAPIName + ' - Report Error');
-            reject(objectAPIName + ' - Error: ' + err );
+          AppUtils.log2( objectAPIName + ' - Report Error');
+          reject(objectAPIName + ' - Error: ' + err );
         })
         .run({ autoFetch : true, maxFetch : 1000000 });     
     });
