@@ -51,105 +51,23 @@ export default class epcJsonExport extends SfdxCommand {
     } else {
       throw new Error("Error: -p, --package has to be either cmt or ins ");
     }
-    
+
     AppUtils.ux = this.ux;
-    
     AppUtils.logInitial(messages.getMessage("command"));
+    AppUtils.log3( "EPC Json Report: " + 'Starting Report');
+    AppUtils.ux.log(' ');
 
     try {
-      const conn = this.org.getConnection();
-
-      AppUtils.log3( "EPC Json Report: " + 'Starting Report');
-      AppUtils.ux.log(' ');
-
-      // -------- AttributeAssignment ---------
-
-      var AAFields = 'Name,'  
-      + '%name-space%AttributeCategoryId__c,'
-      + '%name-space%AttributeCategorySubType__c,'
-      + '%name-space%AttributeDisplayName__c,'
-      + '%name-space%AttributeGroupType__c,'
-      + '%name-space%AttributeId__c,'
-      + '%name-space%CategoryCode__c,'
-      + '%name-space%CategoryName__c,'
-      + '%name-space%GlobalKey__c,'
-      + '%name-space%HasRule__c,'
-      + '%name-space%IsActiveAssignment__c,'
-      + '%name-space%IsActive__c,'
-      + '%name-space%IsConfigurable__c,'
-      + '%name-space%IsDynamic__c,'
-      + '%name-space%IsEligibilityAttribute__c,'
-      + '%name-space%IsRatingAttribute__c,'
-      + '%name-space%IsRequired__c,'
-      + '%name-space%ObjectId__c,'
-      + '%name-space%Value__c'
-      var AAHeaderBase = 'Id,' + AppUtils.replaceaNameSpace(AAFields)
-      var AAHeaderBaseRuleData = AAHeaderBase + ',rule.expression,rule.ruleType,rule.sourceType,rule.validation'
-      var resultAAFileRuleData = 'AttributeAssignmentResultsRuleData.csv';
-      var resultAARuleData = await epcJsonExport.exportObject(conn, resultAAFileRuleData, '%name-space%AttributeAssignment__c', AAHeaderBaseRuleData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%RuleData__c');
-      AppUtils.ux.log(' ');
       
-      var AAHeaderBaseValidValuesData = AAHeaderBase + ',ValidValues.displayText,ValidValues.id,ValidValues.isDefault,ValidValues.value'
-      var resultAAFileValidValuesData = 'AttributeAssignmentValidValuesData.csv';
-      var resultAAValidValuesData = await epcJsonExport.exportObject(conn, resultAAFileValidValuesData, '%name-space%AttributeAssignment__c', AAHeaderBaseValidValuesData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%ValidValuesData__c');
-      AppUtils.ux.log(' ');
+      var resultData = [];
+      const conn = this.org.getConnection();
+      
+      // ---- Run Reports ----
+      await epcJsonExport.doAttributeAssigments(conn,resultData);
+      await epcJsonExport.doProduct2(conn,resultData);
+      await epcJsonExport.doPCI(conn,resultData);
 
-      // -------- Product2 ---------
-
-      var product2Fields = 'Name,'   
-      + 'Exclude_From_Rating__c,'
-      + 'IsActive,'
-      + 'ProductCode,'
-      + '%name-space%Availability__c,'
-      + '%name-space%EligibilityCriteria__c,'
-      + '%name-space%EffectiveDate__c,'
-      + '%name-space%IsOrderable__c,'
-      + '%name-space%RecordTypeName__c,'
-      + '%name-space%SellingStartDate__c,'
-      + '%name-space%Status__c,'
-      + '%name-space%SubType__c,'
-      + '%name-space%Term__c,'
-      + '%name-space%Type__c'
-      var product2BaselHeader = 'Id,'+ AppUtils.replaceaNameSpace(product2Fields);
-      var product2lHeader = product2BaselHeader + ',term.Objectid, term.attributeid, term.attributecategoryid, term.attributeuniquecode,term.id'
-      var resultproduct2File = 'Product2Results.csv';
-      var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields,'%name-space%JSONAttribute__c');
-      AppUtils.ux.log(' ');
-
-      // -------- Product Child Item ---------
-
-      var pciFields = 'Name,'  
-      + '%name-space%ChildLineNumber__c,'
-      + '%name-space%ChildProductId__c,'
-      + '%name-space%ChildRecordType__c,'
-      + '%name-space%EligibilityCriteria__c,'
-      + '%name-space%GlobalKey__c,'
-      + '%name-space%IsRootProductChildItem__c,'
-      + '%name-space%MaximumChildItemQuantity__c,'
-      + '%name-space%MaxQuantity__c,'
-      + '%name-space%MinimumChildItemQuantity__c,'
-      + '%name-space%MinMaxDefaultQty__c,'
-      + '%name-space%MinQuantity__c,'
-      + '%name-space%ParentProductId__c,'
-      + '%name-space%Quantity__c,'
-      + '%name-space%RelationshipType__c,'
-      + '%name-space%SeqNumber__c,'
-      + '%name-space%SubParentSpecId__c'
-
-      var pcilHeader = 'Id,'+ AppUtils.replaceaNameSpace(pciFields);
-
-      var resultpciFile = 'ProductChildItemResults.csv';
-      var resultpci = await epcJsonExport.exportObject(conn, resultpciFile, '%name-space%ProductChildItem__c', pcilHeader, epcJsonExport.formatPCI, pciFields,null);
-
-      // -------- Results ---------
-
-      var tableColumnData = ['ObjectName', 'RecordsExportedCreated', 'NumberOfRecordsCreated', 'ReportFile'];
-      var resultData = [
-            { ObjectName: 'Attribute Assignment - RuleData', NumberOfRecordsCreated: resultAARuleData , ReportFile: resultAAFileRuleData },
-            { ObjectName: 'Attribute Assignment - ValuesData', NumberOfRecordsCreated: resultAAValidValuesData , ReportFile: resultAAFileValidValuesData },
-            { ObjectName: 'Product', NumberOfRecordsCreated: resultproduct2 , ReportFile: resultproduct2File },
-            { ObjectName: 'Product Child Item', NumberOfRecordsCreated: resultpci , ReportFile: resultpciFile }
-      ];
+      var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 
 
       AppUtils.ux.log(' ');
       AppUtils.ux.log('RESULTS:');
@@ -161,6 +79,92 @@ export default class epcJsonExport extends SfdxCommand {
         console.log(e); 
     }
 
+  }
+
+  static async doPCI(conn,resultData) {
+
+    var pciFields = 'Name,'  
+    + '%name-space%ChildLineNumber__c,'
+    + '%name-space%ChildProductId__c,'
+    + '%name-space%ChildRecordType__c,'
+    + '%name-space%EligibilityCriteria__c,'
+    + '%name-space%GlobalKey__c,'
+    + '%name-space%IsRootProductChildItem__c,'
+    + '%name-space%MaximumChildItemQuantity__c,'
+    + '%name-space%MaxQuantity__c,'
+    + '%name-space%MinimumChildItemQuantity__c,'
+    + '%name-space%MinMaxDefaultQty__c,'
+    + '%name-space%MinQuantity__c,'
+    + '%name-space%ParentProductId__c,'
+    + '%name-space%Quantity__c,'
+    + '%name-space%RelationshipType__c,'
+    + '%name-space%SeqNumber__c,'
+    + '%name-space%SubParentSpecId__c'
+
+    var pcilHeader = 'Id,'+ AppUtils.replaceaNameSpace(pciFields);
+
+    var resultpciFile = 'ProductChildItemResults.csv';
+    var resultpci = await epcJsonExport.exportObject(conn, resultpciFile, '%name-space%ProductChildItem__c', pcilHeader, epcJsonExport.formatPCI, pciFields,null);
+    resultData.push({ ObjectName: 'Product Child Item', RecordsExported: resultpci['exported'] , RecordsCreated: resultpci['created'] , ReportFile: resultpciFile });
+  
+  }
+
+  static async doProduct2(conn,resultData) {
+    var product2Fields = 'Name,'   
+    + 'Exclude_From_Rating__c,'
+    + 'IsActive,'
+    + 'ProductCode,'
+    + '%name-space%Availability__c,'
+    + '%name-space%EligibilityCriteria__c,'
+    + '%name-space%EffectiveDate__c,'
+    + '%name-space%IsOrderable__c,'
+    + '%name-space%RecordTypeName__c,'
+    + '%name-space%SellingStartDate__c,'
+    + '%name-space%Status__c,'
+    + '%name-space%SubType__c,'
+    + '%name-space%Term__c,'
+    + '%name-space%Type__c'
+    var product2BaselHeader = 'Id,'+ AppUtils.replaceaNameSpace(product2Fields);
+    var product2lHeader = product2BaselHeader + ',JSONAttributeName,JSONAttributeName.Objectid, JSONAttributeName.attributeid, JSONAttributeName.attributecategoryid, JSONAttributeName.attributeuniquecode,JSONAttributeName.id'
+    var resultproduct2File = 'Product2Results.csv';
+    var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields,'%name-space%JSONAttribute__c');
+    resultData.push({ ObjectName: 'Product', RecordsExported: resultproduct2['exported'] , RecordsCreated: resultproduct2['created'] , ReportFile: resultproduct2File });
+    AppUtils.ux.log(' ');
+  }
+
+  static async doAttributeAssigments(conn,resultData) {
+
+    var AAFields = 'Name,'  
+    + '%name-space%AttributeCategoryId__c,'
+    + '%name-space%AttributeCategorySubType__c,'
+    + '%name-space%AttributeDisplayName__c,'
+    + '%name-space%AttributeGroupType__c,'
+    + '%name-space%AttributeId__c,'
+    + '%name-space%CategoryCode__c,'
+    + '%name-space%CategoryName__c,'
+    + '%name-space%GlobalKey__c,'
+    + '%name-space%HasRule__c,'
+    + '%name-space%IsActiveAssignment__c,'
+    + '%name-space%IsActive__c,'
+    + '%name-space%IsConfigurable__c,'
+    + '%name-space%IsDynamic__c,'
+    + '%name-space%IsEligibilityAttribute__c,'
+    + '%name-space%IsRatingAttribute__c,'
+    + '%name-space%IsRequired__c,'
+    + '%name-space%ObjectId__c,'
+    + '%name-space%Value__c'
+    var AAHeaderBase = 'Id,' + AppUtils.replaceaNameSpace(AAFields)
+    var AAHeaderBaseRuleData = AAHeaderBase + ',rule.expression,rule.ruleType,rule.sourceType,rule.validation'
+    var resultAAFileRuleData = 'AttributeAssignmentResultsRuleData.csv';
+    var resultAARuleData = await epcJsonExport.exportObject(conn, resultAAFileRuleData, '%name-space%AttributeAssignment__c', AAHeaderBaseRuleData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%RuleData__c');
+    AppUtils.ux.log(' ');
+    
+    var AAHeaderBaseValidValuesData = AAHeaderBase + ',ValidValues.displayText,ValidValues.id,ValidValues.isDefault,ValidValues.value'
+    var resultAAFileValidValuesData = 'AttributeAssignmentValidValuesData.csv';
+    var resultAAValidValuesData = await epcJsonExport.exportObject(conn, resultAAFileValidValuesData, '%name-space%AttributeAssignment__c', AAHeaderBaseValidValuesData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%ValidValuesData__c');
+    AppUtils.ux.log(' ');
+    resultData.push({ ObjectName: 'Attribute Assignment - ValuesData', RecordsExported: resultAAValidValuesData['exported'], RecordsCreated: resultAAValidValuesData['created'], ReportFile: resultAAFileValidValuesData });
+    resultData.push({ ObjectName: 'Attribute Assignment - RuleData', RecordsExported: resultAARuleData['exported'], RecordsCreated: resultAARuleData['created'], ReportFile: resultAAFileRuleData });
   }
 
   static formatGeneric(result,createFiles,fieldsArray) {
@@ -273,26 +277,29 @@ export default class epcJsonExport extends SfdxCommand {
     var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
     if(jsonData != null && jsonData != '[]' && JsonField == '%name-space%JSONAttribute__c') {
       var ruleData = JSON.parse(jsonData);
-      var terms = ruleData['terms'];
+      var keys = Object.keys(ruleData);
+      keys.forEach(key => {
+        var attribute = ruleData[key];
+        for( var i = 0 ; i < attribute.length ; i++){
+          cont++;
+          var term = attribute[i];
+          var objectid = term['objectid__c'] != null ? term['objectid__c'] : '';
+          var attributeid = term['attributeid__c'] != null ? term['attributeid__c'] : '';
+          var attributecategoryid = term['attributecategoryid__c'] != null ? term['attributecategoryid__c'] : '';
+          var attributeuniquecode = term['attributeuniquecode__c'] != null ? term['attributeuniquecode__c'] : '';
+          var termid = term['id'] != null ? term['id'] : '';
 
-      for( var i = 0 ; i < terms.length ; i++){
-        cont++;
-        var term = terms[i];
-        var objectid = term['objectid__c'] != null ? term['objectid__c'] : '';
-        var attributeid = term['attributeid__c'] != null ? term['attributeid__c'] : '';
-        var attributecategoryid = term['attributecategoryid__c'] != null ? term['attributecategoryid__c'] : '';
-        var attributeuniquecode = term['attributeuniquecode__c'] != null ? term['attributeuniquecode__c'] : '';
-        var termid = term['id'] != null ? term['id'] : '';
+          var newLine = baseline;
+          newLine += key + splitChararter;
+          newLine += objectid + splitChararter;
+          newLine += attributeid + splitChararter;
+          newLine += attributecategoryid + splitChararter;
+          newLine += attributeuniquecode + splitChararter;
+          newLine += termid + splitChararter;
 
-        var newLine = baseline;
-        newLine += objectid + splitChararter;
-        newLine += attributeid + splitChararter;
-        newLine += attributecategoryid + splitChararter;
-        newLine += attributeuniquecode + splitChararter;
-        newLine += termid + splitChararter;
-
-        createFiles.write(newLine+'\r\n'); 
-      }
+          createFiles.write(newLine+'\r\n'); 
+        }
+      });
 
     } else {
         cont++;
@@ -347,17 +354,18 @@ export default class epcJsonExport extends SfdxCommand {
           AppUtils.log2( objectAPIName + ' - queue' );
         })
         .on("end",  function() {
-          resolve(cont2+' / '+cont);
+          var resultData = { exported: cont2 , created: cont };
+          resolve(resultData);
         })
         .on('error',  function(err) { 
           AppUtils.log2( objectAPIName + ' - Report Error');
           reject(objectAPIName + ' - Error: ' + err );
         })
-        .run({ autoFetch : true, maxFetch : 1000000 });     
+        .run({ autoFetch : true, maxFetch : 1000000,});     
     });
 
     var value = await promise;
-    AppUtils.stopSpinnerMessage('Done, ' + value + ' Exported');
+    AppUtils.stopSpinnerMessage('Done, ' + value['exported'] + ' Exported and ' + value['created'] + ' Created' );
     return value;
   }
     
