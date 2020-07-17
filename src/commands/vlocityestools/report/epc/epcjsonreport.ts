@@ -20,7 +20,7 @@ export default class epcJsonExport extends SfdxCommand {
   public static examples = [
   `$ sfdx vlocityestools:report:epc:epcjsonreport -u myOrg@example.com -p cmt
   `,
-  `$ sfdx vlocityestools:report:epc:epcjsonreport  --targetusername myOrg@example.com --package ins
+  `$ sfdx vlocityestools:report:epc:epcjsonreport --targetusername myOrg@example.com --package ins
   `
   ];
 
@@ -58,14 +58,19 @@ export default class epcJsonExport extends SfdxCommand {
     AppUtils.ux.log(' ');
 
     try {
-      
       var resultData = [];
       const conn = this.org.getConnection();
       
       // ---- Run Reports ----
       await epcJsonExport.doAttributeAssigments(conn,resultData);
+      AppUtils.ux.log(' ');
       await epcJsonExport.doProduct2(conn,resultData);
+      AppUtils.ux.log(' ');
       await epcJsonExport.doPCI(conn,resultData);
+      AppUtils.ux.log(' ');
+      await epcJsonExport.doAttribute(conn,resultData);
+      AppUtils.ux.log(' ');
+      await epcJsonExport.doVlocityCode(conn,resultData);
 
       var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 
 
@@ -78,7 +83,36 @@ export default class epcJsonExport extends SfdxCommand {
     } catch (e) {
         console.log(e); 
     }
+  }
 
+  static async doVlocityCode(conn,resultData) {
+
+    var fields = 'Name,'  
+    + 'Adjustment_Factor__c,'
+    + 'Long_Description_ES__c,'
+    + 'Region__c,'
+    + 'Short_Description_ES__c,'
+    + '%name-space%DisplayName__c,'
+    + '%name-space%LongDescription__c,'
+    + '%name-space%ShortDescription__c '
+    var header = 'Id,'+ AppUtils.replaceaNameSpace(fields);
+    var resultFile = 'VlocityCodeResults.csv';
+    var result = await epcJsonExport.exportObject(conn, resultFile, '%name-space%VlocityCode__c', header, epcJsonExport.formatGeneric, fields,null);
+    resultData.push({ ObjectName: 'VlocityCode', RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
+  }
+
+  static async doAttribute(conn,resultData) {
+
+    var fields = 'Name,'  
+    + '%name-space%AttributeCategoryCode__c,'
+    + '%name-space%AttributeCategoryId__c,'
+    + '%name-space%AttributeCategoryName__c,'
+    + '%name-space%AttributeGroupType__c,'
+    + '%name-space%Code__c '
+    var header = 'Id,'+ AppUtils.replaceaNameSpace(fields);
+    var resultFile = 'AttributeResults.csv';
+    var result = await epcJsonExport.exportObject(conn, resultFile, '%name-space%Attribute__c', header, epcJsonExport.formatGeneric, fields,null);
+    resultData.push({ ObjectName: 'Attribute', RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
   }
 
   static async doPCI(conn,resultData) {
@@ -111,9 +145,11 @@ export default class epcJsonExport extends SfdxCommand {
 
   static async doProduct2(conn,resultData) {
     var product2Fields = 'Name,'   
+    + 'Description,'
     + 'Exclude_From_Rating__c,'
     + 'IsActive,'
     + 'ProductCode,'
+    + 'Region__c,'
     + '%name-space%Availability__c,'
     + '%name-space%EligibilityCriteria__c,'
     + '%name-space%EffectiveDate__c,'
@@ -129,12 +165,13 @@ export default class epcJsonExport extends SfdxCommand {
     var resultproduct2File = 'Product2Results.csv';
     var resultproduct2 = await epcJsonExport.exportObject(conn, resultproduct2File, 'Product2', product2lHeader, epcJsonExport.formatProduct2, product2Fields,'%name-space%JSONAttribute__c');
     resultData.push({ ObjectName: 'Product', RecordsExported: resultproduct2['exported'] , RecordsCreated: resultproduct2['created'] , ReportFile: resultproduct2File });
-    AppUtils.ux.log(' ');
   }
 
   static async doAttributeAssigments(conn,resultData) {
 
     var AAFields = 'Name,'  
+    + '%name-space%AttributeCode__c,'
+    + '%name-space%AttributeUniqueCode__c,'
     + '%name-space%AttributeCategoryId__c,'
     + '%name-space%AttributeCategorySubType__c,'
     + '%name-space%AttributeDisplayName__c,'
@@ -157,12 +194,12 @@ export default class epcJsonExport extends SfdxCommand {
     var AAHeaderBaseRuleData = AAHeaderBase + ',rule.expression,rule.ruleType,rule.sourceType,rule.validation'
     var resultAAFileRuleData = 'AttributeAssignmentResultsRuleData.csv';
     var resultAARuleData = await epcJsonExport.exportObject(conn, resultAAFileRuleData, '%name-space%AttributeAssignment__c', AAHeaderBaseRuleData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%RuleData__c');
+
     AppUtils.ux.log(' ');
-    
+
     var AAHeaderBaseValidValuesData = AAHeaderBase + ',ValidValues.displayText,ValidValues.id,ValidValues.isDefault,ValidValues.value'
     var resultAAFileValidValuesData = 'AttributeAssignmentValidValuesData.csv';
     var resultAAValidValuesData = await epcJsonExport.exportObject(conn, resultAAFileValidValuesData, '%name-space%AttributeAssignment__c', AAHeaderBaseValidValuesData, epcJsonExport.formatAttributeAssigment, AAFields, '%name-space%ValidValuesData__c');
-    AppUtils.ux.log(' ');
     resultData.push({ ObjectName: 'Attribute Assignment - ValuesData', RecordsExported: resultAAValidValuesData['exported'], RecordsCreated: resultAAValidValuesData['created'], ReportFile: resultAAFileValidValuesData });
     resultData.push({ ObjectName: 'Attribute Assignment - RuleData', RecordsExported: resultAARuleData['exported'], RecordsCreated: resultAARuleData['created'], ReportFile: resultAAFileRuleData });
   }
