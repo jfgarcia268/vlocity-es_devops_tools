@@ -14,6 +14,13 @@ export class AppUtils  {
         return res;
     }
 
+    public static replaceaNameSpaceFromFile(text) {
+        //console.log('BEFORE:' + text);
+        var res = text.replace(new RegExp('namespace__', 'g'),this.namespace);
+        //console.log('AFTER:' + res);
+        return res;
+    }
+
     public static logInitial(command: string) {
         this.log('');
         this.log(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA)  <<<<');
