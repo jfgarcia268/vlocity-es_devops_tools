@@ -79,14 +79,34 @@ export default class epcJsonExport extends SfdxCommand {
       for (let index = 0; index < Object.keys(doc.Objects).length; index++) {
         var element = Object.keys(doc.Objects)[index];
         var ObjectName = AppUtils.replaceaNameSpaceFromFile(element);
+        var all = doc.Objects[element]['All'];
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
         var JsonwithKeys = doc.Objects[element]['JsonwithKeys'];
         // console.log(fields);
         // console.log(jsonFields);
-        var fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "");
-        //console.log('baseheader: ' + fieldsString);
-        if(jsonFields == null){
+        if(all) {
+
+          var resultFile = ObjectName + '_All_Result.csv';
+          var meta  = await conn.sobject(ObjectName).describe();
+          var fieldsString = '';
+          for (let i = 0; i < meta.fields.length; i++) {
+            const objectField = meta.fields[i].name;
+            if(objectField != 'Id') {
+              fieldsString += objectField + ',';
+            }
+          }
+          fieldsString = fieldsString.substring(0, fieldsString.length - 1);
+          //console.log('fieldsString: ' + fieldsString);
+          //console.log('resultFile: ' + resultFile);
+          if (fsExtra.existsSync(resultFile)) {
+            fsExtra.unlinkSync(resultFile);
+          }
+          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null);
+          resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
+          console.log(' ');
+        } else if(jsonFields == null) {
+          var fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
           var resultFile = ObjectName + '_Result.csv';
           //console.log('resultFile: ' + resultFile);
           if (fsExtra.existsSync(resultFile)) {
@@ -95,8 +115,8 @@ export default class epcJsonExport extends SfdxCommand {
           var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null);
           resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
           console.log(' ');
-        }
-        else {
+        } else {
+          var fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
           for (let j = 0; j < Object.keys(jsonFields).length; j++) {
             const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
             var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
@@ -129,17 +149,7 @@ export default class epcJsonExport extends SfdxCommand {
   }
 
   static formatWithJson(result,createFiles,fieldsArray,jsonField,jsonValues) {
-    var Id = result['Id'];
-    var baseline = Id + splitChararter;
-    for(var i = 0; i < fieldsArray.length; i++){
-      var newValue = result[fieldsArray[i]];
-      //console.log(fieldsArray[i] + ': ' + newValue)
-      if(newValue != null){
-        baseline += '"' + newValue + '"' + splitChararter;
-      } else {
-        baseline += splitChararter;
-      }
-    }
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
     var cont = 0;
     var jsonData = result[AppUtils.replaceaNameSpace(jsonField)];
     if(jsonData != null && jsonData != '[]') {
@@ -164,32 +174,13 @@ export default class epcJsonExport extends SfdxCommand {
   }
 
   static formatGeneric(result,createFiles,fieldsArray) {
-    var Id = result['Id'];
-    var baseline = Id + splitChararter;
-    for(var i = 0; i < fieldsArray.length; i++){
-      var newValue = result[fieldsArray[i]];
-      if(newValue != null){
-        baseline += '"' + newValue + '"' + splitChararter;
-      } else {
-        baseline += splitChararter;
-      }
-    }
-    createFiles.write(baseline+'\r\n');  
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    createFiles.write(baseline+'\r\n'); 
     return 1; 
   }
 
   static formatWithJsonKeys(result,createFiles,fieldsArray,JsonField,jsonValues) {
-    var Id = result['Id'];
-    var baseline = Id + splitChararter;
-    for(var i = 0; i < fieldsArray.length; i++){
-      var newValue = result[fieldsArray[i]];
-      //console.log(fieldsArray[i] + ': ' + newValue)
-      if(newValue != null){
-        baseline += '"' + newValue + '"' + splitChararter;
-      } else {
-        baseline += splitChararter;
-      }
-    }
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
     var cont = 0;
     var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
     if(jsonData != null && jsonData != '[]') {
@@ -286,6 +277,29 @@ export default class epcJsonExport extends SfdxCommand {
     var value = await promise;
     AppUtils.stopSpinnerMessage('Done, ' + value['exported'] + ' Exported and ' + value['created'] + ' Created' );
     return value;
+  }
+
+  static formatNormallFields(result,fieldsArray) {
+    var Id = result['Id'];
+    var baseline = Id + splitChararter;
+    for(var i = 0; i < fieldsArray.length; i++){
+      var newValue = result[fieldsArray[i]];
+      if(newValue != null){
+        try {
+          JSON.parse(newValue);
+          if (typeof newValue === "boolean"){
+            baseline += '"' + newValue + '"' + splitChararter;
+          } else {
+            baseline += '"' + 'JSONObject' + '"' + splitChararter;
+          }
+        } catch (e) {
+          baseline += '"' + newValue + '"' + splitChararter;
+        }   
+      } else {
+        baseline += splitChararter;
+      }
+    }
+    return baseline; 
   }
     
 }
