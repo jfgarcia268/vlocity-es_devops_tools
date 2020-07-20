@@ -83,13 +83,11 @@ export default class epcJsonExport extends SfdxCommand {
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
         var JsonwithKeys = doc.Objects[element]['JsonwithKeys'];
+        var fieldsString = '';
         // console.log(fields);
         // console.log(jsonFields);
         if(all) {
-
-          var resultFile = ObjectName + '_All_Result.csv';
           var meta  = await conn.sobject(ObjectName).describe();
-          var fieldsString = '';
           for (let i = 0; i < meta.fields.length; i++) {
             const objectField = meta.fields[i].name;
             if(objectField != 'Id') {
@@ -97,27 +95,25 @@ export default class epcJsonExport extends SfdxCommand {
             }
           }
           fieldsString = fieldsString.substring(0, fieldsString.length - 1);
-          //console.log('fieldsString: ' + fieldsString);
+        } 
+
+        if (jsonFields == null) {
+          if(!all) {
+            fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
+          }
+            var resultFile = ObjectName + '_Result.csv';
           //console.log('resultFile: ' + resultFile);
           if (fsExtra.existsSync(resultFile)) {
             fsExtra.unlinkSync(resultFile);
           }
-          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null);
-          resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
-          console.log(' ');
-        } else if(jsonFields == null) {
-          var fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
-          var resultFile = ObjectName + '_Result.csv';
-          //console.log('resultFile: ' + resultFile);
-          if (fsExtra.existsSync(resultFile)) {
-            fsExtra.unlinkSync(resultFile);
-          }
-          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null);
+          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null,all);
           resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
           console.log(' ');
         } else {
-          var fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
-          for (let j = 0; j < Object.keys(jsonFields).length; j++) {
+            if(!all) {
+              fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
+            }
+            for (let j = 0; j < Object.keys(jsonFields).length; j++) {
             const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
             var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
             if (fsExtra.existsSync(resultFile)) {
@@ -125,9 +121,9 @@ export default class epcJsonExport extends SfdxCommand {
             }
             var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
             if(!JsonwithKeys) {
-             var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys);
+             var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys,all);
             } else {
-              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonKeys, fieldsString,jsonField,jsonFieldsKeys);
+              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonKeys, fieldsString,jsonField,jsonFieldsKeys,all);
             }
             resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
             console.log(' ');
@@ -208,7 +204,7 @@ export default class epcJsonExport extends SfdxCommand {
     return cont;
   }
 
-  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,jsonField,jsonValues) {
+  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,jsonField,jsonValues,all) {
     var objectAPIName = AppUtils.replaceaNameSpace(Object)
     AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
 
@@ -224,7 +220,7 @@ export default class epcJsonExport extends SfdxCommand {
       queryString += ',' + element;
     });
 
-    if(jsonField != null) {
+    if(jsonField != null && !all) {
       queryString += ',' + AppUtils.replaceaNameSpace(jsonField);
     }
     queryString += ' FROM ' + objectAPIName; 
@@ -285,16 +281,22 @@ export default class epcJsonExport extends SfdxCommand {
     for(var i = 0; i < fieldsArray.length; i++){
       var newValue = result[fieldsArray[i]];
       if(newValue != null){
-        try {
-          JSON.parse(newValue);
-          if (typeof newValue === "boolean"){
-            baseline += '"' + newValue + '"' + splitChararter;
-          } else {
-            baseline += '"' + 'JSONObject' + '"' + splitChararter;
-          }
-        } catch (e) {
+        // try {
+        //   JSON.parse(newValue);
+        //   if (typeof newValue === "boolean"){
+        //     baseline += '"' + newValue + '"' + splitChararter;
+        //   } else {
+        //     baseline += '"' + 'JSONObject' + '"' + splitChararter;
+        //   }
+        // } catch (e) {
+        //   baseline += '"' + newValue + '"' + splitChararter;
+        // }  
+        if(String(newValue).includes("{") || String(newValue).includes("}")){
+          baseline += '"' + '<JSONObject>' + '"' + splitChararter;
+        } else {
           baseline += '"' + newValue + '"' + splitChararter;
-        }   
+        }
+
       } else {
         baseline += splitChararter;
       }
