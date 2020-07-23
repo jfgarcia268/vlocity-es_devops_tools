@@ -83,6 +83,7 @@ export default class epcJsonExport extends SfdxCommand {
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
         var JsonwithKeys = doc.Objects[element]['JsonwithKeys'];
+        var onlyJson = doc.Objects[element]['OnlyJsonFields'];
         var fieldsString = '';
         // console.log(fields);
         // console.log(jsonFields);
@@ -106,28 +107,28 @@ export default class epcJsonExport extends SfdxCommand {
           if (fsExtra.existsSync(resultFile)) {
             fsExtra.unlinkSync(resultFile);
           }
-          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null,all);
+          var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatGeneric, fieldsString,null,null,all,onlyJson);
           resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
           console.log(' ');
         } else {
-            if(!all) {
+            if(!all && fields!= null) {
               fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
-            }
+            } 
             for (let j = 0; j < Object.keys(jsonFields).length; j++) {
-            const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
-            var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
-            if (fsExtra.existsSync(resultFile)) {
-              fsExtra.unlinkSync(resultFile);
+              const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
+              var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
+              if (fsExtra.existsSync(resultFile)) {
+                fsExtra.unlinkSync(resultFile);
+              }
+              var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
+              if(!JsonwithKeys) {
+              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+              } else {
+                var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonKeys, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+              }
+              resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
+              console.log(' ');
             }
-            var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
-            if(!JsonwithKeys) {
-             var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys,all);
-            } else {
-              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonKeys, fieldsString,jsonField,jsonFieldsKeys,all);
-            }
-            resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
-            console.log(' ');
-          }
         }
       }
 
@@ -204,7 +205,7 @@ export default class epcJsonExport extends SfdxCommand {
     return cont;
   }
 
-  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,jsonField,jsonValues,all) {
+  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
     var objectAPIName = AppUtils.replaceaNameSpace(Object)
     AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
 
@@ -216,9 +217,11 @@ export default class epcJsonExport extends SfdxCommand {
     var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',')
 
     var queryString= 'SELECT ID'
-    fieldsArray.forEach(element => {
-      queryString += ',' + element;
-    });
+    if(!onlyJson) {
+      fieldsArray.forEach(element => {
+        queryString += ',' + element;
+      });
+    }
 
     if(jsonField != null && !all) {
       queryString += ',' + AppUtils.replaceaNameSpace(jsonField);
