@@ -83,6 +83,7 @@ export default class epcJsonExport extends SfdxCommand {
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
         var JsonwithKeys = doc.Objects[element]['JsonwithKeys'];
+        var JsonwithKeys2 = doc.Objects[element]['JsonwithKeys2'];
         var onlyJson = doc.Objects[element]['OnlyJsonFields'];
         var fieldsString = '';
         // console.log(fields);
@@ -121,11 +122,17 @@ export default class epcJsonExport extends SfdxCommand {
                 fsExtra.unlinkSync(resultFile);
               }
               var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
-              if(!JsonwithKeys) {
-              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
-              } else {
-                var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonKeys, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+
+              var formatFuntion = epcJsonExport.formatWithJson;
+
+              if(JsonwithKeys) {
+                formatFuntion = epcJsonExport.formatWithJsonKeys;
+              } else if(JsonwithKeys2){
+                formatFuntion = epcJsonExport.formatWithJsonKeys2;
               }
+              //console.log('formatFuntion:' + formatFuntion);
+              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, formatFuntion, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+
               resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
               console.log(' ');
             }
@@ -176,6 +183,52 @@ export default class epcJsonExport extends SfdxCommand {
     return 1; 
   }
 
+  static formatWithJsonKeys2(result,createFiles,fieldsArray,JsonField,jsonValues) {
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    var cont = 0;
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
+    if(jsonData != null && jsonData != '[]') {
+      var ruleData = JSON.parse(jsonData);
+      var keys = Object.keys(ruleData);
+      keys.forEach(key => {
+        var attribute = ruleData[key];
+        var keys2 = Object.keys(attribute);
+        keys2.forEach(key2 => {
+          var attribute2 = attribute[key2];
+          if(Array.isArray(attribute2)) {
+            for( var i = 0 ; i < attribute2.length ; i++){
+              var term = attribute2[i];
+              var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
+              jsonValues.forEach(jsonValue => {
+                var value = term[jsonValue] != null ? term[jsonValue] : '';
+                newLine += '"' + value + '"' + splitChararter;
+              });
+              createFiles.write(newLine+'\r\n'); 
+              cont++;
+            }
+          } else {
+            var keys3 = Object.keys(attribute2);
+            keys3.forEach(key3 => {
+              var term = attribute2[key3];
+              var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
+              jsonValues.forEach(jsonValue => {
+                var value = term[jsonValue] != null ? term[jsonValue] : '';
+                newLine += '"' + value + '"' + splitChararter;
+              });
+              createFiles.write(newLine+'\r\n'); 
+              cont++;
+            });
+          }
+        });
+      });
+    } else {
+        cont++;
+        createFiles.write(baseline+'\r\n');    
+    }
+    //console.log('/////END ');
+    return cont;
+  }
+
   static formatWithJsonKeys(result,createFiles,fieldsArray,JsonField,jsonValues) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
     var cont = 0;
@@ -186,7 +239,6 @@ export default class epcJsonExport extends SfdxCommand {
       keys.forEach(key => {
         var attribute = ruleData[key];
         for( var i = 0 ; i < attribute.length ; i++){
-          cont++;
           var term = attribute[i];
           cont++;
           var newLine = baseline + key + splitChararter ;
@@ -238,6 +290,9 @@ export default class epcJsonExport extends SfdxCommand {
       var newHeader = header;
       if(formatFuntion.name == 'formatWithJsonKeys'){
         newHeader += ',KEY';
+      }
+      if(formatFuntion.name == 'formatWithJsonKeys2'){
+        newHeader += ',KEY,RULE_TYPE';
       }
       newHeader += splitChararter + (JSON.stringify(jsonValues)).replace('[', '').replace(']', '').replace(/\"/g, "")
       createFiles.write('ID,' + newHeader+'\r\n');  
