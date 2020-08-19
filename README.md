@@ -22,6 +22,7 @@ USAGE
 # Commands:
 
 ### vlocityestools:clean:omniscripts
+### vlocityestools:clean:templates
 ### vlocityestools:compare:folders
 ### vlocityestools:clean:datapacks
 ### vlocityestools:clean:savedomniscripts
@@ -59,9 +60,39 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 5 -p cmt
+  $ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 10 -p cmt
   
-  $ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 5 --package ins
+  $ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 10 --package ins
+
+```
+
+
+## vlocityestools:clean:templates
+
+Delete old verions of Templates and leave X amount of latest verions
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:templates -u <string> -n <integer> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -n, --numberversions=numberversions                       Number of most recent versions of
+                                                            Templates to keep for each one.
+                                                            Has to be greater than 5.
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:templates -u myOrg@example.com -n 5 -p cmt
+  
+  $ sfdx vlocityestools:clean:templates --targetusername myOrg@example.com --numberversions 5 --package ins
 
 ```
 
