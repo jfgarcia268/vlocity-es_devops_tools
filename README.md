@@ -39,7 +39,7 @@ USAGE
 
 ## vlocityestools:clean:omniscripts
 
-Delete old versions of OmniScritps and leave <n> amount of latest versions
+Delete old versions of OmniScritps and leave N amount of latest versions
 Active versions will be ignored and wont get deleted.
 
 ```
@@ -70,7 +70,7 @@ EXAMPLES
 
 ## vlocityestools:clean:templates
 
-Delete old versions of Templates and leave <n> amount of latest versions.
+Delete old versions of Templates and leave N amount of latest versions.
 Active versions will be ignored and wont get deleted.
 
 ```
