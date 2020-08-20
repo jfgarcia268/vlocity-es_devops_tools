@@ -39,7 +39,8 @@ USAGE
 
 ## vlocityestools:clean:omniscripts
 
-Delete old verions of OmniScritps and leave X amount of latest verions
+Delete old versions of OmniScritps and leave <n> amount of latest versions
+Active versions will be ignored and wont get deleted.
 
 ```
 USAGE
@@ -69,7 +70,8 @@ EXAMPLES
 
 ## vlocityestools:clean:templates
 
-Delete old verions of Templates and leave X amount of latest verions
+Delete old versions of Templates and leave <n> amount of latest versions.
+Active versions will be ignored and wont get deleted.
 
 ```
 USAGE
@@ -83,7 +85,7 @@ OPTIONS
 
   -n, --numberversions=numberversions                       Number of most recent versions of
                                                             Templates to keep for each one.
-                                                            Has to be greater than 5.
+                                                            Has to be greater than 1.
 
   -p, --package=package                                     Vlocity Package Type, Options:
                                                             'cmt' or 'ins' 
