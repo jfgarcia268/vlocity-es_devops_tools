@@ -8,16 +8,16 @@ Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('vlocityestools', 'oldomniscripts');
+const messages = Messages.loadMessages('vlocityestools', 'oldtemplates');
 
-export default class deleteOldOS extends SfdxCommand {
+export default class deleteOldTemplates extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 5 -p cmt
+  `$ sfdx vlocityestools:clean:templates -u myOrg@example.com -n 5 -p cmt
   `,
-  `$ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 5 --package ins
+  `$ sfdx vlocityestools:clean:templates --targetusername myOrg@example.com --numberversions 5 --package ins
   `
   ];
 
@@ -53,10 +53,13 @@ export default class deleteOldOS extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage('command'));
     AppUtils.log2('Versions To Keep: ' + versionsToKeep);
 
-    if(versionsToKeep > 0){
+    if(versionsToKeep > 1){
       // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
       const conn = this.org.getConnection();
-      const initialQuery = 'SELECT ID, Name, %name-space%Version__c, %name-space%IsActive__c, %name-space%Language__c, %name-space%Type__c, %name-space%SubType__c FROM %name-space%OmniScript__c  Order By Name, %name-space%Language__c, %name-space%Type__c,%name-space%SubType__c, %name-space%Version__c DESC';
+      const initialQuery = 'SELECT Id, Name, %name-space%Active__c,%name-space%Version__c,%name-space%Type__c ' +
+                           'FROM %name-space%VlocityUITemplate__c ' +
+                           'ORDER BY Name, %name-space%Version__c DESC'
+      
       const query = AppUtils.replaceaNameSpace(initialQuery);
       // Query the org
       const result = await conn.query(query);
@@ -68,24 +71,21 @@ export default class deleteOldOS extends SfdxCommand {
 
 
       var nameField = 'Name';
-      var languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
-      var typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
-      var subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
-      var isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
+      var isActiveField  = AppUtils.replaceaNameSpace('%name-space%Active__c');
       var versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
 
       var firstresult = result.records[0]
-      var currentComp = firstresult[nameField] + firstresult[languageField] + firstresult[typeField] + firstresult[subTypeField];
+      var currentComp = firstresult[nameField]
 
       var count = 0;
 
-      var OStoDetele = new Array();
+      var templatestoDetele = new Array();
 
-      AppUtils.log2('The Following OmniScritps will be deteled:');
+      AppUtils.log2('The Following Templates will be deteled:');
 
       for (var i=0; i<result.records.length; i++) {
         var record = result.records[i];
-        var componentid = record[nameField] + record[languageField]+ record[typeField] + record[subTypeField];
+        var componentid = record[nameField];
         
         if(currentComp==componentid) {
           count = count + 1;
@@ -96,17 +96,17 @@ export default class deleteOldOS extends SfdxCommand {
         }
 
         if(count > versionsToKeep && !record[isActiveField]) {
-          OStoDetele.push(record);
-          var output = 'Name: ' + record[nameField] + ', Language: ' + record[languageField] + ', Type: '  + record[typeField] + ', SubType: ' + record[subTypeField] + ', Version: ' + record[versionField];
+          templatestoDetele.push(record);
+          var output = 'Name: ' + record[nameField] + ', Version: ' + record[versionField];
           AppUtils.log1(output);
         }
       }
 
-      if(OStoDetele.length > 0) {
+      if(templatestoDetele.length > 0) {
         await new Promise((resolveBatch) => {
-            var job = conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%OmniScript__c"), "delete");
+            var job = conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%VlocityUITemplate__c"), "delete");
             var batch = job.createBatch();
-            batch.execute(OStoDetele);
+            batch.execute(templatestoDetele);
 
             batch.on("error", function(err) { // fired when batch request is queued in server.
               console.log('Error, batchInfo:', err);
@@ -132,10 +132,10 @@ export default class deleteOldOS extends SfdxCommand {
         AppUtils.log2("Nothing to delete");
       }
 
-      return { OStoDetele };
+      return { templatestoDetele };
 
     } else {
-      throw new Error("Error: -n, --numberversions has to be greated than 0");
+      throw new Error("Error: -n, --numberversions has to be greated or equal to 1");
     }
   }
 }

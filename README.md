@@ -22,6 +22,7 @@ USAGE
 # Commands:
 
 ### vlocityestools:clean:omniscripts
+### vlocityestools:clean:templates
 ### vlocityestools:compare:folders
 ### vlocityestools:clean:datapacks
 ### vlocityestools:clean:savedomniscripts
@@ -38,7 +39,8 @@ USAGE
 
 ## vlocityestools:clean:omniscripts
 
-Delete old verions of OmniScritps and leave X amount of latest verions
+Delete old versions of OmniScritps and leave <n> amount of latest versions
+Active versions will be ignored and wont get deleted.
 
 ```
 USAGE
@@ -59,9 +61,40 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 5 -p cmt
+  $ sfdx vlocityestools:clean:omniscripts -u myOrg@example.com -n 10 -p cmt
   
-  $ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 5 --package ins
+  $ sfdx vlocityestools:clean:omniscripts --targetusername myOrg@example.com --numberversions 10 --package ins
+
+```
+
+
+## vlocityestools:clean:templates
+
+Delete old versions of Templates and leave <n> amount of latest versions.
+Active versions will be ignored and wont get deleted.
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:templates -u <string> -n <integer> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -n, --numberversions=numberversions                       Number of most recent versions of
+                                                            Templates to keep for each one.
+                                                            Has to be greater than 1.
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:templates -u myOrg@example.com -n 5 -p cmt
+  
+  $ sfdx vlocityestools:clean:templates --targetusername myOrg@example.com --numberversions 5 --package ins
 
 ```
 
