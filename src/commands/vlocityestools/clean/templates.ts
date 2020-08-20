@@ -53,7 +53,7 @@ export default class deleteOldTemplates extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage('command'));
     AppUtils.log2('Versions To Keep: ' + versionsToKeep);
 
-    if(versionsToKeep > 4){
+    if(versionsToKeep > 1){
       // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
       const conn = this.org.getConnection();
       const initialQuery = 'SELECT Id, Name, %name-space%Active__c,%name-space%Version__c,%name-space%Type__c ' +
@@ -135,7 +135,7 @@ export default class deleteOldTemplates extends SfdxCommand {
       return { templatestoDetele };
 
     } else {
-      throw new Error("Error: -n, --numberversions has to be greated or equal to 5");
+      throw new Error("Error: -n, --numberversions has to be greated or equal to 1");
     }
   }
 }
