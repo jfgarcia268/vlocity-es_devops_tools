@@ -133,7 +133,7 @@ export default class deltaPackage extends SfdxCommand {
         var numOfDiffs = status.files.length;
         if (numOfDiffs > 0) {
           AppUtils.log3("Creating delta Folder: " + deltaPackageFolder);
-          AppUtils.log3("Deltas: ");
+          AppUtils.log3("Checking GitDiff.. Deltas: ");
           status.files.forEach(files => {
             //console.log('File: ' + files.file);
             var filePath = files.file;
@@ -250,6 +250,9 @@ export default class deltaPackage extends SfdxCommand {
               }
             }
           });
+          if (!fsExtra.existsSync(deltaPackageFolder)){
+            AppUtils.log2("No modified files found to copy to the delta folder.. Delta folder was not created");
+          }
         } else {
           AppUtils.log2("No Diffs Found");
         }
