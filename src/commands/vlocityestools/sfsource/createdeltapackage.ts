@@ -175,7 +175,12 @@ export default class deltaPackage extends SfdxCommand {
                         //console.log('fileInStaticResourcesFolder: '+fileInStaticResourcesFolder);
                         var pathforFounded = staticResourceFolder + fileInStaticResourcesFolder;
                         var newPathforFounded = pathforFounded.replace(sourceFolder, deltaPackageFolder);
-                        AppUtils.log1("Moving File/Folder for Static Resources Change. New path: " + newPathforFounded);
+                        var statspathforFounded = fsExtra.statSync(pathforFounded);
+                        if(statspathforFounded.isDirectory()){
+                          AppUtils.log1("Moving complete folder: " + newPathforFounded);
+                        } else {
+                          AppUtils.log1("Moving File for Static Resources Change. New path: " + newPathforFounded);
+                        }
                         fsExtra.copySync(pathforFounded, newPathforFounded);
                       }  
                     });
