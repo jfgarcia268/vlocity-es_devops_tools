@@ -91,6 +91,10 @@ export default class deltaPackage extends SfdxCommand {
     const repoPath = path.normalize("./");
     const simpleGit = require("simple-git")(repoPath);
     if (result.records.length < 1) {
+      if (fsExtra.existsSync(deltaPackageFolder)) {
+        AppUtils.log2("Old delta folder was found... deleting before creating new delta: " + deltaPackageFolder );
+        fsExtra.removeSync(deltaPackageFolder);
+      }
       AppUtils.log3("Hash not found in the environment, Coping full Package");
       deltaPackage.copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra);
     } else if (!simpleGit.checkIsRepo()) {
@@ -124,6 +128,7 @@ export default class deltaPackage extends SfdxCommand {
     fsExtra.mkdirSync(deltaPackageFolder);
     fsExtra.copySync(sourceFolder, deltaPackageFolder);
   }
+
   static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
     simpleGit.diffSummary([previousHash], (err, status) => {
       if (err) {
