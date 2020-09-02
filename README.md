@@ -32,6 +32,7 @@ USAGE
 ### vlocityestools:sfsource:createdeltapackage
 ### vlocityestools:sfsource:updatedeltahash
 ### vlocityestools:clean:calcmatrix
+### vlocityestools:login:login
   
 '    '
 
@@ -379,5 +380,38 @@ EXAMPLES
   $ sfdx vlocityestools:clean:calcmatrix -u myOrg@example.com -i a0dR000000kxD4qIAE -p ins
   
   $ sfdx vlocityestools:clean:calcmatrix --targetusername myOrg@example.com --matrixid a0dR000000kxD4qIAE --package cmt
+
+```
+
+## vlocityestools:login:login
+
+Create an Alias using User password an token (If needed)
+Note: This will not create an Alias with Auth Connnection.
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:calcmatrix -u <string> -p <string> -a <string> [-l <string>] [-t <string>]
+
+OPTIONS
+
+  -u, --username=username                                   Username to Autenticate
+
+  -p, --password=password                                   Password
+
+  -t, --token=token                                         Token
+  
+  -l, --url=url                                             Org Url, Default: https://login.salesforce.com
+
+  -a, --alias=alias                                          Alias
+
+
+                                                                    
+
+EXAMPLES
+
+  $ sfdx vlocityestools:login:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
+  
+  $ sfdx vlocityestools:login:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
 
 ```

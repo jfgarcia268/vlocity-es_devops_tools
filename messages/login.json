@@ -1,0 +1,10 @@
+{
+  "commandDescription": "Login Using User + Pasword and Tocken",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"login",
+  "username": " Username",
+  "password": "Password",
+  "token": "Token (Optional)",
+  "url": "Org URL (default: 'https://login.salesforce.com' ",
+  "alias": "New Alias"
+}
