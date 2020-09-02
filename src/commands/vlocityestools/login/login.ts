@@ -67,17 +67,17 @@ export default class login extends SfdxCommand {
 
     AppUtils.log2("Username: " + username);
     AppUtils.log2("Alias: " + alias);
-    AppUtils.log2("Url: " + url);
+    AppUtils.log2("Url: " + loingURL);
 
     AppUtils.startSpinner('Contenting To: ' + username);
 
-    let conn = await login.connectToOrg(username,url,pass);
+    let conn = await login.connectToOrg(username,loingURL,pass);
 
     AppUtils.stopSpinnerMessage('Successfully connected...');
     
     AppUtils.log2("Creating Alias");
 
-    await login.createAlias(conn,username,alias,url);
+    await login.createAlias(conn,username,alias,loingURL);
 
     console.log("");
     AppUtils.log3("Succesfully created Alias '" + alias + "' for Username: " + username);
