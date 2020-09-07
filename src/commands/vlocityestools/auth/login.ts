@@ -93,8 +93,8 @@ export default class login extends SfdxCommand {
       username: username,
       accessTokenOptions
     });
-
     await auth.save();
+
     const aliases = await Aliases.create( ConfigGroup.getOptions("orgs", "alias.json"));
     aliases.set(alias, username);
     await aliases.write();

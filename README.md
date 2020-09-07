@@ -385,13 +385,13 @@ EXAMPLES
 
 ## vlocityestools:login:login
 
-Create an Alias using User password an token (If needed)
-Note: This will not create an Alias with Auth Connnection.
+Create an Alias using User and Password,  (Token if needed as wells)
+Note: This will not create an Alias with OAuth Connnection so the connection will expired.
 
 ```
 USAGE
 
-  $ sfdx vlocityestools:clean:calcmatrix -u <string> -p <string> -a <string> [-l <string>] [-t <string>]
+  $ sfdx vlocityestools:auth:login -u <string> -p <string> -a <string> [-l <string>] [-t <string>]
 
 OPTIONS
 
@@ -410,8 +410,8 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:login:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
+  $ sfdx vlocityestools:auth:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
   
-  $ sfdx vlocityestools:login:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
+  $ sfdx vlocityestools:auth:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
 
 ```
