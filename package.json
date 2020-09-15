@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -48,8 +48,8 @@
     "commands": "./lib/commands",
     "bin": "sfdx",
     "topics": {
-      "vlocityesTools": {
-        "description": "Vlocity-DevOps Tools"
+      "vlocityestools": {
+        "description": "VlocityeESTools distributes certain DevOps Utilities for a Salesforce/Vlocity Project. This tool is not an Official tool from Vlocity or Salesforce. Use it at your own risk."
       },
       "vlocityestools:clean": {
         "description": "Cleaning Commands"

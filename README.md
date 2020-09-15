@@ -383,7 +383,7 @@ EXAMPLES
 
 ```
 
-## vlocityestools:login:login
+## vlocityestools:auth:login
 
 Create an Alias using User and Password,  (Token if needed as wells)
 Note: This will not create an Alias with OAuth Connnection so the connection will expired.
