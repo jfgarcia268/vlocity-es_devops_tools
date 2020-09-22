@@ -12,16 +12,17 @@ const messages = Messages.loadMessages('vlocityestools', 'epcjsonreport');
 const fsExtra = require("fs-extra");
 const yaml = require('js-yaml');
 
-const splitChararter = ',';
+var splitChararter = ',';
+const strinQuote = '';
 
 export default class epcJsonExport extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:report:epc:epcjsonreport -u myOrg@example.com -p cmt
+  `$ sfdx vlocityestools:report:epc:epcjsonreport -u myOrg@example.com -p cmt -d data.yaml
   `,
-  `$ sfdx vlocityestools:report:epc:epcjsonreport --targetusername myOrg@example.com --package ins
+  `$ sfdx vlocityestools:report:epc:epcjsonreport --targetusername myOrg@example.com --package ins --datafile data.yaml
   `
   ];
 
@@ -29,7 +30,8 @@ export default class epcJsonExport extends SfdxCommand {
 
   protected static flagsConfig = {
     package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
-    datafile: flags.string({char: 'd', description: messages.getMessage('dataFile')})
+    datafile: flags.string({char: 'd', description: messages.getMessage('dataFile')}),
+    separator: flags.string({char: 's', description: messages.getMessage('separator')})
   };
 
   // Comment this out if your command does not require an org username
@@ -46,6 +48,7 @@ export default class epcJsonExport extends SfdxCommand {
 
     var packageType = this.flags.package;
     var dataFile = this.flags.datafile;
+    var separator = this.flags.separator;
 
     if(packageType == 'cmt'){
       AppUtils.namespace = 'vlocity_cmt__';
@@ -53,6 +56,10 @@ export default class epcJsonExport extends SfdxCommand {
       AppUtils.namespace = 'vlocity_ins__';
     } else {
       throw new Error("Error: -p, --package has to be either cmt or ins ");
+    }
+
+    if(separator){
+      splitChararter = separator;
     }
 
     if(dataFile == null){
@@ -93,7 +100,7 @@ export default class epcJsonExport extends SfdxCommand {
           for (let i = 0; i < meta.fields.length; i++) {
             const objectField = meta.fields[i].name;
             if(objectField != 'Id') {
-              fieldsString += objectField + ',';
+              fieldsString += objectField + splitChararter;
             }
           }
           fieldsString = fieldsString.substring(0, fieldsString.length - 1);
@@ -129,7 +136,7 @@ export default class epcJsonExport extends SfdxCommand {
                 formatFuntion = epcJsonExport.formatWithJsonKeys;
               } else if(JsonwithKeys2){
                 formatFuntion = epcJsonExport.formatWithJsonKeys2;
-              }
+              } 
               //console.log('formatFuntion:' + formatFuntion);
               var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, formatFuntion, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
 
@@ -162,12 +169,43 @@ export default class epcJsonExport extends SfdxCommand {
         cont++;
         var term = data[i];
         var newLine = baseline;
-        jsonValues.forEach(jsonValue => {
-          var value = term[jsonValue] != null ? term[jsonValue] : '';
-          newLine += '"' + value + '"' + splitChararter;
-        });
 
-        createFiles.write(newLine+'\r\n'); 
+        var loopLimit = jsonValues.length;
+        var secondLevelArray;
+        if(typeof jsonValues[jsonValues.length -1] === 'object'){
+          loopLimit = loopLimit - 1;
+          secondLevelArray = AppUtils.getDataByPath(term,Object.keys(jsonValues[jsonValues.length -1])[0]);
+        }
+        for (let index = 0; index < loopLimit; index++) {
+          const jsonElement = jsonValues[index];
+          //console.log('// jsonValue: ' + jsonValue + ' Value: ' + AppUtils.getDataByPath(term, jsonValue) );
+          var value = AppUtils.getDataByPath(term, jsonElement);
+          var valueResult = value? value : '';
+          newLine += strinQuote + valueResult + strinQuote + splitChararter;
+        }
+
+        if(secondLevelArray && secondLevelArray.length > 0) {
+          //console.log('//////secondLevelArray: ' + JSON.stringify(secondLevelArray));
+          for (const secondLevelObjectIndex in secondLevelArray) {
+            var secondLevelObject = secondLevelArray[secondLevelObjectIndex];
+            //console.log('//secondLevelObject: ' + JSON.stringify(secondLevelObject));
+            var secondLevelLine = '';
+            var secodLevelKeys = jsonValues[jsonValues.length -1][Object.keys(jsonValues[jsonValues.length -1])[0]];
+            //console.log('secodLevelKeys: ' + JSON.stringify(secodLevelKeys));
+            for (let index = 0; index < secodLevelKeys.length; index++) {
+              var key = secodLevelKeys[index];
+              var value = secondLevelObject[key];
+              var valueResult = value? value : '';
+              //console.log('value: ' + valueResult + ' key: ' + key);
+              secondLevelLine += strinQuote + valueResult + strinQuote + splitChararter;
+            }
+            //console.log('secondLevelLine: ' + secondLevelLine);
+            createFiles.write(newLine + secondLevelLine + '\r\n'); 
+          }
+        }
+        else {
+          createFiles.write(newLine + '\r\n'); 
+        }
       }
     } else {
         cont++;
@@ -179,6 +217,7 @@ export default class epcJsonExport extends SfdxCommand {
 
   static formatGeneric(result,createFiles,fieldsArray) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    //console.log('// BASELINE: ' + baseline);
     createFiles.write(baseline+'\r\n'); 
     return 1; 
   }
@@ -201,7 +240,7 @@ export default class epcJsonExport extends SfdxCommand {
               var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
               jsonValues.forEach(jsonValue => {
                 var value = term[jsonValue] != null ? term[jsonValue] : '';
-                newLine += '"' + value + '"' + splitChararter;
+                newLine += strinQuote + value + strinQuote + splitChararter;
               });
               createFiles.write(newLine+'\r\n'); 
               cont++;
@@ -213,7 +252,7 @@ export default class epcJsonExport extends SfdxCommand {
               var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
               jsonValues.forEach(jsonValue => {
                 var value = term[jsonValue] != null ? term[jsonValue] : '';
-                newLine += '"' + value + '"' + splitChararter;
+                newLine += strinQuote + value + strinQuote + splitChararter;
               });
               createFiles.write(newLine+'\r\n'); 
               cont++;
@@ -244,7 +283,7 @@ export default class epcJsonExport extends SfdxCommand {
           var newLine = baseline + key + splitChararter ;
           jsonValues.forEach(jsonValue => {
             var value = term[jsonValue] != null ? term[jsonValue] : '';
-            newLine += '"' + value + '"' + splitChararter;
+            newLine += strinQuote + value + strinQuote + splitChararter;
           });
           createFiles.write(newLine+'\r\n'); 
         }
@@ -257,8 +296,8 @@ export default class epcJsonExport extends SfdxCommand {
     return cont;
   }
 
-  static async exportObject(conn, resultsFile, Object, header, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
-    var objectAPIName = AppUtils.replaceaNameSpace(Object)
+  static async exportObject(conn, resultsFile, ObjectName, header, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
+    var objectAPIName = AppUtils.replaceaNameSpace(ObjectName);
     AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
 
     if (fsExtra.existsSync(resultsFile)) {
@@ -266,15 +305,15 @@ export default class epcJsonExport extends SfdxCommand {
     }
 
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
-    var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',')
-
+    var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',');
+    
     var queryString= 'SELECT ID'
     if(!onlyJson) {
       fieldsArray.forEach(element => {
         queryString += ',' + element;
       });
     }
-
+    
     if(jsonField != null && !all) {
       queryString += ',' + AppUtils.replaceaNameSpace(jsonField);
     }
@@ -286,24 +325,29 @@ export default class epcJsonExport extends SfdxCommand {
 
     AppUtils.startSpinner('Exporting ' + objectAPIName);
 
+    var newHeader = header;
+
     if(jsonField != null) {
-      var newHeader = header;
       if(formatFuntion.name == 'formatWithJsonKeys'){
-        newHeader += ',KEY';
+        newHeader += splitChararter + 'KEY';
       }
       if(formatFuntion.name == 'formatWithJsonKeys2'){
-        newHeader += ',KEY,RULE_TYPE';
+        newHeader += splitChararter + 'KEY' + splitChararter + 'KEY_2';
       }
-      newHeader += splitChararter + (JSON.stringify(jsonValues)).replace('[', '').replace(']', '').replace(/\"/g, "")
-      createFiles.write('ID,' + newHeader+'\r\n');  
+      newHeader += splitChararter + (JSON.stringify(jsonValues)).replace(/\[/g, '').replace(/\]/g, '').replace(/\"/g, "");
+      if(typeof jsonValues[jsonValues.length -1] === 'object'){
+        var keyValueName = Object.keys(jsonValues[jsonValues.length -1])[0];
+        newHeader = newHeader.replace(/\{/g, '').replace(/\}/g, '').replace(keyValueName + ':', '');
+      }
     }
-    else {
-      createFiles.write('ID,' + header+'\r\n');  
-    }
-
+    newHeader = newHeader.replace(/,/g, splitChararter).replace(splitChararter+splitChararter, splitChararter);
+    console.log('newHeader: ' + newHeader);
+    createFiles.write(('ID' + splitChararter + newHeader + '\r\n'));  
+    
     let promise = new Promise((resolve, reject) => {
         conn.query(queryString2)
         .on('record',  function(result) { 
+          //console.log('/// RESULT: ' + JSON.stringify(result))
           if(jsonField != null) {
             cont += formatFuntion(result,createFiles,fieldsArray,jsonField,jsonValues);
           }
@@ -312,7 +356,6 @@ export default class epcJsonExport extends SfdxCommand {
           }
           cont2++;
           AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Records Created: ' + cont);
-                
         })
         .on("queue",  function(batchInfo) {
           AppUtils.log2( objectAPIName + ' - queue' );
@@ -334,27 +377,17 @@ export default class epcJsonExport extends SfdxCommand {
   }
 
   static formatNormallFields(result,fieldsArray) {
+    //console.log('NUM fieldsArray:' + fieldsArray.length);
     var Id = result['Id'];
     var baseline = Id + splitChararter;
     for(var i = 0; i < fieldsArray.length; i++){
       var newValue = result[fieldsArray[i]];
       if(newValue != null){
-        // try {
-        //   JSON.parse(newValue);
-        //   if (typeof newValue === "boolean"){
-        //     baseline += '"' + newValue + '"' + splitChararter;
-        //   } else {
-        //     baseline += '"' + 'JSONObject' + '"' + splitChararter;
-        //   }
-        // } catch (e) {
-        //   baseline += '"' + newValue + '"' + splitChararter;
-        // }  
-        if(String(newValue).includes("{") || String(newValue).includes("}")){
-          baseline += '"' + '<JSONObject>' + '"' + splitChararter;
+        if((String(newValue).includes("{") || String(newValue).includes("}")) && splitChararter != '|'){
+          baseline += strinQuote + '<JSONObject>' + strinQuote + splitChararter;
         } else {
-          baseline += '"' + newValue + '"' + splitChararter;
+          baseline += strinQuote + newValue + strinQuote + splitChararter;
         }
-
       } else {
         baseline += splitChararter;
       }

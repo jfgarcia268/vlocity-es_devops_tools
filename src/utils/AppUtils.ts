@@ -64,4 +64,16 @@ export class AppUtils  {
         }
     }
 
+    public static getDataByPath(data, path) {
+        try {
+            var pathArray = path.split(".");
+            for(var i in pathArray) {
+                data = data[pathArray[i]];
+            }
+            return data;   
+        } catch (error) {
+            return undefined;
+        }
+    }
+
 }
