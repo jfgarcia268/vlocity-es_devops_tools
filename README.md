@@ -32,6 +32,7 @@ USAGE
 ### vlocityestools:sfsource:createdeltapackage
 ### vlocityestools:sfsource:updatedeltahash
 ### vlocityestools:clean:calcmatrix
+### vlocityestools:login:login
   
 '    '
 
@@ -39,7 +40,7 @@ USAGE
 
 ## vlocityestools:clean:omniscripts
 
-Delete old versions of OmniScritps and leave <n> amount of latest versions
+Delete old versions of OmniScritps and leave N amount of latest versions
 Active versions will be ignored and wont get deleted.
 
 ```
@@ -70,7 +71,7 @@ EXAMPLES
 
 ## vlocityestools:clean:templates
 
-Delete old versions of Templates and leave <n> amount of latest versions.
+Delete old versions of Templates and leave N amount of latest versions.
 Active versions will be ignored and wont get deleted.
 
 ```
@@ -379,5 +380,38 @@ EXAMPLES
   $ sfdx vlocityestools:clean:calcmatrix -u myOrg@example.com -i a0dR000000kxD4qIAE -p ins
   
   $ sfdx vlocityestools:clean:calcmatrix --targetusername myOrg@example.com --matrixid a0dR000000kxD4qIAE --package cmt
+
+```
+
+## vlocityestools:auth:login
+
+Create an Alias using User and Password,  (Token if needed as wells)
+Note: This will not create an Alias with OAuth Connnection so the connection will expired.
+
+```
+USAGE
+
+  $ sfdx vlocityestools:auth:login -u <string> -p <string> -a <string> [-l <string>] [-t <string>]
+
+OPTIONS
+
+  -u, --username=username                                   Username to Autenticate
+
+  -p, --password=password                                   Password
+
+  -t, --token=token                                         Token
+  
+  -l, --url=url                                             Org Url, Default: https://login.salesforce.com
+
+  -a, --alias=alias                                          Alias
+
+
+                                                                    
+
+EXAMPLES
+
+  $ sfdx vlocityestools:auth:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
+  
+  $ sfdx vlocityestools:auth:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
 
 ```

@@ -135,7 +135,7 @@ export default class deleteOldTemplates extends SfdxCommand {
       return { templatestoDetele };
 
     } else {
-      throw new Error("Error: -n, --numberversions has to be greated or equal to 1");
+      throw new Error("Error: -n, --numberversions has to be greated or equal to 2");
     }
   }
 }
