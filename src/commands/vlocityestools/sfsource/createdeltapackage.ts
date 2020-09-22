@@ -2,6 +2,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AppUtils } from "../../../utils/AppUtils";
 
+
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -130,7 +131,10 @@ export default class deltaPackage extends SfdxCommand {
   }
 
   static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
-    simpleGit.diffSummary([previousHash], (err, status) => {
+    AppUtils.log3("GitDiff: ");
+    var result = require('child_process').execSync("git diff --stat " + previousHash +  " --raw --no-renames" , { encoding: 'utf8' });
+    console.log(result);
+    simpleGit.diffSummary([previousHash],(err, status) => {
       if (err) {
         throw new Error( "Error with GitDiff, Nothing was copied - Error: " + err );
         //deltaPackage.copyCompleteFolder( sourceFolder, deltaPackageFolder, fsExtra);
@@ -140,7 +144,6 @@ export default class deltaPackage extends SfdxCommand {
           AppUtils.log3("Creating delta Folder: " + deltaPackageFolder);
           AppUtils.log3("Checking GitDiff.. Deltas: ");
           status.files.forEach(files => {
-            //console.log('File: ' + files.file);
             var filePath = files.file;
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
