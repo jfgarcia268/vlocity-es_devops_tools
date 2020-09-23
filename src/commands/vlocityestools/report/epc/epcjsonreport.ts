@@ -15,9 +15,20 @@ const yaml = require('js-yaml');
 var splitChararter = ',';
 const strinQuote = '';
 
+var keyNames = [];
+
+var currentJsonField = '';
+
+var numberOfLevels = 0;
+
+var cont = 0;
+var cont2 = 0;
+
 export default class epcJsonExport extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
+
+  
 
   public static examples = [
   `$ sfdx vlocityestools:report:epc:epcjsonreport -u myOrg@example.com -p cmt -d data.yaml
@@ -89,12 +100,20 @@ export default class epcJsonExport extends SfdxCommand {
         var all = doc.Objects[element]['All'];
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
-        var JsonwithKeys = doc.Objects[element]['JsonwithKeys'];
-        var JsonwithKeys2 = doc.Objects[element]['JsonwithKeys2'];
         var onlyJson = doc.Objects[element]['OnlyJsonFields'];
+        var numOfKeys = doc.Objects[element]['numOfKeys']; 
         var fieldsString = '';
-        // console.log(fields);
-        // console.log(jsonFields);
+
+
+
+        if (numOfKeys && numOfKeys > 0 ) {
+          numberOfLevels = numOfKeys;
+          for (let index = 1; index <= numberOfLevels; index++) {
+            var key = doc.Objects[element]['key' + index];
+            keyNames.push(key);
+          }
+        }
+
         if(all) {
           var meta  = await conn.sobject(ObjectName).describe();
           for (let i = 0; i < meta.fields.length; i++) {
@@ -123,23 +142,14 @@ export default class epcJsonExport extends SfdxCommand {
               fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
             } 
             for (let j = 0; j < Object.keys(jsonFields).length; j++) {
+              currentJsonField = Object.keys(jsonFields)[j];
               const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
               var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
               if (fsExtra.existsSync(resultFile)) {
                 fsExtra.unlinkSync(resultFile);
               }
               var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
-
-              var formatFuntion = epcJsonExport.formatWithJson;
-
-              if(JsonwithKeys) {
-                formatFuntion = epcJsonExport.formatWithJsonKeys;
-              } else if(JsonwithKeys2){
-                formatFuntion = epcJsonExport.formatWithJsonKeys2;
-              } 
-              //console.log('formatFuntion:' + formatFuntion);
-              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, formatFuntion, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
-
+              var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJson, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
               resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
               console.log(' ');
             }
@@ -159,146 +169,151 @@ export default class epcJsonExport extends SfdxCommand {
     }
   }
 
-  static formatWithJson(result,createFiles,fieldsArray,jsonField,jsonValues) {
-    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
-    var cont = 0;
-    var jsonData = result[AppUtils.replaceaNameSpace(jsonField)];
-    if(jsonData != null && jsonData != '[]') {
-      var data = JSON.parse(jsonData);
-      for( var i = 0 ; i < data.length ; i++){
-        cont++;
-        var term = data[i];
-        var newLine = baseline;
-
-        var loopLimit = jsonValues.length;
-        var secondLevelArray;
-        if(typeof jsonValues[jsonValues.length -1] === 'object'){
-          loopLimit = loopLimit - 1;
-          secondLevelArray = AppUtils.getDataByPath(term,Object.keys(jsonValues[jsonValues.length -1])[0]);
-        }
-        for (let index = 0; index < loopLimit; index++) {
-          const jsonElement = jsonValues[index];
-          //console.log('// jsonValue: ' + jsonValue + ' Value: ' + AppUtils.getDataByPath(term, jsonValue) );
-          var value = AppUtils.getDataByPath(term, jsonElement);
-          var valueResult = value? value : '';
-          newLine += strinQuote + valueResult + strinQuote + splitChararter;
-        }
-
-        if(secondLevelArray && secondLevelArray.length > 0) {
-          //console.log('//////secondLevelArray: ' + JSON.stringify(secondLevelArray));
-          for (const secondLevelObjectIndex in secondLevelArray) {
-            var secondLevelObject = secondLevelArray[secondLevelObjectIndex];
-            //console.log('//secondLevelObject: ' + JSON.stringify(secondLevelObject));
-            var secondLevelLine = '';
-            var secodLevelKeys = jsonValues[jsonValues.length -1][Object.keys(jsonValues[jsonValues.length -1])[0]];
-            //console.log('secodLevelKeys: ' + JSON.stringify(secodLevelKeys));
-            for (let index = 0; index < secodLevelKeys.length; index++) {
-              var key = secodLevelKeys[index];
-              var value = secondLevelObject[key];
-              var valueResult = value? value : '';
-              //console.log('value: ' + valueResult + ' key: ' + key);
-              secondLevelLine += strinQuote + valueResult + strinQuote + splitChararter;
-            }
-            //console.log('secondLevelLine: ' + secondLevelLine);
-            createFiles.write(newLine + secondLevelLine + '\r\n'); 
-          }
-        }
-        else {
-          createFiles.write(newLine + '\r\n'); 
-        }
-      }
-    } else {
-        cont++;
-        createFiles.write(baseline+'\r\n');    
-    }
-    //console.log('/////END ');
-    return cont;
-  }
 
   static formatGeneric(result,createFiles,fieldsArray) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
-    //console.log('// BASELINE: ' + baseline);
     createFiles.write(baseline+'\r\n'); 
-    return 1; 
+    cont++; 
   }
 
-  static formatWithJsonKeys2(result,createFiles,fieldsArray,JsonField,jsonValues) {
-    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
-    var cont = 0;
-    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
-    if(jsonData != null && jsonData != '[]') {
-      var ruleData = JSON.parse(jsonData);
-      var keys = Object.keys(ruleData);
-      keys.forEach(key => {
-        var attribute = ruleData[key];
-        var keys2 = Object.keys(attribute);
-        keys2.forEach(key2 => {
-          var attribute2 = attribute[key2];
-          if(Array.isArray(attribute2)) {
-            for( var i = 0 ; i < attribute2.length ; i++){
-              var term = attribute2[i];
-              var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
-              jsonValues.forEach(jsonValue => {
-                var value = term[jsonValue] != null ? term[jsonValue] : '';
-                newLine += strinQuote + value + strinQuote + splitChararter;
-              });
-              createFiles.write(newLine+'\r\n'); 
-              cont++;
-            }
-          } else {
-            var keys3 = Object.keys(attribute2);
-            keys3.forEach(key3 => {
-              var term = attribute2[key3];
-              var newLine = baseline + key + splitChararter+ key2 + splitChararter ;
-              jsonValues.forEach(jsonValue => {
-                var value = term[jsonValue] != null ? term[jsonValue] : '';
-                newLine += strinQuote + value + strinQuote + splitChararter;
-              });
-              createFiles.write(newLine+'\r\n'); 
-              cont++;
-            });
-          }
-        });
-      });
-    } else {
-        cont++;
-        createFiles.write(baseline+'\r\n');    
-    }
-    //console.log('/////END ');
-    return cont;
-  }
-
-  static formatWithJsonKeys(result,createFiles,fieldsArray,JsonField,jsonValues) {
-    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
-    var cont = 0;
-    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
-    if(jsonData != null && jsonData != '[]') {
-      var ruleData = JSON.parse(jsonData);
-      var keys = Object.keys(ruleData);
-      keys.forEach(key => {
-        var attribute = ruleData[key];
-        for( var i = 0 ; i < attribute.length ; i++){
-          var term = attribute[i];
-          cont++;
-          var newLine = baseline + key + splitChararter ;
-          jsonValues.forEach(jsonValue => {
-            var value = term[jsonValue] != null ? term[jsonValue] : '';
-            newLine += strinQuote + value + strinQuote + splitChararter;
-          });
-          createFiles.write(newLine+'\r\n'); 
+  static formatAttributeRules(jsonData, jsonValues, baseline, createFiles, keyValues) {
+    //console.log('jsonData: ' + JSON.stringify(jsonData));
+    var keys = Object.keys(jsonData);
+    for (const key of keys) {
+      var term = jsonData[key];
+      for (let index = 0; index < term.length; index++) {
+        var term2 = term[index];
+        var newLine = baseline + epcJsonExport.getKeysNameforLine(keyValues);
+        var secondLevelArray =  epcJsonExport.getSecondLevelArray(jsonValues,jsonData); 
+        //console.log('jsonData: ' + JSON.stringify(jsonData));
+        if(secondLevelArray && secondLevelArray.length > 0) {
+          newLine += epcJsonExport.formatLine(jsonValues, term2, true );
+          epcJsonExport.formatSecondLevelArray(secondLevelArray,jsonValues,createFiles,newLine);
         }
-      });
-    } else {
-        cont++;
-        createFiles.write(baseline+'\r\n');    
+        else{
+          newLine += epcJsonExport.formatLine(jsonValues, term2, false);
+          createFiles.write(newLine+'\r\n'); 
+          cont++;
+        }        
+      }
     }
-    //console.log('/////END ');
-    return cont;
+  }
+
+  static getKeysNameforLine(keyNames){
+    var newLine = '';
+    for (const element of keyNames) {
+      newLine += element + splitChararter;
+    }
+    return newLine;
+  }  
+
+  static getSecondLevelArray(jsonValues,jsonData){
+    if(jsonValues[jsonValues.length -1] && (typeof jsonValues[jsonValues.length -1] === 'object')){
+      //console.log('jsonValues[jsonValues.length -1]: ' + JSON.stringify(jsonValues[jsonValues.length -1]) );
+      //console.log('jsonData: ' + JSON.stringify(jsonData));
+      return AppUtils.getDataByPath(jsonData,Object.keys(jsonValues[jsonValues.length -1])[0]);
+    }
+  }
+
+  static formatRecord(jsonData,keyNames,createFiles,jsonValues,baseline) {
+    if(Array.isArray(jsonData)) {
+      //console.log('1')
+      for(var i = 0 ; i < jsonData.length ; i++){
+        var term = jsonData[i];
+        var newLine = baseline + epcJsonExport.getKeysNameforLine(keyNames);
+        //console.log('jsonData: ' + jsonData);
+        var secondLevelArray =  epcJsonExport.getSecondLevelArray(jsonValues,term); 
+        if(secondLevelArray && secondLevelArray.length > 0) {
+          newLine += epcJsonExport.formatLine(jsonValues, term, true );
+          epcJsonExport.formatSecondLevelArray(secondLevelArray,jsonValues,createFiles,newLine);
+          //console.log('1.1: ' + JSON.stringify(term));
+        }
+        else{
+          newLine += epcJsonExport.formatLine(jsonValues, term, false);
+          createFiles.write(newLine+'\r\n'); 
+          //console.log('1.2 '+ JSON.stringify(term));
+          cont++;
+        }
+      }
+    } else {
+      //console.log('2')
+      if (currentJsonField = 'namespace__AttributeRules__c') {
+        //console.log('jsonData: ' + JSON.stringify(jsonData));
+        //console.log('2.1 '+ JSON.stringify(jsonData));
+        epcJsonExport.formatAttributeRules(jsonData, jsonValues, baseline, createFiles, keyNames);
+      } else {
+        //console.log('2.2 '+ JSON.stringify(jsonData));
+        var newLine = baseline + epcJsonExport.getKeysNameforLine(keyNames);
+        newLine += epcJsonExport.formatLine(jsonValues, term, false);
+        createFiles.write(newLine+'\r\n'); 
+        cont++;
+      }
+    }
+
+  }
+
+  static formatSecondLevelArray(secondLevelArray,jsonValues,createFiles,newLine){
+    //console.log('///// secondLevelArray: ' + JSON.stringify(secondLevelArray));
+    for (const secondLevelObjectIndex in secondLevelArray) {
+      //console.log('secondLevelObjectIndex: ' + secondLevelObjectIndex);
+      var secondLevelObject = secondLevelArray[secondLevelObjectIndex];
+      var secondLevelLine = '';
+      var secodLevelKeys = jsonValues[jsonValues.length -1][Object.keys(jsonValues[jsonValues.length -1])[0]];
+      for (let index = 0; index < secodLevelKeys.length; index++) {
+        var key = secodLevelKeys[index];
+        var value = secondLevelObject[key];
+        var valueResult = value? value : '';
+        secondLevelLine += strinQuote + valueResult + strinQuote + splitChararter;
+      }
+      createFiles.write(newLine + secondLevelLine + '\r\n'); 
+      cont++;
+    }
+  }
+
+  static recursiveFormat(jsonData,missingTimes,keyNames,createFiles,jsonValues,baseline){
+    //console.log('missingTimes: ' + missingTimes + ' jsonData: ' + JSON.stringify(jsonData));
+    if(missingTimes == 0 ) {
+      epcJsonExport.formatRecord(jsonData,keyNames,createFiles,jsonValues,baseline);
+    } else {
+      var keys = Object.keys(jsonData);
+      for (const key of keys) {
+        var attribute = jsonData[key];
+        var newKeyNames = Object.assign([],keyNames);
+        newKeyNames.push(key);
+        epcJsonExport.recursiveFormat(attribute, missingTimes - 1, newKeyNames, createFiles,jsonValues,baseline);
+      }
+    }
+  }
+
+  static formatWithJson(result,createFiles,fieldsArray,JsonField,jsonValues) {
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
+    if(jsonData != null && jsonData != '[]' && jsonData != '{}') {
+      var jsonData = JSON.parse(jsonData);
+      var keyNames = [];
+      epcJsonExport.recursiveFormat(jsonData, numberOfLevels, keyNames, createFiles,jsonValues,baseline);
+    } else {
+      createFiles.write(baseline+'\r\n');   
+      cont++;
+    }
+  }
+
+  static formatLine(jsonValues, term, skipLast ) {
+    var newLine = '';
+    var loopLimit = skipLast? jsonValues.length - 1 : jsonValues.length;
+    for (let index = 0; index < loopLimit; index++) {
+      const jsonElement = jsonValues[index];
+      //console.log('// jsonValue: ' + jsonValues + ' Value: ' + AppUtils.getDataByPath(term, jsonElement)  + ' looplimit: ' + loopLimit);
+      var value = AppUtils.getDataByPath(term, jsonElement);
+      var valueResult = value? value : '';
+      newLine += strinQuote + valueResult + strinQuote + splitChararter;
+    }
+    return newLine;
   }
 
   static async exportObject(conn, resultsFile, ObjectName, header, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
     var objectAPIName = AppUtils.replaceaNameSpace(ObjectName);
-    AppUtils.log3( objectAPIName + ' Report, File: ' + resultsFile);
+    AppUtils.log3( objectAPIName + ' Report, File: ' + JSON.stringify(resultsFile));
 
     if (fsExtra.existsSync(resultsFile)) {
       fsExtra.unlinkSync(resultsFile);
@@ -309,9 +324,9 @@ export default class epcJsonExport extends SfdxCommand {
     
     var queryString= 'SELECT ID'
     if(!onlyJson) {
-      fieldsArray.forEach(element => {
+      for (const element of fieldsArray) {
         queryString += ',' + element;
-      });
+      }
     }
     
     if(jsonField != null && !all) {
@@ -320,20 +335,22 @@ export default class epcJsonExport extends SfdxCommand {
     queryString += ' FROM ' + objectAPIName; 
     var queryString2 = AppUtils.replaceaNameSpace(queryString);
     //console.log('// SOQL Query: ' + queryString2);
-    var cont = 0;
-    var cont2 = 0;
+    cont = 0;
+    cont2 = 0;
 
     AppUtils.startSpinner('Exporting ' + objectAPIName);
 
     var newHeader = header;
 
     if(jsonField != null) {
-      if(formatFuntion.name == 'formatWithJsonKeys'){
-        newHeader += splitChararter + 'KEY';
+
+      if(keyNames.length > 1 ){
+        for (let index = 0; index < keyNames.length; index++) {
+          const element = keyNames[index];
+          newHeader += splitChararter + element;
+        }
       }
-      if(formatFuntion.name == 'formatWithJsonKeys2'){
-        newHeader += splitChararter + 'KEY' + splitChararter + 'KEY_2';
-      }
+
       newHeader += splitChararter + (JSON.stringify(jsonValues)).replace(/\[/g, '').replace(/\]/g, '').replace(/\"/g, "");
       if(typeof jsonValues[jsonValues.length -1] === 'object'){
         var keyValueName = Object.keys(jsonValues[jsonValues.length -1])[0];
@@ -341,7 +358,7 @@ export default class epcJsonExport extends SfdxCommand {
       }
     }
     newHeader = newHeader.replace(/,/g, splitChararter).replace(splitChararter+splitChararter, splitChararter);
-    console.log('newHeader: ' + newHeader);
+    //console.log('newHeader: ' + newHeader);
     createFiles.write(('ID' + splitChararter + newHeader + '\r\n'));  
     
     let promise = new Promise((resolve, reject) => {
@@ -349,10 +366,10 @@ export default class epcJsonExport extends SfdxCommand {
         .on('record',  function(result) { 
           //console.log('/// RESULT: ' + JSON.stringify(result))
           if(jsonField != null) {
-            cont += formatFuntion(result,createFiles,fieldsArray,jsonField,jsonValues);
+            formatFuntion(result,createFiles,fieldsArray,jsonField,jsonValues);
           }
           else {
-            cont += formatFuntion(result,createFiles,fieldsArray);
+            epcJsonExport.formatGeneric(result,createFiles,fieldsArray);
           }
           cont2++;
           AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Records Created: ' + cont);
@@ -365,8 +382,9 @@ export default class epcJsonExport extends SfdxCommand {
           resolve(resultData);
         })
         .on('error',  function(err) { 
-          AppUtils.log2( objectAPIName + ' - Report Error');
-          reject(objectAPIName + ' - Error: ' + err );
+          AppUtils.log2( objectAPIName + ' - Report Error: ' + err);
+          console.log(err.stack);
+          //reject(objectAPIName + ' - Error: ' + err );
         })
         .run({ autoFetch : true, maxFetch : 1000000,});     
     });
@@ -377,7 +395,6 @@ export default class epcJsonExport extends SfdxCommand {
   }
 
   static formatNormallFields(result,fieldsArray) {
-    //console.log('NUM fieldsArray:' + fieldsArray.length);
     var Id = result['Id'];
     var baseline = Id + splitChararter;
     for(var i = 0; i < fieldsArray.length; i++){
