@@ -96,15 +96,19 @@ export default class epcJsonExport extends SfdxCommand {
 
       for (let index = 0; index < Object.keys(doc.Objects).length; index++) {
         var element = Object.keys(doc.Objects)[index];
-        var ObjectName = AppUtils.replaceaNameSpaceFromFile(element);
+        var ObjectNameYaml = AppUtils.replaceaNameSpaceFromFile(element);
+        var ObjectName = ObjectNameYaml.split('-')[0];
+        var numberFile = '';
+        if(ObjectNameYaml.split('-')[1]){
+          numberFile = ObjectNameYaml.split('-')[1] + '_'
+        }
         var all = doc.Objects[element]['All'];
         var fields = doc.Objects[element]['Fields'];
         var jsonFields = doc.Objects[element]['JsonFields'];
         var onlyJson = doc.Objects[element]['OnlyJsonFields'];
         var numOfKeys = doc.Objects[element]['numOfKeys']; 
+        var simpleJsonArray = doc.Objects[element]['simpleJsonArray']; 
         var fieldsString = '';
-
-
 
         if (numOfKeys && numOfKeys > 0 ) {
           numberOfLevels = numOfKeys;
@@ -123,13 +127,25 @@ export default class epcJsonExport extends SfdxCommand {
             }
           }
           fieldsString = fieldsString.substring(0, fieldsString.length - 1);
-        } 
-
-        if (jsonFields == null) {
-          if(!all) {
-            fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
+        } else {
+          fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
+        }
+        
+        if (simpleJsonArray) {
+          for (let j = 0; j < Object.keys(jsonFields).length; j++) {
+            currentJsonField = Object.keys(jsonFields)[j];
+            const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
+            var resultFile = ObjectName + '_' + jsonField + '_' + numberFile + 'Result.csv';
+            if (fsExtra.existsSync(resultFile)) {
+              fsExtra.unlinkSync(resultFile);
+            }
+            var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
+            var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithSimpleJsonArray, fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+            resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
+            console.log(' ');
           }
-            var resultFile = ObjectName + '_Result.csv';
+        } else if (jsonFields == null) {
+          var resultFile = ObjectName + '_' + numberFile + 'Result.csv';
           //console.log('resultFile: ' + resultFile);
           if (fsExtra.existsSync(resultFile)) {
             fsExtra.unlinkSync(resultFile);
@@ -138,13 +154,10 @@ export default class epcJsonExport extends SfdxCommand {
           resultData.push({ ObjectName: ObjectName, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
           console.log(' ');
         } else {
-            if(!all && fields!= null) {
-              fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "" ;
-            } 
             for (let j = 0; j < Object.keys(jsonFields).length; j++) {
               currentJsonField = Object.keys(jsonFields)[j];
               const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
-              var resultFile = ObjectName + '_' + jsonField + '_Result.csv';
+              var resultFile = ObjectName + '_' + jsonField + '_' + numberFile + 'Result.csv';
               if (fsExtra.existsSync(resultFile)) {
                 fsExtra.unlinkSync(resultFile);
               }
@@ -157,10 +170,8 @@ export default class epcJsonExport extends SfdxCommand {
       }
 
       var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 
-
-      AppUtils.ux.log(' ');
       AppUtils.ux.log('RESULTS:');
-      AppUtils.ux.log(' ');
+      //AppUtils.ux.log(' ');
       AppUtils.ux.table(resultData, tableColumnData);
       AppUtils.ux.log(' ');
 
@@ -170,7 +181,7 @@ export default class epcJsonExport extends SfdxCommand {
   }
 
 
-  static formatGeneric(result,createFiles,fieldsArray) {
+  static formatGeneric(result,createFiles,fieldsArray,jsonField,jsonValues) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
     createFiles.write(baseline+'\r\n'); 
     cont++; 
@@ -285,13 +296,37 @@ export default class epcJsonExport extends SfdxCommand {
     }
   }
 
+  static formatWithSimpleJsonArray(result,createFiles,fieldsArray,JsonField,jsonValues) {
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
+    if(jsonData != null && jsonData != '[]' && jsonData != '{}') {
+      var jsonDataResult = JSON.parse(jsonData);
+      epcJsonExport.parseSimpleArray(jsonDataResult,baseline,createFiles);
+    } else {
+      createFiles.write(baseline+'\r\n');   
+      cont++;
+    }
+  }
+
+  static parseSimpleArray(jsonData,baseline,createFiles){
+    var keys = Object.keys(jsonData);
+    for (let index = 0; index < keys.length; index++) {
+      const key = keys[index];
+      const value = jsonData[key];
+      var line = strinQuote + key + strinQuote + splitChararter;
+      line += strinQuote + value + strinQuote + splitChararter;
+      createFiles.write(baseline +line +'\r\n'); 
+      cont++;
+    }
+  }
+
   static formatWithJson(result,createFiles,fieldsArray,JsonField,jsonValues) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
     var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
     if(jsonData != null && jsonData != '[]' && jsonData != '{}') {
-      var jsonData = JSON.parse(jsonData);
+      var jsonDataResult = JSON.parse(jsonData);
       var keyNames = [];
-      epcJsonExport.recursiveFormat(jsonData, numberOfLevels, keyNames, createFiles,jsonValues,baseline);
+      epcJsonExport.recursiveFormat(jsonDataResult, numberOfLevels, keyNames, createFiles,jsonValues,baseline);
     } else {
       createFiles.write(baseline+'\r\n');   
       cont++;
@@ -333,7 +368,7 @@ export default class epcJsonExport extends SfdxCommand {
       queryString += ',' + AppUtils.replaceaNameSpace(jsonField);
     }
     queryString += ' FROM ' + objectAPIName; 
-    var queryString2 = AppUtils.replaceaNameSpace(queryString);
+    var queryString2 = AppUtils.replaceaNameSpace(queryString).replace(/,,/,',');
     //console.log('// SOQL Query: ' + queryString2);
     cont = 0;
     cont2 = 0;
@@ -365,12 +400,7 @@ export default class epcJsonExport extends SfdxCommand {
         conn.query(queryString2)
         .on('record',  function(result) { 
           //console.log('/// RESULT: ' + JSON.stringify(result))
-          if(jsonField != null) {
-            formatFuntion(result,createFiles,fieldsArray,jsonField,jsonValues);
-          }
-          else {
-            epcJsonExport.formatGeneric(result,createFiles,fieldsArray);
-          }
+          formatFuntion(result,createFiles,fieldsArray,jsonField,jsonValues);
           cont2++;
           AppUtils.updateSpinnerMessage(' Records Exported: ' + cont2 +' / Records Created: ' + cont);
         })
