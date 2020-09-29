@@ -20,6 +20,22 @@ export class AppUtils  {
         return res;
     }
 
+    public static async setNameSpace(conn,packageType) {
+        if(packageType == 'cmt'){
+            AppUtils.namespace = 'vlocity_cmt__';
+        } else if(packageType == 'ins'){
+            AppUtils.namespace = 'vlocity_ins__';
+        } else if(!packageType) {
+            var query = "Select Name, NamespacePrefix from ApexClass where Name = 'DRDataPackService'";
+            const result = await conn.query(query);
+            var nameSpaceResult = result.records[0].NamespacePrefix;
+            if(nameSpaceResult) {
+                this.namespace = nameSpaceResult + '__';
+            }
+        }
+        return this.namespace;
+    }
+
     public static logInitial(command: string) {
         this.log(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA) <<<<');
         //this.log('');

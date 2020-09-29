@@ -1,5 +1,6 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
+import { Messages, SfdxError } from '@salesforce/core';
+import { networkInterfaces } from 'os';
 import { AppUtils } from '../../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
@@ -11,24 +12,18 @@ const messages = Messages.loadMessages('vlocityestools', 'epcjsonreport');
 
 const fsExtra = require("fs-extra");
 const yaml = require('js-yaml');
-
 var splitChararter = ',';
 const strinQuote = '';
 
 var keyNames = [];
-
 var currentJsonField = '';
-
 var numberOfLevels = 0;
-
 var cont = 0;
 var cont2 = 0;
 
 export default class epcJsonExport extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
-
-  
 
   public static examples = [
   `$ sfdx vlocityestools:report:epc:epcjsonreport -u myOrg@example.com -p cmt -d data.yaml
@@ -54,20 +49,10 @@ export default class epcJsonExport extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   //protected static requiresProject = false;
 
-  
   public async run() {
-
     var packageType = this.flags.package;
     var dataFile = this.flags.datafile;
     var separator = this.flags.separator;
-
-    if(packageType == 'cmt'){
-      AppUtils.namespace = 'vlocity_cmt__';
-    } else if(packageType == 'ins'){
-      AppUtils.namespace = 'vlocity_ins__';
-    } else {
-      throw new Error("Error: -p, --package has to be either cmt or ins ");
-    }
 
     if(separator){
       splitChararter = separator;
@@ -86,10 +71,15 @@ export default class epcJsonExport extends SfdxCommand {
     AppUtils.log3( "EPC Json Report: " + 'Starting Report');
     AppUtils.ux.log(' ');
 
-    try {
-      var resultData = [];
-      const conn = this.org.getConnection();
 
+    const conn = this.org.getConnection();
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    //console.log('nameSpaceSet: ' + nameSpaceSet);
+    if(!nameSpaceSet){
+      throw new SfdxError("Error: Package was not set or incorrect was provided.");
+    }
+
+    try {
       var doc = yaml.safeLoad(fsExtra.readFileSync(dataFile, 'utf8'));
 
       var resultData = [];
@@ -108,8 +98,10 @@ export default class epcJsonExport extends SfdxCommand {
         var onlyJson = doc.Objects[element]['OnlyJsonFields'];
         var numOfKeys = doc.Objects[element]['numOfKeys']; 
         var simpleJsonArray = doc.Objects[element]['simpleJsonArray']; 
+        var JsonPath = doc.Objects[element]['JsonPath']; 
         var fieldsString = '';
 
+        
         if (numOfKeys && numOfKeys > 0 ) {
           numberOfLevels = numOfKeys;
           for (let index = 1; index <= numberOfLevels; index++) {
@@ -130,8 +122,23 @@ export default class epcJsonExport extends SfdxCommand {
         } else {
           fieldsString = AppUtils.replaceaNameSpaceFromFile(JSON.stringify(fields)).replace('[', '').replace(']', '').replace(/\"/g, "") + "";
         }
+
         
-        if (simpleJsonArray) {
+        if(JsonPath) {
+          for (let j = 0; j < Object.keys(jsonFields).length; j++) {
+            currentJsonField = Object.keys(jsonFields)[j];
+            const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
+            var resultFile = ObjectName + '_' + jsonField + '_' + numberFile + 'Result.csv';
+            if (fsExtra.existsSync(resultFile)) {
+              fsExtra.unlinkSync(resultFile);
+            }
+            var jsonFieldsKeys = jsonFields[Object.keys(jsonFields)[j]];
+            //console.log('jsonFieldsKeys: ' + JSON.stringify(jsonFieldsKeys));
+            var result = await epcJsonExport.exportObject(conn, resultFile, ObjectName, fieldsString, epcJsonExport.formatWithJsonPath , fieldsString,jsonField,jsonFieldsKeys,all,onlyJson);
+            resultData.push({ ObjectName: ObjectName + ' - ' + jsonField, RecordsExported: result['exported'] , RecordsCreated: result['created'] , ReportFile: resultFile });
+            console.log(' ');
+          }
+        } else if (simpleJsonArray) {
           for (let j = 0; j < Object.keys(jsonFields).length; j++) {
             currentJsonField = Object.keys(jsonFields)[j];
             const jsonField = AppUtils.replaceaNameSpaceFromFile(Object.keys(jsonFields)[j]);
@@ -167,6 +174,7 @@ export default class epcJsonExport extends SfdxCommand {
               console.log(' ');
             }
         }
+        keyNames = [];
       }
 
       var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 
@@ -179,7 +187,6 @@ export default class epcJsonExport extends SfdxCommand {
         console.log(e); 
     }
   }
-
 
   static formatGeneric(result,createFiles,fieldsArray,jsonField,jsonValues) {
     var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
@@ -226,7 +233,7 @@ export default class epcJsonExport extends SfdxCommand {
     }
   }
 
-  static formatRecord(jsonData,keyNames,createFiles,jsonValues,baseline) {
+  static formatRecordFinal(jsonData,keyNames,createFiles,jsonValues,baseline) {
     if(Array.isArray(jsonData)) {
       //console.log('1')
       for(var i = 0 ; i < jsonData.length ; i++){
@@ -284,7 +291,7 @@ export default class epcJsonExport extends SfdxCommand {
   static recursiveFormat(jsonData,missingTimes,keyNames,createFiles,jsonValues,baseline){
     //console.log('missingTimes: ' + missingTimes + ' jsonData: ' + JSON.stringify(jsonData));
     if(missingTimes == 0 ) {
-      epcJsonExport.formatRecord(jsonData,keyNames,createFiles,jsonValues,baseline);
+      epcJsonExport.formatRecordFinal(jsonData,keyNames,createFiles,jsonValues,baseline);
     } else {
       var keys = Object.keys(jsonData);
       for (const key of keys) {
@@ -333,12 +340,61 @@ export default class epcJsonExport extends SfdxCommand {
     }
   }
 
+  static formatWithJsonPath(result,createFiles,fieldsArray,JsonField,jsonValues) {
+    var baseline = epcJsonExport.formatNormallFields(result,fieldsArray);
+    var jsonData = result[AppUtils.replaceaNameSpace(JsonField)];
+    if(jsonData != null && jsonData != '[]' && jsonData != '{}') {
+      var jsonDataResult = JSON.parse(jsonData);
+      //console.log('//jsonValues: ' + JSON.stringify(jsonValues));
+      epcJsonExport.recursiveFormatPath(jsonDataResult,createFiles,jsonValues,baseline);
+    } else {
+      createFiles.write(baseline+'\r\n');   
+      cont++;
+    }
+  }
+
+
+  static recursiveFormatPath(jsonData,createFiles,jsonValues,baseline){
+    //console.log('-------------------------------------------------')
+    //console.log('is array :' + Array.isArray(jsonData) + ' -  jsonData: ' + JSON.stringify(jsonData));
+    var nextKeyName = jsonValues['nextLevel'];
+    var fields = jsonValues['fields'];
+    if(!nextKeyName) {
+      epcJsonExport.formatRecordFinal(jsonData,keyNames,createFiles,fields,baseline);
+    } else {
+      var nextArray = jsonValues['nextLevel'];
+      var nextName = nextArray['name'];
+      if(Array.isArray(jsonData)){
+        for (let index = 0; index < jsonData.length; index++) {
+          const element = jsonData[index];
+          var newBaseLine2 = baseline;
+          if(fields) {
+            newBaseLine2 += epcJsonExport.formatLine(fields, element, false);
+          }
+          //console.log('// fields: ' + JSON.stringify(fields));
+          //console.log('// element: ' + JSON.stringify(element));
+          //console.log('// nextName: ' + nextName);
+          //console.log('// element[nextName]: ' + JSON.stringify(element[nextName]));
+          epcJsonExport.recursiveFormatPath(element[nextName], createFiles,nextArray,newBaseLine2);
+        }
+      } else {
+        var newBaseLine2 = baseline;
+        if(fields) {
+          newBaseLine2 += epcJsonExport.formatLine(fields, jsonData, false);
+        }
+        //console.log('// nextName: ' + nextName);
+        //console.log('// jsonData[nextName]: ' + JSON.stringify(jsonData[nextName]));
+        epcJsonExport.recursiveFormatPath(jsonData[nextName], createFiles,nextArray,newBaseLine2);
+      }
+    }
+  }
+
   static formatLine(jsonValues, term, skipLast ) {
     var newLine = '';
     var loopLimit = skipLast? jsonValues.length - 1 : jsonValues.length;
     for (let index = 0; index < loopLimit; index++) {
       const jsonElement = jsonValues[index];
-      //console.log('// jsonValue: ' + jsonValues + ' Value: ' + AppUtils.getDataByPath(term, jsonElement)  + ' looplimit: ' + loopLimit);
+      //console.log('jsonElement: ' + jsonElement + ' Value: ' + AppUtils.getDataByPath(term, jsonElement)  + ' looplimit: ' + loopLimit);
       var value = AppUtils.getDataByPath(term, jsonElement);
       var valueResult = value? value : '';
       newLine += strinQuote + valueResult + strinQuote + splitChararter;
@@ -346,7 +402,43 @@ export default class epcJsonExport extends SfdxCommand {
     return newLine;
   }
 
-  static async exportObject(conn, resultsFile, ObjectName, header, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
+  static writeHeader(jsonField,jsonValues,createFiles,initialHeader){
+    var newHeader = initialHeader ? initialHeader : '';
+    //console.log('// jsonValues-nextLevel: ' + JSON.stringify(jsonValues['nextLevel']));
+    if(jsonField != null) {
+      if(jsonValues['nextLevel']){
+        var nextLevel = jsonValues['nextLevel'];
+        while(nextLevel){
+          var fields = nextLevel['fields'];
+          var name = nextLevel['name'];
+          //console.log('fields: ' + JSON.stringify(fields));
+          if(fields){
+            for (let index = 0; index < fields.length; index++) {
+              const element = fields[index];
+              newHeader += splitChararter + name + '.' + element;
+            }
+          }
+          nextLevel = nextLevel['nextLevel'];
+        }
+      } else { 
+        if(keyNames.length > 1 ){
+          for (let index = 0; index < keyNames.length; index++) {
+            const element = keyNames[index];
+            newHeader += splitChararter + element;
+          }
+        }
+        newHeader += splitChararter + (JSON.stringify(jsonValues)).replace(/\[/g, '').replace(/\]/g, '').replace(/\"/g, "");
+        if(typeof jsonValues[jsonValues.length -1] === 'object'){
+          var keyValueName = Object.keys(jsonValues[jsonValues.length -1])[0];
+          newHeader = newHeader.replace(/\{/g, '').replace(/\}/g, '').replace(keyValueName + ':', '');
+        }
+     }
+    }
+    newHeader = newHeader.replace(/,/g, splitChararter).replace(splitChararter+splitChararter, splitChararter);
+    createFiles.write(('ID' + splitChararter + newHeader + '\r\n'));  
+  }
+
+  static async exportObject(conn, resultsFile, ObjectName, initialHeader, formatFuntion,fields,jsonField,jsonValues,all,onlyJson) {
     var objectAPIName = AppUtils.replaceaNameSpace(ObjectName);
     AppUtils.log3( objectAPIName + ' Report, File: ' + JSON.stringify(resultsFile));
 
@@ -356,6 +448,8 @@ export default class epcJsonExport extends SfdxCommand {
 
     const createFiles = fsExtra.createWriteStream(resultsFile, {flags: 'a'});
     var fieldsArray = AppUtils.replaceaNameSpace(fields).split(',');
+
+    epcJsonExport.writeHeader(jsonField,jsonValues,createFiles,initialHeader);
     
     var queryString= 'SELECT ID'
     if(!onlyJson) {
@@ -374,27 +468,6 @@ export default class epcJsonExport extends SfdxCommand {
     cont2 = 0;
 
     AppUtils.startSpinner('Exporting ' + objectAPIName);
-
-    var newHeader = header;
-
-    if(jsonField != null) {
-
-      if(keyNames.length > 1 ){
-        for (let index = 0; index < keyNames.length; index++) {
-          const element = keyNames[index];
-          newHeader += splitChararter + element;
-        }
-      }
-
-      newHeader += splitChararter + (JSON.stringify(jsonValues)).replace(/\[/g, '').replace(/\]/g, '').replace(/\"/g, "");
-      if(typeof jsonValues[jsonValues.length -1] === 'object'){
-        var keyValueName = Object.keys(jsonValues[jsonValues.length -1])[0];
-        newHeader = newHeader.replace(/\{/g, '').replace(/\}/g, '').replace(keyValueName + ':', '');
-      }
-    }
-    newHeader = newHeader.replace(/,/g, splitChararter).replace(splitChararter+splitChararter, splitChararter);
-    //console.log('newHeader: ' + newHeader);
-    createFiles.write(('ID' + splitChararter + newHeader + '\r\n'));  
     
     let promise = new Promise((resolve, reject) => {
         conn.query(queryString2)
