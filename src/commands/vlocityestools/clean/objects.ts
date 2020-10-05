@@ -1,5 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError} from '@salesforce/core';
+import { Messages, SfdxError } from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory

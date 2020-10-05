@@ -49,6 +49,9 @@ export default class epcJsonExport extends SfdxCommand {
   //protected static requiresProject = false;
 
   public async run() {
+
+    currentJsonField = '';
+
     var packageType = this.flags.package;
     var dataFile = this.flags.datafile;
     var separator = this.flags.separator;
@@ -174,7 +177,7 @@ export default class epcJsonExport extends SfdxCommand {
             }
         }
         keyNames = [];
-        currentJsonField = ''
+        currentJsonField = '';
       }
 
       var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 
