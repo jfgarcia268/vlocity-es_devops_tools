@@ -403,7 +403,7 @@ OPTIONS
   
   -l, --url=url                                             Org Url, Default: https://login.salesforce.com
 
-  -a, --alias=alias                                          Alias
+  -a, --alias=alias                                         Alias
 
 
                                                                     
@@ -419,7 +419,7 @@ EXAMPLES
 
 ## vlocityestools:clean:objects
 
-Delets SObjet(s) from org Defined File. WHERE can be specified
+Delets SObjects from org defined by File. WHERE can be specified
 
 Sample File:
 
@@ -437,7 +437,7 @@ OPTIONS
   -p, --package=package                                     Vlocity Package Type, Options:
                                                             'cmt' or 'ins' (Optional)
 
-  -d, --datafile=datafile                                   Filw with list Of Objects
+  -d, --datafile=datafile                                   File with list Of Objects
   
   -q, --onlyquery=onlyquery                                 Dont Delete Any Object, just do queries.
                                                             Default: false
@@ -445,7 +445,7 @@ OPTIONS
   -r, --retry=retry                                         Retry all Deletes if Error
                                                             Default: false
 
-  -s, --save=save                                           Save Batch Results in File (True|False)
+  -s, --save=save                                           Save Batch Results in File
                                                             Default: false
                                                                     
 EXAMPLES
