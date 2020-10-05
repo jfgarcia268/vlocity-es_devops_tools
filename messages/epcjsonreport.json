@@ -1,0 +1,8 @@
+{
+  "commandDescription": "Returns CSVs wit EPC Report data",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "dataFile" : "Data yaml File",
+  "command":"epcjsonreport",
+  "separator":"CSV Separator"
+}

@@ -403,7 +403,7 @@ OPTIONS
   
   -l, --url=url                                             Org Url, Default: https://login.salesforce.com
 
-  -a, --alias=alias                                          Alias
+  -a, --alias=alias                                         Alias
 
 
                                                                     
@@ -413,5 +413,51 @@ EXAMPLES
   $ sfdx vlocityestools:auth:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
   
   $ sfdx vlocityestools:auth:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
+
+```
+
+
+## vlocityestools:clean:objects
+
+Delets SObjects from org defined by File. WHERE can be specified
+
+Sample File:
+
+![Org to Org Comparison](doc/SampleObjectsFile.png)
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:objects -u <string> -p <string> -d <string> [-q true|false] [-r true|false] [-s true|false]
+
+OPTIONS
+
+  -u, --username=username                                   Username to Autenticate
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' (Optional)
+
+  -d, --datafile=datafile                                   File with list Of Objects
+  
+  -q, --onlyquery=onlyquery                                 Dont Delete Any Object, just do queries.
+                                                            Default: false
+
+  -r, --retry=retry                                         Retry all Deletes if Error
+                                                            Default: false
+
+  -s, --save=save                                           Save Batch Results in File
+                                                            Default: false
+                                                                    
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:objects -u myOrg@example.com -p ins -d objects.yaml
+  
+  $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml
+
+  $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml -q true
+
+  $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml -r true
+
+  $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml -q true
 
 ```
