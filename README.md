@@ -423,7 +423,7 @@ Delets SObjects from org defined by File. SOQL 'WHERE' can be specified
 
 Sample File:
 
-![Org to Org Comparison](doc/SampleObjectsFile.png)
+![Org to Org Comparison](images/SampleObjectsFile.png)
 
 ```
 USAGE
