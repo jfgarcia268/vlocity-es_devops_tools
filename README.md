@@ -419,7 +419,7 @@ EXAMPLES
 
 ## vlocityestools:clean:objects
 
-Delets SObjects from org defined by File. WHERE can be specified
+Delets SObjects from org defined by File. SOQL 'WHERE' can be specified
 
 Sample File:
 
