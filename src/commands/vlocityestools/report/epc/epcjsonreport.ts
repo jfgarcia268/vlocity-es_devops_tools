@@ -258,7 +258,7 @@ export default class epcJsonExport extends SfdxCommand {
       }
     } else {
       //console.log('2')
-      if (currentJsonField = 'namespace__AttributeRules__c') {
+      if (currentJsonField == 'namespace__AttributeRules__c') {
         //console.log('jsonData: ' + JSON.stringify(jsonData));
         //console.log('2.1 '+ JSON.stringify(jsonData));
         epcJsonExport.formatAttributeRules(jsonData, jsonValues, baseline, createFiles, keyNames);
