@@ -1,6 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
-import { networkInterfaces } from 'os';
 import { AppUtils } from '../../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
@@ -175,6 +174,7 @@ export default class epcJsonExport extends SfdxCommand {
             }
         }
         keyNames = [];
+        currentJsonField = ''
       }
 
       var tableColumnData = ['ObjectName', 'RecordsExported', 'RecordsCreated', 'ReportFile']; 

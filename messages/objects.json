@@ -1,0 +1,10 @@
+{
+  "commandDescription": "Deletes SObjects",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"objects",
+  "dataFile":"File With Objects",
+  "onlyquery":"Do not delete, Only Query",
+  "retry":"Retry all if error",
+  "save":"Save Batches Results"
+}
