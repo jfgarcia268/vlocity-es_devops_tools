@@ -59,6 +59,9 @@
       },
       "vlocityestools:auth": {
         "description": "Auth Tools"
+      },
+      "vlocityestools:sfsource": {
+        "description": "Salesforce Source Tools"
       }
     },
     "devPlugins": [
