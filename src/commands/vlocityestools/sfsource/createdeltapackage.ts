@@ -1,5 +1,5 @@
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { Messages, SfdxError } from "@salesforce/core";
 import { AppUtils } from "../../../utils/AppUtils";
 
 // Initialize Messages with the current plugin directory
@@ -64,17 +64,14 @@ export default class deltaPackage extends SfdxCommand {
     
     var deltaPackageFolder = sourceFolder + '_delta';
 
-    if (customsettingobject == undefined) {
-      if (packageType == "cmt") {
-        AppUtils.namespace = "vlocity_cmt__";
-      } else if (packageType == "ins") {
-        AppUtils.namespace = "vlocity_ins__";
-      } else {
-        throw new Error("Error: -p, --package has to be either cmt or ins ");
-      }
-    }
-
     const conn = this.org.getConnection();
+
+
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    //console.log('nameSpaceSet: ' + nameSpaceSet);
+    if(!nameSpaceSet){
+      throw new SfdxError("Error: Package was not set or incorrect was provided.");
+    }
 
     var query;
 
@@ -147,14 +144,18 @@ export default class deltaPackage extends SfdxCommand {
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
               var splitResult = filePath.split(path.sep);
 
-              if (filePath.includes(path.sep + "staticresources" + path.sep)) {
+              if (filePath.includes(path.sep + "staticresources" + path.sep) || filePath.includes(path.sep + "documents" + path.sep)) {
                 /**
-                 * Static Resources Scenario
+                 * Static Resources  and Scenario
                  */   
+                var folderMatch = filePath.includes(path.sep + "staticresources" + path.sep)? /.*\/staticresources\/.*?/ : /.*\/documents\/.*?/;
+                var metaEnding = filePath.includes(path.sep + "staticresources" + path.sep)? '.resource-meta.xml' : '.documentFolder-meta.xml';
+
+
                 var newCompPath = filePath.replace(sourceFolder, deltaPackageFolder);
                 if (!fsExtra.existsSync(newCompPath)) {
-                  AppUtils.log1("Looking for Files to move for Static Resources Change ");
-                  var staticResourceFolder = filePath.match(/.*\/staticresources\/.*?/)[0];
+                  AppUtils.log1("Looking for Files to move for Change");
+                  var staticResourceFolder = filePath.match(folderMatch)[0];
                   var mainFileOrfolder = filePath.replace(staticResourceFolder,'').split(path.sep)[0];
                   var mainFileOrfolderPath = staticResourceFolder + mainFileOrfolder;
                   //console.log('mainFileOrfolderPath: ' + mainFileOrfolderPath);
@@ -165,7 +166,7 @@ export default class deltaPackage extends SfdxCommand {
                       AppUtils.log1("Moving complete folder: " + newFoldePath);
                       fsExtra.copySync(mainFileOrfolderPath, newFoldePath);
                     }
-                    var metaFileForFolder = mainFileOrfolderPath + '.resource-meta.xml';
+                    var metaFileForFolder = mainFileOrfolderPath + metaEnding;
                     if (fsExtra.existsSync(metaFileForFolder)) {
                       var newMetaFileForFolder = metaFileForFolder.replace(sourceFolder,deltaPackageFolder);
                       AppUtils.log1("Moving Meta File: " + newMetaFileForFolder);
@@ -184,7 +185,7 @@ export default class deltaPackage extends SfdxCommand {
                         if(statspathforFounded.isDirectory()){
                           AppUtils.log1("Moving complete folder: " + newPathforFounded);
                         } else {
-                          AppUtils.log1("Moving File for Static Resources Change. New path: " + newPathforFounded);
+                          AppUtils.log1("Moving File for Change. New path: " + newPathforFounded);
                         }
                         fsExtra.copySync(pathforFounded, newPathforFounded);
                       }  
