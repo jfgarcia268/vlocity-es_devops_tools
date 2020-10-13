@@ -6,5 +6,6 @@
   "dataFile":"File With Objects",
   "onlyquery":"Do not delete, Only Query",
   "retry":"Retry all if error",
-  "save":"Save Batches Results"
+  "save":"Save Batches Results",
+  "hard":"Hard Delete All Records"
 }

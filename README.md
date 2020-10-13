@@ -447,6 +447,9 @@ OPTIONS
 
   -s, --save=save                                           Save Batch Results in File
                                                             Default: false
+  -h, --hard=hard                                           Hard delete all records
+                                                            This needs the System permission:
+                                                            "Bulk API Hard Delete"
                                                                     
 EXAMPLES
 

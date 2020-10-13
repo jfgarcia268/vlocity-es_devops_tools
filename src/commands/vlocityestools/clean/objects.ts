@@ -34,7 +34,8 @@ export default class cleanObjects extends SfdxCommand {
     datafile: flags.string({char: 'd', description: messages.getMessage('dataFile')}),
     onlyquery: flags.string({char: 'q', description: messages.getMessage('onlyquery')}),
     retry: flags.string({char: 'r', description: messages.getMessage('retry')}),
-    save: flags.string({char: 's', description: messages.getMessage('save')})
+    save: flags.string({char: 's', description: messages.getMessage('save')}),
+    hard: flags.string({char: 'h', description: messages.getMessage('hard')})
   };
 
   // Comment this out if your command does not require an org username
@@ -52,6 +53,7 @@ export default class cleanObjects extends SfdxCommand {
     var onlyquery = this.flags.onlyquery;
     var retry = this.flags.retry;
     var save = this.flags.save;
+    var hard = this.flags.hard;
 
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
@@ -81,7 +83,7 @@ export default class cleanObjects extends SfdxCommand {
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
         AppUtils.log3('Object: ' + objectAPIName);
         try {
-          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save);
+          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard);
         } catch (error) {
           AppUtils.log2('Error Deleting: '  + objectAPIName + '  Error: ' + error);
         }
@@ -91,7 +93,7 @@ export default class cleanObjects extends SfdxCommand {
     AppUtils.log3('All Done');
   }
 
-  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save) {
+  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
       query += ' WHERE ' + where;  
@@ -132,57 +134,65 @@ export default class cleanObjects extends SfdxCommand {
     //console.log('value: ' + value);
     if(value == 'Done' && !onlyquery){
       //console.log(JSON.stringify(records));
-      await cleanObjects.deleteRows(records,conn,objectName,save);
+      await cleanObjects.deleteRows(records,conn,objectName,save,hard);
     }
   }
   
 
-  static async deleteRows(records,conn,objectName,save) {
-    var job = conn.bulk.createJob(objectName,'hardDelete');
-    //job.open();
+  static async deleteRows(records,conn,objectName,save,hardelete) {
+    var deleteType = hardelete == true ? 'hardDelete' : 'Delete';
+    var job = await conn.bulk.createJob(objectName,deleteType);
+    await job.open();
     //console.log(job);
     var numOfComonents = records.length;
     var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
     var numberOfBatchesDone = 0;
     AppUtils.log2('Number Of Batches to be created to delete Rows: ' + numberOfBatches);
-    var promises = [];
-    for (var i=0; i<numberOfBatches; i++) {
-      var batchNumber = i + 1;
-      var arraytoDelete = records;
-      if(i<(numberOfBatches-1)) {
-        arraytoDelete = records.splice(0,this.batchSize);
-      }
-      var batch = job.createBatch();
-      var batchNumber = i + 1;
-      //console.log(batch);
-      AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoDelete.length);
-      let newp = new Promise( (resolve, reject) => {
-        batch.execute(arraytoDelete)
-        .on("error",  function(err) { 
-          console.log('Error, batch # ' + batchNumber + 'Info:', err);
-          numberOfBatchesDone = numberOfBatchesDone +1;
-          resolve();
-        })
-        .on("queue",  function(batchInfo) { 
-          AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
-          batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); 
-        })
-        .on("response",  function(rets) { 
-          numberOfBatchesDone = numberOfBatchesDone +1;
-          var hadErrors = cleanObjects.noErrors(rets);
-          AppUtils.log1('Batch # ' + batchNumber + ' Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-          if(save){
-            cleanObjects.saveResults(rets,batchNumber,objectName);
-          }
-          resolve();
+    try {
+      var promises = [];
+      for (var i=0; i<numberOfBatches; i++) {
+        var batchNumber = i + 1;
+        var arraytoDelete = records;
+        if(i<(numberOfBatches-1)) {
+          arraytoDelete = records.splice(0,this.batchSize);
+        }
+        var batch = job.createBatch();
+        var batchNumber = i + 1;
+        //console.log(batch);
+        AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoDelete.length);
+        let newp = new Promise((resolve, reject) => {
+          //console.log('Enter Promise');
+          batch.execute(arraytoDelete)
+          .on("error",  function(err) { 
+            console.log('Error, batch # ' + batchNumber + 'Info:', err);
+            numberOfBatchesDone = numberOfBatchesDone +1;
+            resolve();
+          })
+          .on("queue",  function(batchInfo) { 
+            AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
+            batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); 
+          })
+          .on("response",  function(rets) { 
+            numberOfBatchesDone = numberOfBatchesDone +1;
+            var hadErrors = cleanObjects.noErrors(rets);
+            AppUtils.log1('Batch # ' + batchNumber + ' Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+            if(save){
+              cleanObjects.saveResults(rets,batchNumber,objectName);
+            }
+            resolve();
+          });
+          //console.log('batch: '+ batch);
+        }).catch(error => {
+          AppUtils.log2('Error Creating  batches - Error: ' + error);
         });
-        //console.log('batch: '+ batch);
-      });
-      promises.push(newp);
-      //console.log('newp: ' + JSON.stringify(newp));
+        await promises.push(newp);
+      }
+      //console.log('Promise Size: '+ Promise.length);
+      await Promise.all(promises);
+      job.close();
+    } catch (error) {
+      AppUtils.log2('Error Creating  batches - Error: ' + error);
     }
-    await Promise.all(promises);
-    job.close();
   }
 
   private static saveResults(rets,batchNumber,objectName) {
