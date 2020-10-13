@@ -300,10 +300,11 @@ OPTIONS
 
 OPTIONS IF USING a Custom "Custom Settings"
 
-  -c, --customsettingobject=customsettingobject             (Optional) Optional Custom Setting API Name when using custom one
+  -c, --customsettingobject=customsettingobject             (Optional) Optional Custom Setting API Object Name 
 
-  -v, --gitcheckkeycustom=gitcheckkeycustom                 (Optional) Custom Setting record Name when using --customsettingobject, -c 
+  -v, --gitcheckkeycustom=gitcheckkeycustom                 (Optional) Custom Setting record Name
 
+  -h, --valuecolumn=valuecolumn                             (Optional) API Field Name Where hash is stored
                                                            
                           
 

@@ -6,5 +6,6 @@
   "sourcefolder":"Source Folder to create Delta Package",
   "gitcheckkey":"(Optional) Key when using gitCheckKey with Build Tool",
   "gitcheckkeycustom":"(Optional) Custom Setting record name when using --customsettingobject, -c ",
-  "customsettingobject":"(Optional) Custom Setting API name when using custom one"
+  "customsettingobject":"(Optional) Custom Setting API name when using custom one",
+  "valuecolumn":"(Optional) Field Name Where hash is stored when using --customsettingobject, -c "
 }

@@ -30,7 +30,8 @@ export default class deltaPackage extends SfdxCommand {
     sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
     gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")}),
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
-    customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")})
+    customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")}),
+    valuecolumn: flags.string({ char: "h", description: messages.getMessage("valuecolumn")})
   };
 
   protected static requiresUsername = true;
@@ -46,6 +47,7 @@ export default class deltaPackage extends SfdxCommand {
     var deployKey = "VBTDeployKey";
     var gitcheckkeycustom = this.flags.gitcheckkeycustom;
     var customsettingobject = this.flags.customsettingobject;
+    var valueColumn = this.flags.valuecolumn;
 
     if(customsettingobject != undefined && gitcheckkeycustom == undefined) {
       throw new Error("Error: -v, --gitcheckkeycustom needs to passed when using customsettingobject");
@@ -76,7 +78,8 @@ export default class deltaPackage extends SfdxCommand {
     var query;
 
     if(customsettingobject != undefined) {
-      query = "SELECT Name, Value__c FROM " + customsettingobject + " WHERE Name = '" + gitcheckkeycustom + "'";
+      var valueColumName = valueColumn? valueColumn : 'Value__c';
+      query = "SELECT Name, " + valueColumName  + " FROM " + customsettingobject + " WHERE Name = '" + gitcheckkeycustom + "'";
     }
     else {
       const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
@@ -99,7 +102,7 @@ export default class deltaPackage extends SfdxCommand {
     } else {
       var previousHash;
       if(customsettingobject != undefined) {
-        previousHash = result.records[0][AppUtils.replaceaNameSpace("Value__c")];
+        previousHash = result.records[0][AppUtils.replaceaNameSpace(valueColumn? valueColumn : 'Value__c')];
       }
       else {
         previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
