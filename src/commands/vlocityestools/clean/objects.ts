@@ -184,7 +184,7 @@ export default class cleanObjects extends SfdxCommand {
             resolve();
           })
           .on("queue",  function(batchInfo) { 
-            batch.poll(5*1000 /* interval(ms) */, 1000*cleanObjects.bulkApiPollTimeout /* timeout(ms) */);
+            batch.poll(5*1000 /* interval(ms) */, 1000*60*cleanObjects.bulkApiPollTimeout /* timeout(ms) */);
             AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
           })
           .on("response",  function(rets) { 
