@@ -26,6 +26,9 @@ export default class cleanObjects extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   private static batchSize = 10000;
+  //private static batchSize = 10; //Testing
+
+  private static bulkApiPollTimeout = 60;
 
   private static error = false;
 
@@ -35,7 +38,8 @@ export default class cleanObjects extends SfdxCommand {
     onlyquery: flags.string({char: 'q', description: messages.getMessage('onlyquery')}),
     retry: flags.string({char: 'r', description: messages.getMessage('retry')}),
     save: flags.string({char: 's', description: messages.getMessage('save')}),
-    hard: flags.string({char: 'h', description: messages.getMessage('hard')})
+    hard: flags.string({char: 'h', description: messages.getMessage('hard')}),
+    polltimeout: flags.string({char: 't', description: messages.getMessage('polltimeout')}),
   };
 
   // Comment this out if your command does not require an org username
@@ -54,6 +58,11 @@ export default class cleanObjects extends SfdxCommand {
     var retry = this.flags.retry;
     var save = this.flags.save;
     var hard = this.flags.hard;
+    var polltimeout = this.flags.polltimeout;
+
+    if(polltimeout){
+      cleanObjects.bulkApiPollTimeout = polltimeout;
+    }
 
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
@@ -102,6 +111,11 @@ export default class cleanObjects extends SfdxCommand {
     } else {
       AppUtils.startSpinner('Fetching All records for ' + objectName );
     }
+
+    //Testing
+    //query += ' LIMIT 200';
+    //
+
     var count = 0;
     var records = [];
     let promise = new Promise((resolve, reject) => {
@@ -145,37 +159,39 @@ export default class cleanObjects extends SfdxCommand {
     await job.open();
     //console.log(job);
     var numOfComonents = records.length;
-    var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
+    var div = numOfComonents/this.batchSize;
+    var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;
     var numberOfBatchesDone = 0;
     AppUtils.log2('Number Of Batches to be created to delete Rows: ' + numberOfBatches);
     try {
       var promises = [];
       for (var i=0; i<numberOfBatches; i++) {
-        var batchNumber = i + 1;
+        
         var arraytoDelete = records;
         if(i<(numberOfBatches-1)) {
           arraytoDelete = records.splice(0,this.batchSize);
         }
-        var batch = job.createBatch();
-        var batchNumber = i + 1;
-        //console.log(batch);
-        AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoDelete.length);
         let newp = new Promise((resolve, reject) => {
+          var batchNumber = i + 1;
+          var batch = job.createBatch()
+          AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoDelete.length);
+
           //console.log('Enter Promise');
           batch.execute(arraytoDelete)
           .on("error",  function(err) { 
-            console.log('Error, batch # ' + batchNumber + 'Info:', err);
+            console.log('Error, batch Info:', err);
             numberOfBatchesDone = numberOfBatchesDone +1;
             resolve();
           })
           .on("queue",  function(batchInfo) { 
-            AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
-            batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); 
+            batch.poll(5*1000 /* interval(ms) */, 1000*cleanObjects.bulkApiPollTimeout /* timeout(ms) */);
+            AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
           })
           .on("response",  function(rets) { 
             numberOfBatchesDone = numberOfBatchesDone +1;
             var hadErrors = cleanObjects.noErrors(rets);
-            AppUtils.log1('Batch # ' + batchNumber + ' Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+            //console.log(rets);
+            AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
             if(save){
               cleanObjects.saveResults(rets,batchNumber,objectName);
             }
@@ -191,6 +207,7 @@ export default class cleanObjects extends SfdxCommand {
       await Promise.all(promises);
       job.close();
     } catch (error) {
+      job.close();
       AppUtils.log2('Error Creating  batches - Error: ' + error);
     }
   }

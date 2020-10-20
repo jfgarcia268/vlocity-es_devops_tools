@@ -451,6 +451,8 @@ OPTIONS
   -h, --hard=hard                                           Hard delete all records
                                                             This needs the System permission:
                                                             "Bulk API Hard Delete"
+
+  -t, --polltimeout=polltimeout                              Bulk API Poll time out in Minutes (Default 60)
                                                                     
 EXAMPLES
 
