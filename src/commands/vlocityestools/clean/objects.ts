@@ -83,6 +83,8 @@ export default class cleanObjects extends SfdxCommand {
 
     var doc = yaml.safeLoad(fsExtra.readFileSync(dataFile, 'utf8'));
 
+    var resultData = [];
+
     do {
       AppUtils.log3('Deleting....');
       console.log('');
@@ -92,17 +94,22 @@ export default class cleanObjects extends SfdxCommand {
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
         AppUtils.log3('Object: ' + objectAPIName);
         try {
-          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard);
+          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData);
         } catch (error) {
           AppUtils.log2('Error Deleting: '  + objectAPIName + '  Error: ' + error);
         }
       }
       console.log('');
     } while (retry && cleanObjects.error);
-    AppUtils.log3('All Done');
+
+    var tableColumnData = ['ObjectName', 'RecordsFound', 'DeleteSuccess']; 
+    AppUtils.ux.log('RESULTS:');
+    //AppUtils.ux.log(' ');
+    AppUtils.ux.table(resultData, tableColumnData);
+    AppUtils.ux.log(' ');
   }
 
-  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard) {
+  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
       query += ' WHERE ' + where;  
@@ -148,12 +155,14 @@ export default class cleanObjects extends SfdxCommand {
     //console.log('value: ' + value);
     if(value == 'Done' && !onlyquery){
       //console.log(JSON.stringify(records));
-      await cleanObjects.deleteRows(records,conn,objectName,save,hard);
+      await cleanObjects.deleteRows(records,conn,objectName,save,hard,resultData);
+    } else {
+      resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
     }
   }
   
 
-  static async deleteRows(records,conn,objectName,save,hardelete) {
+  static async deleteRows(records,conn,objectName,save,hardelete,resultData) {
     var deleteType = hardelete == true ? 'hardDelete' : 'Delete';
     var job = await conn.bulk.createJob(objectName,deleteType);
     await job.open();
@@ -181,6 +190,7 @@ export default class cleanObjects extends SfdxCommand {
           .on("error",  function(err) { 
             console.log('Error, batch Info:', err);
             numberOfBatchesDone = numberOfBatchesDone +1;
+            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
             resolve();
           })
           .on("queue",  function(batchInfo) { 
@@ -192,6 +202,7 @@ export default class cleanObjects extends SfdxCommand {
             var hadErrors = cleanObjects.noErrors(rets);
             //console.log(rets);
             AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
             if(save){
               cleanObjects.saveResults(rets,batchNumber,objectName);
             }
@@ -200,6 +211,7 @@ export default class cleanObjects extends SfdxCommand {
           //console.log('batch: '+ batch);
         }).catch(error => {
           AppUtils.log2('Error Creating  batches - Error: ' + error);
+          resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
         });
         await promises.push(newp);
       }
@@ -209,6 +221,7 @@ export default class cleanObjects extends SfdxCommand {
     } catch (error) {
       job.close();
       AppUtils.log2('Error Creating  batches - Error: ' + error);
+      resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
     }
   }
 
