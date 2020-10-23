@@ -33,6 +33,7 @@ USAGE
 ### vlocityestools:sfsource:updatedeltahash
 ### vlocityestools:clean:calcmatrix
 ### vlocityestools:login:login
+### vlocityestools:clean:objects
   
 '    '
 
@@ -173,6 +174,32 @@ EXAMPLES
   $ sfdx vlocityestools:compare:folders -s vlocity1 -t vlocity2
   
   $ sfdx vlocityestools:compare:folders --folder1 vlocity1 --folder2 vlocity2
+
+```
+
+## vlocityestools:compare:packages
+
+Compare Two Vlocity Metadata Folders. Gives Error if there is overlap
+
+```
+USAGE
+
+  $ sfdx vlocityestools:compare:packages -s <string>- t <integer>
+
+OPTIONS
+
+  -s, --folder1=folder1                                   Vlocity Folder 1 to Compare
+                                                
+
+  -t, --folder2=folder2                                   Vlocity Folder 2 to Compare
+  
+
+
+EXAMPLES
+  
+  $ sfdx vlocityestools:compare:packages: -s vlocity1 -t vlocity2
+
+  $ sfdx vlocityestools:compare:packages --folder1 vlocity1 --folder2 vlocity2
 
 ```
 

@@ -14,11 +14,11 @@ export default class compareFolders extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:compare:folders: -u myOrg@example.com -n 5
-  `,
-  `$ sfdx vlocityestools:compare:folders --targetusername myOrg@example.com --numberversions 5
-  `
-  ];
+    `$ sfdx vlocityestools:compare:packages -s vlocity1 -t vlocity2
+    `,
+    `$ sfdx vlocityestools:compare:packages --folder1 vlocity1 --folder2 vlocity2
+    `
+    ];
 
   public static args = [{name: 'file'}];
 
