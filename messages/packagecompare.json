@@ -1,0 +1,7 @@
+{
+  "commandDescription": "Compare Two Vlocity Metadata Folders. Gives Error if there is overlap",
+  "folder1": "Folder1 To compare",
+  "folder2": "Folder2 To compare",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"packages"
+}
