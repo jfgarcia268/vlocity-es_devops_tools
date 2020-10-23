@@ -99,7 +99,7 @@ export default class compareFolders extends SfdxCommand {
                     CreateFiles.write(notFoundResult+'\r\n');   
                   } else if (withDiffs && fs.existsSync(pathLevel2_folderB) && !pathLevel2_folderB.startsWith(".")) {
                     //console.log('YES: ' + pathLevel2_folderB);
-                    var options = {compareSize: true};
+                    var options = {compareContent: true};
                     var res = dircompare.compareSync(pathLevel2_folderA, pathLevel2_folderB,options);
                     //console.log(res.same);
                     var diff = res.same;

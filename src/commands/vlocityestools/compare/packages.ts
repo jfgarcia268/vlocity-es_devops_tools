@@ -10,6 +10,8 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('vlocityestools', 'packagecompare');
 
 const path = require('path');
+const dircompare = require('dir-compare');
+const fs = require('fs');
 
 export default class compareFolders extends SfdxCommand {
 
@@ -42,9 +44,6 @@ export default class compareFolders extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage('command')); 
     AppUtils.ux = this.ux;
 
-    const fs = require('fs');
-    const dircompare = require('dir-compare');
-
     var foldera = this.flags.folder1;
     var folderb = this.flags.folder2;
 
@@ -58,10 +57,10 @@ export default class compareFolders extends SfdxCommand {
     
     var resultData = [];
 
-    this.compareFolders(fs,dircompare,foldera,folderb,resultData);
+    this.compareFolders(fs,foldera,folderb,resultData);
 
     if(resultData.length > 0){
-      var tableColumnData = ['DatapackKey']; 
+      var tableColumnData = ['DatapackType','DatapackKey','Diff']; 
       AppUtils.ux.log(' ');
       AppUtils.ux.log('OVERLAP RESULTS:');
       AppUtils.ux.log(' ');
@@ -76,7 +75,7 @@ export default class compareFolders extends SfdxCommand {
 
   }
 
-  public  compareFolders(fs,dircompare,foldera,folderb,resultData) {
+  public compareFolders(fs,foldera,folderb,resultData) {
     AppUtils.log3('Finding Overlap between ' + foldera + ' and ' + folderb); 
     var firstLevelFoler = fs.readdirSync(foldera); 
     for (let index = 0; index < firstLevelFoler.length; index++) {
@@ -90,9 +89,13 @@ export default class compareFolders extends SfdxCommand {
         var pathLevel2_folderb = folderb + path.sep + folder1 + path.sep + folders2
         //console.log('pathLevel2_folderb: ' + pathLevel2_folderb);
         if (fs.lstatSync(pathLevel2_foldera).isDirectory() && fs.existsSync(pathLevel2_folderb) ){
-          var DPKey = folder1 + '/' + folders2;
           AppUtils.log1('Overlap - Key: ' + DPKey); 
-          resultData.push({ DatapackKey: DPKey});
+          var options = {compareContent: true};
+          var res = dircompare.compareSync(pathLevel2_foldera, pathLevel2_folderb,options);
+          //console.log(res.same);
+          var diff = res.same? 'No' : 'Yes';
+          var DPKey = folder1 + '/' + folders2;
+          resultData.push({DatapackType: folder1, DatapackKey: DPKey, Diff: diff});
         }
       }
     }
