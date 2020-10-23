@@ -61,14 +61,14 @@ export default class compareFolders extends SfdxCommand {
     this.compareFolders(fs,dircompare,foldera,folderb,resultData);
 
     if(resultData.length > 0){
-      var tableColumnData = ['DataPackKey']; 
+      var tableColumnData = ['DatapackKey']; 
       AppUtils.ux.log(' ');
-      AppUtils.ux.log('RESULTS:');
-      //AppUtils.ux.log(' ');
+      AppUtils.ux.log('OVERLAP RESULTS:');
+      AppUtils.ux.log(' ');
       AppUtils.ux.table(resultData, tableColumnData);
       AppUtils.ux.log(' ');
 
-      throw new SfdxError("Overlap was Found, Please see table");
+      throw new SfdxError("Overlap was Found - Number of common components: " + resultData.length );
     }
     else {
       AppUtils.log3('Success - No Overlap between ' + foldera + ' and ' + folderb); 
@@ -92,7 +92,7 @@ export default class compareFolders extends SfdxCommand {
         if (fs.lstatSync(pathLevel2_foldera).isDirectory() && fs.existsSync(pathLevel2_folderb) ){
           var DPKey = folder1 + '/' + folders2;
           AppUtils.log1('Overlap - Key: ' + DPKey); 
-          resultData.push({ DataPackKey: DPKey});
+          resultData.push({ DatapackKey: DPKey});
         }
       }
     }
