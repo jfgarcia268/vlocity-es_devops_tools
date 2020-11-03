@@ -1,0 +1,9 @@
+{
+  "commandDescription": "Fix AA GK mistmatch",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"attributegkfix",
+  "objectid":"Filter by Product2 Id",
+  "source":"Source Org",
+  "target":"Target Org"
+}
