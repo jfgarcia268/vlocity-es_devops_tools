@@ -199,7 +199,7 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
         var targetgk = targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
         //console.log(sourcegk + " =? " + targetgk);
         if(sourcegk != targetgk) {
-          AppUtils.log2('Mismatch - Related IDs Source: ' + object.id + ' Target: ' +  targetObject.id  ); 
+          AppUtils.log2('Mismatch - Related IDs Source: ' + object.Id + ' Target: ' +  targetObject.Id  ); 
           targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
           delete targetObject[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
           recordsToUpdate.push(targetObject);
