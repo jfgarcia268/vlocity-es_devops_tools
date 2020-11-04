@@ -28,7 +28,8 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
     objectid: flags.string({char: 'i', description: messages.getMessage('objectid')}),
     source: flags.string({char: 's', description: messages.getMessage('source')}),
-    target: flags.string({char: 't', description: messages.getMessage('target')})
+    target: flags.string({char: 't', description: messages.getMessage('target')}),
+    cleanstaleobjects: flags.string({char: 'c', description: messages.getMessage('cleanstaleobjects')})
   };
 
   // Comment this out if your command does not require an org username
@@ -68,12 +69,14 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     var targetProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connTarget);
     //console.log('TEST: ' + targetProduct2Map.get('01t5o000000Ead3AAC'))
     AppUtils.ux.log(' ');
-    AppUtils.ux.log(' ');
     await attributeAssigmentGKFix.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
-    AppUtils.ux.log(' ');
     AppUtils.ux.log(' ');
     await attributeAssigmentGKFix.fixOverrideAA(connSource,connTarget);
     
+  }
+
+  static async cleanStaleAA(connSource, connTarget) {
+
   }
 
   static async createProduct2Map(conn) {
@@ -189,29 +192,46 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     AppUtils.ux.log(' ');
 
     AppUtils.log2('Matching by AttributeId and ObjectId...'); 
+    var recordsToUpdateSource = [];
     var recordsToUpdate = [];
-    for (let [key, object] of sourceAAMap) {
-      //console.log(key + " = " + object);
-      var targetObject = targetAAMap.get(key);
-      //console.log('targetObject: ' + targetObject);
-      if(targetObject) {
+    for (let [key, objectArray] of sourceAAMap) {
+      var object = objectArray[0];
+      if(objectArray.length > 1) {
         var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
-        var targetgk = targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
-        //console.log(sourcegk + " =? " + targetgk);
-        if(sourcegk != targetgk) {
-          AppUtils.log2('Mismatch - Related IDs Source: ' + object.Id + ' Target: ' +  targetObject.Id  ); 
-          targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
-          delete targetObject[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
-          recordsToUpdate.push(targetObject);
-          //console.log(JSON.stringify(targetObject));
+        for (let index = 1; index < objectArray.length; index++) {
+          var duplicateObjectToUpdate = objectArray[index];
+          duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
+          delete duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
+          AppUtils.log2('Duplicated Found - Records Will be Updated with Same GlobalKey if necessary - Global Key: ' + sourcegk ); 
+          recordsToUpdateSource.push(duplicateObjectToUpdate); 
+        }
+      } 
+      //console.log(key + " = " + object);
+      var targetObjects = targetAAMap.get(key);
+      //console.log('targetObject: ' + targetObject);
+      if(targetObjects) {
+        for (let index = 0; index < targetObjects.length; index++) {
+          const targetObject = targetObjects[index];
+          var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+          var targetgk = targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+          //console.log(sourcegk + " =? " + targetgk);
+          if(sourcegk != targetgk) {
+            AppUtils.log2('Mismatch - Related IDs Source: ' + object.Id + ' Target: ' +  targetObject.Id  ); 
+            targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
+            delete targetObject[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
+            recordsToUpdate.push(targetObject);
+            //console.log(JSON.stringify(targetObject));
+          }
         }
       }
     }
     if(recordsToUpdate.length > 0){
+      AppUtils.log2('Updating Target:'); 
       await attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
-    else {
-      AppUtils.log2('No Records to update'); 
+    if(recordsToUpdateSource.length > 0){
+      AppUtils.log2('Updating Source:'); 
+      await attributeAssigmentGKFix.updateRows(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
   }
 
@@ -284,7 +304,12 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
         var attributeGK = element[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
         var key = product2GK + attributeGK;
         //console.log('Key: ' + key);
-        map.set(key, element);
+        var array = [] ;
+        if(map.get(key)) {
+          array = map.get(key);
+        }
+        array.push(element);
+        map.set(key, array);
       } else {
         AppUtils.log1('Invalid AA - ObjectId does not exist - AA ID: ' + element.Id); 
       }
