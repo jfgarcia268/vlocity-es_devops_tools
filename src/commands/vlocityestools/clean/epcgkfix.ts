@@ -1,5 +1,6 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError, Org } from '@salesforce/core';
+import { closeSync } from 'fs';
 import { AppUtils } from '../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
@@ -7,7 +8,7 @@ Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('vlocityestools', 'attributegkfix');
+const messages = Messages.loadMessages('vlocityestools', 'epcgkfix');
 
 export default class attributeAssigmentGKFix extends SfdxCommand {
 
@@ -26,9 +27,10 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
 
   protected static flagsConfig = {
     package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
-    objectid: flags.string({char: 'i', description: messages.getMessage('objectid')}),
     source: flags.string({char: 's', description: messages.getMessage('source')}),
-    target: flags.string({char: 't', description: messages.getMessage('target')})
+    target: flags.string({char: 't', description: messages.getMessage('target')}),
+    pci: flags.string({char: 'c', description: messages.getMessage('pci')}),
+    aa: flags.string({char: 'a', description: messages.getMessage('aa')})
   };
 
   // Comment this out if your command does not require an org username
@@ -42,13 +44,17 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
 
   public async run() {
 
+    AppUtils.ux = this.ux;
+    AppUtils.logInitial(messages.getMessage("command"));
+    AppUtils.ux.log(' ');
+
     var packageType = this.flags.package;
     var source = this.flags.source;
     var target = this.flags.target;
 
-    AppUtils.ux = this.ux;
-    AppUtils.logInitial(messages.getMessage("command"));
-    AppUtils.ux.log(' ');
+    var pci = this.flags.pci;
+    var aa = this.flags.aa;
+    //console.log('pci: ' + pci + ' aa: ' + aa);
 
     const org1: Org = await Org.create({ aliasOrUsername: source });
     const connSource = org1.getConnection();
@@ -61,21 +67,105 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     if(!nameSpaceSet){
       throw new SfdxError("Error: Package was not set or incorrect was provided.");
     }
-    AppUtils.log2('Creating Products Maps'); 
-    AppUtils.log2('Source:'); 
-    var sourceProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connSource);
-    AppUtils.log2('Target:'); 
-    var targetProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connTarget);
-    //console.log('TEST: ' + targetProduct2Map.get('01t5o000000Ead3AAC'))
-    AppUtils.ux.log(' ');
-    await attributeAssigmentGKFix.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
-    AppUtils.ux.log(' ');
-    await attributeAssigmentGKFix.fixOverrideAA(connSource,connTarget);
-    
+    if(aa == 'true'){
+      AppUtils.log2('Creating Products Maps'); 
+      AppUtils.log2('Source:'); 
+      var sourceProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connSource);
+      AppUtils.log2('Target:'); 
+      var targetProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connTarget);
+      //console.log('TEST: ' + targetProduct2Map.get('01t5o000000Ead3AAC'))
+      AppUtils.ux.log(' ');
+      AppUtils.log3('Fixing Non Override AA - records will be matched by AttributeId and ObjectId'); 
+      await attributeAssigmentGKFix.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
+      AppUtils.ux.log(' ');
+      AppUtils.log3('Fixing Override AA - records will be matched by Matching OverrideDefintions'); 
+      await attributeAssigmentGKFix.fixOverrideAA(connSource,connTarget);
+    }
+    if(pci == 'true'){
+      AppUtils.ux.log(' ');
+      AppUtils.log3('Fixing Non Override PCI - records will be matched by Matching ParentProductId and ChildProductId'); 
+      await attributeAssigmentGKFix.fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
+    }
   }
 
-  static async cleanStaleAA(connSource, connTarget) {
+  static async fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map) {
+    var queryString= "SELECT id, %name-space%GlobalKey__c, %name-space%ParentProductId__r.%name-space%GlobalKey__c, %name-space%ChildProductId__r.%name-space%GlobalKey__c FROM %name-space%ProductChildItem__c WHERE %name-space%IsOverride__c = false";
+    AppUtils.log2('Fetching PCI records from Source'); 
+    var sourceAA = await attributeAssigmentGKFix.query(connSource,queryString);
+    var sourceAAMap = attributeAssigmentGKFix.createMapforNonPCI(sourceAA);
+    AppUtils.log2('Fetching PCI records from Target'); 
+    var targetAA = await attributeAssigmentGKFix.query(connTarget,queryString);
+    var targetAAMap = attributeAssigmentGKFix.createMapforNonPCI(targetAA);
+    AppUtils.ux.log(' ');
 
+    AppUtils.log2('Matching by ParentProductId and ChildProductId...'); 
+    var recordsToUpdateSource = [];
+    var recordsToUpdate = [];
+    for (let [key, objectArray] of sourceAAMap) {
+      var object = objectArray[0];
+      if(objectArray.length > 1) {
+        var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+        for (let index = 1; index < objectArray.length; index++) {
+          var duplicateObjectToUpdate = objectArray[index];
+          duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
+          delete duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
+          delete duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%ChildProductId__r.%name-space%GlobalKey__c')];
+          AppUtils.log2('Duplicated Found - Records Will be Updated with Same GlobalKey if necessary - Global Key: ' + sourcegk ); 
+          recordsToUpdateSource.push(duplicateObjectToUpdate); 
+        }
+      } 
+      //console.log(key + " = " + object);
+      var targetObjects = targetAAMap.get(key);
+      //console.log('targetObject: ' + targetObject);
+      if(targetObjects) {
+        for (let index = 0; index < targetObjects.length; index++) {
+          const targetObject = targetObjects[index];
+          var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+          var targetgk = targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+          //console.log(sourcegk + " =? " + targetgk);
+          if(sourcegk != targetgk) {
+            AppUtils.log2('Mismatch - Related IDs Source: ' + object.Id + ' Target: ' +  targetObject.Id  ); 
+            targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
+            delete targetObject[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
+            delete targetObject[AppUtils.replaceaNameSpace('%name-space%ChildProductId__r.%name-space%GlobalKey__c')];
+            recordsToUpdate.push(targetObject);
+            //console.log(JSON.stringify(targetObject));
+          }
+        }
+      }
+    }
+    if(recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0) {
+      AppUtils.log2('No Records to Update');
+    }
+    if(recordsToUpdate.length > 0){
+      AppUtils.log2('Updating Target:'); 
+      //console.log(recordsToUpdate);
+      await attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
+    }
+    if(recordsToUpdateSource.length > 0){
+      AppUtils.log2('Updating Source:');
+      //console.log(recordsToUpdateSource); 
+      await attributeAssigmentGKFix.updateRows(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
+    }
+
+  }
+
+  static createMapforNonPCI(records){
+    let map = new Map();
+    for (let index = 0; index < records.length; index++) {
+      const element = records[index];
+      var parentProductGK = element[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
+      var childProductGK = element[AppUtils.replaceaNameSpace('%name-space%ChildProductId__r.%name-space%GlobalKey__c')];  
+      var key = parentProductGK + childProductGK;
+      //console.log('Key: ' + key);
+      var array = [] ;
+      if(map.get(key)) {
+        array = map.get(key);
+      }
+      array.push(element);
+      map.set(key, array);
+    }
+    return map;
   }
 
   static async createProduct2Map(conn) {
@@ -107,8 +197,6 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
 
 
   static async fixOverrideAA(connSource,connTarget) {
-
-    AppUtils.log3('Fixing Override AA - records will be matched by Matching OverrideDefintions'); 
     AppUtils.log2('Creating Attribute Assigment Maps'); 
     AppUtils.log2('Source: '); 
     var sourceAAMap = await attributeAssigmentGKFix.createAAOverrideMap(connSource);
@@ -180,7 +268,6 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
   }
 
   static async fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map) {
-    AppUtils.log3('Fixing Non Override AA - records will be matched by AttributeId and ObjectId'); 
     var queryString= "SELECT ID, %name-space%AttributeId__r.%name-space%GlobalKey__c, %name-space%ObjectId__c, %name-space%GlobalKey__c FROM %name-space%AttributeAssignment__c WHERE %name-space%ObjectType__c= 'Product2' AND %name-space%IsOverride__c = false";
     AppUtils.log2('Fetching AA records from Source'); 
     var sourceAA = await attributeAssigmentGKFix.query(connSource,queryString);
@@ -224,6 +311,9 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
         }
       }
     }
+    if(recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0) {
+      AppUtils.log2('No Records to Update');
+    }
     if(recordsToUpdate.length > 0){
       AppUtils.log2('Updating Target:'); 
       await attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
@@ -235,9 +325,11 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
   }
 
   static async updateRows(records,conn,objectName) {
+    //console.log('Before Creating Job');
     var job = await conn.bulk.createJob(objectName,'update');
+    //console.log('Before Opening Job');
     await job.open();
-    //console.log(job);
+    //console.log('Open Job');
     var numOfComonents = records.length;
     var div = numOfComonents/this.batchSize;
     var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;

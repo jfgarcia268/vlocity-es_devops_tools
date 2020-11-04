@@ -2,8 +2,9 @@
   "commandDescription": "Fix AA GK mistmatch",
   "packageType": "Vlocity Package Type, Options: ins and cmt",
   "errorNoOrgResults": "No results found for the org '%s'.",
-  "command":"attributegkfix",
-  "objectid":"Filter by Product2 Id",
+  "command":"epcgkfix",
   "source":"Source Org",
-  "target":"Target Org"
+  "target":"Target Org",
+  "pci":"Match Product Child Items GK",
+  "aa":"Match Attribute Assigments GK"
 }
