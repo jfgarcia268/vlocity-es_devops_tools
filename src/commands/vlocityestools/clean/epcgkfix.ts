@@ -67,24 +67,27 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     if(!nameSpaceSet){
       throw new SfdxError("Error: Package was not set or incorrect was provided.");
     }
+    
     if(aa == 'true'){
+      AppUtils.log4('Attribute Assignments Global Key Sync'); 
       AppUtils.log2('Creating Products Maps'); 
       AppUtils.log2('Source:'); 
       var sourceProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connSource);
       AppUtils.log2('Target:'); 
       var targetProduct2Map = await attributeAssigmentGKFix.createProduct2Map(connTarget);
-      //console.log('TEST: ' + targetProduct2Map.get('01t5o000000Ead3AAC'))
       AppUtils.ux.log(' ');
       AppUtils.log3('Fixing Non Override AA - records will be matched by AttributeId and ObjectId'); 
       await attributeAssigmentGKFix.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
       AppUtils.ux.log(' ');
       AppUtils.log3('Fixing Override AA - records will be matched by Matching OverrideDefintions'); 
       await attributeAssigmentGKFix.fixOverrideAA(connSource,connTarget);
+      AppUtils.ux.log(' ');
     }
     if(pci == 'true'){
-      AppUtils.ux.log(' ');
+      AppUtils.log4('Product Child Items Global Key Sync'); 
       AppUtils.log3('Fixing Non Override PCI - records will be matched by Matching ParentProductId and ChildProductId'); 
       await attributeAssigmentGKFix.fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map);
+      AppUtils.ux.log(' ');
     }
   }
 
