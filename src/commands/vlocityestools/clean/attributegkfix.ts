@@ -1,6 +1,6 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError, Org } from '@salesforce/core';
-import { AppUtils } from '../../../../utils/AppUtils';
+import { AppUtils } from '../../../utils/AppUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -14,8 +14,6 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   private static batchSize = 10000;
-
-  private static bulkApiPollTimeout = 120;
 
   public static examples = [
   `$ sfdx vlocityestools:report:epc:attributegkfix -s myOrg@example.com -t myOrg2@example.com  -p cmt
@@ -157,7 +155,7 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
       }
     }
     if(recordsToUpdate.length > 0){
-      attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
+      await attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
     else {
       AppUtils.log2('No Records to update'); 
@@ -205,12 +203,12 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
           targetObject[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
           delete targetObject[AppUtils.replaceaNameSpace('%name-space%AttributeId__r.%name-space%GlobalKey__c')];
           recordsToUpdate.push(targetObject);
-          console.log(JSON.stringify(targetObject));
+          //console.log(JSON.stringify(targetObject));
         }
       }
     }
     if(recordsToUpdate.length > 0){
-      attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
+      await attributeAssigmentGKFix.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
     else {
       AppUtils.log2('No Records to update'); 
@@ -248,7 +246,7 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
             resolve();
           })
           .on("queue",  function(batchInfo) { 
-            batch.poll(5*1000 /* interval(ms) */, 1000*60*this.bulkApiPollTimeout /* timeout(ms) */);
+            batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
             AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
           })
           .on("response",  function(rets) { 
@@ -300,6 +298,8 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     //console.log('Query:  ' + query); 
     var count = 0;
     var records = [];
+    conn.bulk.pollInterval = 5000; // 5 sec
+    conn.bulk.pollTimeout = 120000; // 60 sec
     let promise = new Promise((resolve, reject) => {
       conn.bulk.query(query)
         .on('record', function(result) { 
