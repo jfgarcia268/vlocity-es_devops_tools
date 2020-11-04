@@ -28,8 +28,7 @@ export default class attributeAssigmentGKFix extends SfdxCommand {
     package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
     objectid: flags.string({char: 'i', description: messages.getMessage('objectid')}),
     source: flags.string({char: 's', description: messages.getMessage('source')}),
-    target: flags.string({char: 't', description: messages.getMessage('target')}),
-    cleanstaleobjects: flags.string({char: 'c', description: messages.getMessage('cleanstaleobjects')})
+    target: flags.string({char: 't', description: messages.getMessage('target')})
   };
 
   // Comment this out if your command does not require an org username
