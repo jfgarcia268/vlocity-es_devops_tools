@@ -6,5 +6,6 @@
   "source":"Source Org",
   "target":"Target Org",
   "pci":"Match Product Child Items GK",
-  "aa":"Match Attribute Assigments GK"
+  "aa":"Match Attribute Assigments GK",
+  "duplicates":"Check Override Definitions Duplicates for PCI or AA Overrides and dont match GK"
 }
