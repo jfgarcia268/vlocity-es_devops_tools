@@ -36,9 +36,9 @@ export default class epcGlobalKeySync extends SfdxCommand {
   public static keySeparator = '|';
 
   public static examples = [
-  `$ sfdx vlocityestools:clean:epcgkfix -s myOrg@example.com -t myOrg2@example.com  -p cmt --pci true --aa true
+  `$ sfdx vlocityestools:clean:epcgkfix -s myOrg@example.com -t myOrg2@example.com  -p cmt --pci  --aa 
   `,
-  `$ sfdx vlocityestools:clean:epcgkfix --source myOrg--target myOrg2 --aa true
+  `$ sfdx vlocityestools:clean:epcgkfix --source myOrg--target myOrg2 --aa
   `
   ];
 
