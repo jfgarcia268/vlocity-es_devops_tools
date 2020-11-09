@@ -7,5 +7,6 @@
   "target":"Target Org",
   "pci":"Match Product Child Items GK",
   "aa":"Match Attribute Assigments GK",
-  "check":"Run the command but do not insert Records"
+  "check":"Run the command but do not insert Records",
+  "definitions":"Custom Unique Key definition for OverrideDefinition For AA and PCI"
 }

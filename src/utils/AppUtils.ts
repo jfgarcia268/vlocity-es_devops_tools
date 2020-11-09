@@ -20,6 +20,15 @@ export class AppUtils  {
         return res;
     }
 
+    public static replaceaNameSpaceFromFileArray(array){
+        var newArray = [];
+        for (let index = 0; index < array.length; index++) {
+            const element = array[index];
+            newArray.push(this.replaceaNameSpaceFromFile(element));
+        }
+        return newArray;
+    }
+
     public static async setNameSpace(conn,packageType) {
         if(packageType == 'cmt'){
             AppUtils.namespace = 'vlocity_cmt__';
