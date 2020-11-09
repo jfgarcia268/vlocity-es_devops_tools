@@ -120,6 +120,29 @@ OverrideDefinition.vlocity_namespace__PromotionItemId__r.vvlocity_namespace__Off
 
 Then, Sync Global Keys of OverrideDefinition.vlocity_namespace__OverridingProductChildItemId__c of source and target
 
+#### How to use a custom unique key for "OverrideDefinition" Match
+
+You can pass as an additional parameter a .yaml file to use custom unique key for "OverrideDefinition" Match sample File for PCI and AA.
+Sample File:
+
+```
+PCI:
+  - namespace__ProductHierarchyGlobalKeyPath__c
+  - namespace__ProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__ProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__ContextProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__OfferId__r.namespace__GlobalKey__c
+AA:
+  - namespace__ProductHierarchyGlobalKeyPath__c
+  - namespace__ProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__ProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__ContextProductId__r.namespace__GlobalKey__c
+  - namespace__PromotionItemId__r.namespace__OfferId__r.namespace__GlobalKey__c
+  - namespace__OverridingAttributeAssignmentId__r.namespace__AttributeId__r.namespace__Code__c
+```
+
 
 ```
 USAGE
@@ -142,6 +165,11 @@ OPTIONS
                                                             (Optional)
 
   -v, --check=check                                         Do not insert Updated Records
+
+  -d, --definitions=definitions                             YAML file Name to Override the 
+                                                            unique key for "OverrideDefinition" 
+                                                            Match
+  
 
 EXAMPLES
 

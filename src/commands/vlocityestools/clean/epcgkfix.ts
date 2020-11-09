@@ -10,28 +10,31 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('vlocityestools', 'epcgkfix');
 
+const fsExtra = require("fs-extra");
+const yaml = require('js-yaml');
+
+var OverrideUniqueFieldsForAA = [
+  '%name-space%ProductHierarchyGlobalKeyPath__c',
+  '%name-space%ProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%ProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%ContextProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%OfferId__r.%name-space%GlobalKey__c',
+  '%name-space%OverridingAttributeAssignmentId__r.%name-space%AttributeId__r.%name-space%Code__c',
+];
+
+var OverrideUniqueFieldsForPCI = [
+  '%name-space%ProductHierarchyGlobalKeyPath__c',
+  '%name-space%ProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%ProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%ContextProductId__r.%name-space%GlobalKey__c',
+  '%name-space%PromotionItemId__r.%name-space%OfferId__r.%name-space%GlobalKey__c'
+];
+
 export default class epcGlobalKeySync extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
-
-  public static OverrideUniqueFieldsForAA = [
-    '%name-space%ProductHierarchyGlobalKeyPath__c',
-    '%name-space%ProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%ProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%ContextProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%OfferId__r.%name-space%GlobalKey__c',
-    '%name-space%OverridingAttributeAssignmentId__r.%name-space%AttributeId__r.%name-space%Code__c',
-  ];
-
-  public static OverrideUniqueFieldsForPCI = [
-    '%name-space%ProductHierarchyGlobalKeyPath__c',
-    '%name-space%ProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%ProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%ContextProductId__r.%name-space%GlobalKey__c',
-    '%name-space%PromotionItemId__r.%name-space%OfferId__r.%name-space%GlobalKey__c'
-  ];
 
   public static keySeparator = '|';
 
@@ -50,7 +53,8 @@ export default class epcGlobalKeySync extends SfdxCommand {
     target: flags.string({char: 't', description: messages.getMessage('target')}),
     pci: flags.boolean({char: 'c', description: messages.getMessage('pci')}),
     aa: flags.boolean({char: 'a', description: messages.getMessage('aa')}),
-    check: flags.boolean({char: 'v', description: messages.getMessage('check')})
+    check: flags.boolean({char: 'v', description: messages.getMessage('check')}),
+    definitions: flags.string({char: 'd', description: messages.getMessage('definitions')})
   };
 
   // Comment this out if your command does not require an org username
@@ -72,6 +76,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
     var source = this.flags.source;
     var target = this.flags.target;
     var checkMode = this.flags.check;
+    var definitions = this.flags.definitions;
 
     var pci = this.flags.pci;
     var aa = this.flags.aa;
@@ -88,6 +93,29 @@ export default class epcGlobalKeySync extends SfdxCommand {
     if(!nameSpaceSet){
       throw new SfdxError("Error: Package was not set or incorrect was provided.");
     }
+    
+    var doc; 
+    
+    if (definitions) {
+      if (!fsExtra.existsSync(definitions)) {
+        throw new Error("Error: File: " + definitions + " does not exist");
+      } else {
+        doc = yaml.safeLoad(fsExtra.readFileSync(definitions, 'utf8'));
+        var pciDef = doc.PCI;
+        var aaDef = doc.AA;
+        if(pciDef && pciDef.length > 0){
+          OverrideUniqueFieldsForPCI = AppUtils.replaceaNameSpaceFromFileArray(pciDef);
+          
+        }
+        if(pciDef && pciDef.length > 0){
+          OverrideUniqueFieldsForAA = AppUtils.replaceaNameSpaceFromFileArray(aaDef);
+        }
+        //console.log(OverrideUniqueFieldsForPCI);
+        //console.log(OverrideUniqueFieldsForAA);
+      }
+    } 
+    
+
     try {
       if(aa){
         AppUtils.log4('Attribute Assignments Global Key Sync'); 
@@ -133,10 +161,10 @@ export default class epcGlobalKeySync extends SfdxCommand {
     
     AppUtils.log2('Fetching Override Definitions records from Source'); 
     var sourceOO = await DBUtils.bulkAPIquery(connSource,queryString);
-    var sourceOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(sourceOO,this.OverrideUniqueFieldsForAA);
+    var sourceOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(sourceOO,OverrideUniqueFieldsForAA);
     AppUtils.log2('Fetching Override Definitions records from Target'); 
     var targetOO = await DBUtils.bulkAPIquery(connTarget,queryString);
-    var targetOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(targetOO,this.OverrideUniqueFieldsForAA);
+    var targetOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(targetOO,OverrideUniqueFieldsForAA);
     AppUtils.ux.log(' ');
     var objectName = ObjectAPINname.split("__")[1];
     var recordsToUpdate = [];
@@ -362,8 +390,8 @@ export default class epcGlobalKeySync extends SfdxCommand {
   static createOverrideDefQueryForPCI(){
     //SELECT
     var queryString = "SELECT ID, "
-    for (let index = 0; index < this.OverrideUniqueFieldsForPCI.length; index++) {
-      const element = this.OverrideUniqueFieldsForPCI[index];
+    for (let index = 0; index < OverrideUniqueFieldsForPCI.length; index++) {
+      const element = OverrideUniqueFieldsForPCI[index];
       queryString += element + ', '
     }    
     queryString += "%name-space%OverriddenProductChildItemId__c, %name-space%OverridingProductChildItemId__c  ";
@@ -377,8 +405,8 @@ export default class epcGlobalKeySync extends SfdxCommand {
   static createOverrideDefQueryForAA(){
     //SELECT
     var queryString = "SELECT ID, "
-    for (let index = 0; index < this.OverrideUniqueFieldsForAA.length; index++) {
-      const element = this.OverrideUniqueFieldsForAA[index];
+    for (let index = 0; index < OverrideUniqueFieldsForAA.length; index++) {
+      const element = OverrideUniqueFieldsForAA[index];
       queryString += element + ', '
     }
     queryString += "%name-space%OverridingAttributeAssignmentId__c, %name-space%OverriddenAttributeAssignmentId__c"
