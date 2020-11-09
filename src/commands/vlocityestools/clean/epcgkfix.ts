@@ -123,37 +123,6 @@ export default class epcGlobalKeySync extends SfdxCommand {
     }
   }
 
-  static createOverrideDefQueryForPCI(){
-    //SELECT
-    var queryString = "SELECT ID, "
-    for (let index = 0; index < this.OverrideUniqueFieldsForPCI.length; index++) {
-      const element = this.OverrideUniqueFieldsForPCI[index];
-      queryString += element + ', '
-    }    
-    queryString += "%name-space%OverriddenProductChildItemId__c, %name-space%OverridingProductChildItemId__c  ";
-    //FROM
-    queryString += "FROM %name-space%OverrideDefinition__c "
-    //WHERE
-    queryString += "WHERE %name-space%OverrideType__c = 'Product Definition' AND %name-space%OverridingProductChildItemId__c != null AND %name-space%OverriddenProductChildItemId__c != null ";  
-    return queryString;
-  }
-
-  static createOverrideDefQueryForAA(){
-    //SELECT
-    var queryString = "SELECT ID, "
-    for (let index = 0; index < this.OverrideUniqueFieldsForAA.length; index++) {
-      const element = this.OverrideUniqueFieldsForAA[index];
-      queryString += element + ', '
-    }
-    queryString += "%name-space%OverridingAttributeAssignmentId__c, %name-space%OverriddenAttributeAssignmentId__c"
-    // FROM
-    queryString += " FROM %name-space%OverrideDefinition__c "
-    // WHERE
-    queryString += " WHERE %name-space%OverrideType__c = 'Attribute' AND %name-space%OverridingAttributeAssignmentId__c != null AND %name-space%OverriddenAttributeAssignmentId__c != null "
-    return queryString;
-  }
-
-
   static async fixOverrideAAorPCI(connSource,connTarget,checkMode,ObjectAPINname,queryString) {
     AppUtils.log2('Creating ' + ObjectAPINname + ' Maps'); 
     AppUtils.log2('Source: '); 
@@ -316,68 +285,6 @@ export default class epcGlobalKeySync extends SfdxCommand {
 
   }
 
-  static createMapforNonPCI(records){
-    let map = new Map();
-    for (let index = 0; index < records.length; index++) {
-      const element = records[index];
-      var parentProductGK = element[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
-      var childProductGK = element[AppUtils.replaceaNameSpace('%name-space%ChildProductId__r.%name-space%GlobalKey__c')];  
-      var key = parentProductGK + childProductGK;
-      //console.log('Key: ' + key);
-      var array = [] ;
-      if(map.get(key)) {
-        array = map.get(key);
-      }
-      array.push(element);
-      map.set(key, array);
-    }
-    return map;
-  }
-
-  static async createProduct2Map(conn) {
-    var queryString= 'SELECT Id, %name-space%GlobalKey__c FROM Product2';
-    var products = await DBUtils.bulkAPIquery(conn,queryString);
-    let map = new Map();
-    for (let index = 0; index < products.length; index++) {
-      const element = products[index];
-      var productid = element.Id;
-      var gk = element[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
-      //console.log('Id: ' + productid + ' gk: ' + gk);
-      map.set(productid, gk);
-    }
-    return map;
-  }
-
-  static async createPCIorAAOverrideMap(conn,object) {
-    var queryString= "SELECT ID, %name-space%GlobalKey__c FROM " + object + " WHERE %name-space%IsOverride__c = true";
-    var objects = await DBUtils.bulkAPIquery(conn,queryString);
-    let map = new Map();
-    for (let index = 0; index < objects.length; index++) {
-      const element = objects[index];
-      var obid = element.Id;
-      //console.log('Id: ' + productid + ' gk: ' + gk);
-      map.set(obid, element);
-    }
-    return map;
-  }
-
-  static createMapforObjectforOverrideDefinitions(records,fields){
-    let map = new Map();
-    for (let index = 0; index < records.length; index++) {
-      const element = records[index];
-      var key = '';
-      for (let index2 = 0; index2 < fields.length; index2++) {
-        const field = fields[index2];
-        key += element[AppUtils.replaceaNameSpace(field)] + this.keySeparator;
-      } 
-      var array = map.get(key)? map.get(key) : [];
-      //console.log(array);
-      array.push(element);
-      map.set(key, array);
-    }
-    return map;
-  }
-  
   static async fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map,checkMode) {
     var queryString= "SELECT ID, %name-space%AttributeId__r.%name-space%GlobalKey__c, %name-space%ObjectId__c, %name-space%GlobalKey__c FROM %name-space%AttributeAssignment__c WHERE %name-space%ObjectType__c= 'Product2' AND %name-space%IsOverride__c = false";
     AppUtils.log2('Fetching AA records from Source'); 
@@ -452,6 +359,54 @@ export default class epcGlobalKeySync extends SfdxCommand {
 
   }
 
+  static createOverrideDefQueryForPCI(){
+    //SELECT
+    var queryString = "SELECT ID, "
+    for (let index = 0; index < this.OverrideUniqueFieldsForPCI.length; index++) {
+      const element = this.OverrideUniqueFieldsForPCI[index];
+      queryString += element + ', '
+    }    
+    queryString += "%name-space%OverriddenProductChildItemId__c, %name-space%OverridingProductChildItemId__c  ";
+    //FROM
+    queryString += "FROM %name-space%OverrideDefinition__c "
+    //WHERE
+    queryString += "WHERE %name-space%OverrideType__c = 'Product Definition' AND %name-space%OverridingProductChildItemId__c != null AND %name-space%OverriddenProductChildItemId__c != null ";  
+    return queryString;
+  }
+
+  static createOverrideDefQueryForAA(){
+    //SELECT
+    var queryString = "SELECT ID, "
+    for (let index = 0; index < this.OverrideUniqueFieldsForAA.length; index++) {
+      const element = this.OverrideUniqueFieldsForAA[index];
+      queryString += element + ', '
+    }
+    queryString += "%name-space%OverridingAttributeAssignmentId__c, %name-space%OverriddenAttributeAssignmentId__c"
+    // FROM
+    queryString += " FROM %name-space%OverrideDefinition__c "
+    // WHERE
+    queryString += " WHERE %name-space%OverrideType__c = 'Attribute' AND %name-space%OverridingAttributeAssignmentId__c != null AND %name-space%OverriddenAttributeAssignmentId__c != null "
+    return queryString;
+  }
+
+  static createMapforNonPCI(records){
+    let map = new Map();
+    for (let index = 0; index < records.length; index++) {
+      const element = records[index];
+      var parentProductGK = element[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
+      var childProductGK = element[AppUtils.replaceaNameSpace('%name-space%ChildProductId__r.%name-space%GlobalKey__c')];  
+      var key = parentProductGK + childProductGK;
+      //console.log('Key: ' + key);
+      var array = [] ;
+      if(map.get(key)) {
+        array = map.get(key);
+      }
+      array.push(element);
+      map.set(key, array);
+    }
+    return map;
+  }
+
   static createMapforNonAA(records,product2Map){
     let map = new Map();
     for (let index = 0; index < records.length; index++) {
@@ -474,5 +429,51 @@ export default class epcGlobalKeySync extends SfdxCommand {
     }
     return map;
   }
+
+  static async createProduct2Map(conn) {
+    var queryString= 'SELECT Id, %name-space%GlobalKey__c FROM Product2';
+    var products = await DBUtils.bulkAPIquery(conn,queryString);
+    let map = new Map();
+    for (let index = 0; index < products.length; index++) {
+      const element = products[index];
+      var productid = element.Id;
+      var gk = element[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+      //console.log('Id: ' + productid + ' gk: ' + gk);
+      map.set(productid, gk);
+    }
+    return map;
+  }
+
+  static async createPCIorAAOverrideMap(conn,object) {
+    var queryString= "SELECT ID, %name-space%GlobalKey__c FROM " + object + " WHERE %name-space%IsOverride__c = true";
+    var objects = await DBUtils.bulkAPIquery(conn,queryString);
+    let map = new Map();
+    for (let index = 0; index < objects.length; index++) {
+      const element = objects[index];
+      var obid = element.Id;
+      //console.log('Id: ' + productid + ' gk: ' + gk);
+      map.set(obid, element);
+    }
+    return map;
+  }
+
+  static createMapforObjectforOverrideDefinitions(records,fields){
+    let map = new Map();
+    for (let index = 0; index < records.length; index++) {
+      const element = records[index];
+      var key = '';
+      for (let index2 = 0; index2 < fields.length; index2++) {
+        const field = fields[index2];
+        key += element[AppUtils.replaceaNameSpace(field)] + this.keySeparator;
+      } 
+      var array = map.get(key)? map.get(key) : [];
+      //console.log(array);
+      array.push(element);
+      map.set(key, array);
+    }
+    return map;
+  }
+  
+ 
     
 }
