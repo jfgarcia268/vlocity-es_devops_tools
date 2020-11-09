@@ -1,6 +1,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError, Org } from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -12,8 +13,6 @@ const messages = Messages.loadMessages('vlocityestools', 'epcgkfix');
 export default class epcGlobalKeySync extends SfdxCommand {
 
   public static description = messages.getMessage('commandDescription');
-
-  private static batchSize = 10000;
 
   public static OverrideUniqueFieldsForAA = [
     '%name-space%ProductHierarchyGlobalKeyPath__c',
@@ -51,7 +50,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
     target: flags.string({char: 't', description: messages.getMessage('target')}),
     pci: flags.boolean({char: 'c', description: messages.getMessage('pci')}),
     aa: flags.boolean({char: 'a', description: messages.getMessage('aa')}),
-    duplicates: flags.boolean({char: 'd', description: messages.getMessage('duplicates')})
+    check: flags.boolean({char: 'v', description: messages.getMessage('check')})
   };
 
   // Comment this out if your command does not require an org username
@@ -72,7 +71,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
     var packageType = this.flags.package;
     var source = this.flags.source;
     var target = this.flags.target;
-    var duplicates = this.flags.duplicates;
+    var checkMode = this.flags.check;
 
     var pci = this.flags.pci;
     var aa = this.flags.aa;
@@ -100,22 +99,22 @@ export default class epcGlobalKeySync extends SfdxCommand {
         var targetProduct2Map = await epcGlobalKeySync.createProduct2Map(connTarget);
         AppUtils.ux.log(' ');
         AppUtils.log3('Fixing Non Override AA - records will be matched by AttributeId and ObjectId'); 
-        await epcGlobalKeySync.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map,duplicates);
+        await epcGlobalKeySync.fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map,checkMode);
         AppUtils.ux.log(' ');
         AppUtils.log3('Fixing Override AA - records will be matched by Matching OverrideDefintions'); 
         let query = epcGlobalKeySync.createOverrideDefQueryForAA();
-        await epcGlobalKeySync.fixOverrideAAorPCI(connSource,connTarget,duplicates,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'),query);
+        await epcGlobalKeySync.fixOverrideAAorPCI(connSource,connTarget,checkMode,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'),query);
         AppUtils.ux.log(' ');
       }
       if(pci){
         AppUtils.log4('Product Child Items Global Key Sync'); 
         AppUtils.ux.log(' ');
         AppUtils.log3('Fixing Non Override PCI - records will be matched by Matching ParentProductId and ChildProductId'); 
-        await epcGlobalKeySync.fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map,duplicates);
+        await epcGlobalKeySync.fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map,checkMode);
         AppUtils.ux.log(' ');
         AppUtils.log3('Fixing Override PCI - records will be matched by Matching OverrideDefintions'); 
         let query = epcGlobalKeySync.createOverrideDefQueryForPCI();
-        await epcGlobalKeySync.fixOverrideAAorPCI(connSource,connTarget,duplicates,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'),query);
+        await epcGlobalKeySync.fixOverrideAAorPCI(connSource,connTarget,checkMode,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'),query);
         AppUtils.ux.log(' ');
       }
       
@@ -155,7 +154,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
   }
 
 
-  static async fixOverrideAAorPCI(connSource,connTarget,duplicates,ObjectAPINname,queryString) {
+  static async fixOverrideAAorPCI(connSource,connTarget,checkMode,ObjectAPINname,queryString) {
     AppUtils.log2('Creating ' + ObjectAPINname + ' Maps'); 
     AppUtils.log2('Source: '); 
     var sourceAAMap = await epcGlobalKeySync.createPCIorAAOverrideMap(connSource,ObjectAPINname);
@@ -164,10 +163,10 @@ export default class epcGlobalKeySync extends SfdxCommand {
     AppUtils.ux.log(' ');
     
     AppUtils.log2('Fetching Override Definitions records from Source'); 
-    var sourceOO = await epcGlobalKeySync.query(connSource,queryString);
+    var sourceOO = await DBUtils.bulkAPIquery(connSource,queryString);
     var sourceOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(sourceOO,this.OverrideUniqueFieldsForAA);
     AppUtils.log2('Fetching Override Definitions records from Target'); 
-    var targetOO = await epcGlobalKeySync.query(connTarget,queryString);
+    var targetOO = await DBUtils.bulkAPIquery(connTarget,queryString);
     var targetOOMap = epcGlobalKeySync.createMapforObjectforOverrideDefinitions(targetOO,this.OverrideUniqueFieldsForAA);
     AppUtils.ux.log(' ');
     var objectName = ObjectAPINname.split("__")[1];
@@ -232,26 +231,26 @@ export default class epcGlobalKeySync extends SfdxCommand {
         }  
       }
     }
-    if(recordsToUpdate.length > 0 && !duplicates){
+    if(recordsToUpdate.length > 0 && !checkMode){
       AppUtils.log2('Updating Target:'); 
-      await epcGlobalKeySync.updateRows(recordsToUpdate,connTarget,ObjectAPINname);
+      await DBUtils.bulkAPIUpdate(recordsToUpdate,connTarget,ObjectAPINname);
     }
-    if(recordsToUpdateSource.length > 0 && !duplicates){
+    if(recordsToUpdateSource.length > 0 && !checkMode){
       AppUtils.log2('Updating Source:'); 
-      await epcGlobalKeySync.updateRows(recordsToUpdateSource,connSource,ObjectAPINname);
+      await DBUtils.bulkAPIUpdate(recordsToUpdateSource,connSource,ObjectAPINname);
     }
     else {
       AppUtils.log2('No Records to update'); 
     }
   }
 
-  static async fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map,duplicates) {
+  static async fixNonOverridePCI(connSource,connTarget,sourceProduct2Map,targetProduct2Map,checkMode) {
     var queryString= "SELECT id, %name-space%GlobalKey__c, %name-space%ParentProductId__r.%name-space%GlobalKey__c, %name-space%ChildProductId__r.%name-space%GlobalKey__c FROM %name-space%ProductChildItem__c WHERE %name-space%IsOverride__c = false";
     AppUtils.log2('Fetching PCI records from Source'); 
-    var sourceAA = await epcGlobalKeySync.query(connSource,queryString);
+    var sourceAA = await DBUtils.bulkAPIquery(connSource,queryString);
     var sourceAAMap = epcGlobalKeySync.createMapforNonPCI(sourceAA);
     AppUtils.log2('Fetching PCI records from Target'); 
-    var targetAA = await epcGlobalKeySync.query(connTarget,queryString);
+    var targetAA = await DBUtils.bulkAPIquery(connTarget,queryString);
     var targetAAMap = epcGlobalKeySync.createMapforNonPCI(targetAA);
     AppUtils.ux.log(' ');
 
@@ -301,18 +300,18 @@ export default class epcGlobalKeySync extends SfdxCommand {
         }
       }
     }
-    if(duplicates || (recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0)) {
+    if(checkMode || (recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0)) {
       AppUtils.log2('No Records to Update');
     }
-    if(recordsToUpdate.length > 0 && !duplicates){
+    if(recordsToUpdate.length > 0 && !checkMode){
       AppUtils.log2('Updating Target:'); 
       //console.log(recordsToUpdate);
-      await epcGlobalKeySync.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
+      await DBUtils.bulkAPIUpdate(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
     }
-    if(recordsToUpdateSource.length > 0 && !duplicates){
+    if(recordsToUpdateSource.length > 0 && !checkMode){
       AppUtils.log2('Updating Source:');
       //console.log(recordsToUpdateSource); 
-      await epcGlobalKeySync.updateRows(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
+      await DBUtils.bulkAPIUpdate(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%ProductChildItem__c'));
     }
 
   }
@@ -337,7 +336,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
 
   static async createProduct2Map(conn) {
     var queryString= 'SELECT Id, %name-space%GlobalKey__c FROM Product2';
-    var products = await epcGlobalKeySync.query(conn,queryString);
+    var products = await DBUtils.bulkAPIquery(conn,queryString);
     let map = new Map();
     for (let index = 0; index < products.length; index++) {
       const element = products[index];
@@ -351,7 +350,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
 
   static async createPCIorAAOverrideMap(conn,object) {
     var queryString= "SELECT ID, %name-space%GlobalKey__c FROM " + object + " WHERE %name-space%IsOverride__c = true";
-    var objects = await epcGlobalKeySync.query(conn,queryString);
+    var objects = await DBUtils.bulkAPIquery(conn,queryString);
     let map = new Map();
     for (let index = 0; index < objects.length; index++) {
       const element = objects[index];
@@ -379,13 +378,13 @@ export default class epcGlobalKeySync extends SfdxCommand {
     return map;
   }
   
-  static async fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map,duplicates) {
+  static async fixNonOverrideAA(connSource,connTarget,sourceProduct2Map,targetProduct2Map,checkMode) {
     var queryString= "SELECT ID, %name-space%AttributeId__r.%name-space%GlobalKey__c, %name-space%ObjectId__c, %name-space%GlobalKey__c FROM %name-space%AttributeAssignment__c WHERE %name-space%ObjectType__c= 'Product2' AND %name-space%IsOverride__c = false";
     AppUtils.log2('Fetching AA records from Source'); 
-    var sourceAA = await epcGlobalKeySync.query(connSource,queryString);
+    var sourceAA = await DBUtils.bulkAPIquery(connSource,queryString);
     var sourceAAMap = epcGlobalKeySync.createMapforNonAA(sourceAA,sourceProduct2Map);
     AppUtils.log2('Fetching AA records from Target'); 
-    var targetAA = await epcGlobalKeySync.query(connTarget,queryString);
+    var targetAA = await DBUtils.bulkAPIquery(connTarget,queryString);
     var targetAAMap = epcGlobalKeySync.createMapforNonAA(targetAA,targetProduct2Map);
     AppUtils.ux.log(' ');
 
@@ -436,82 +435,21 @@ export default class epcGlobalKeySync extends SfdxCommand {
       }
     }
 
-    if(duplicates || (recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0)) {
+    if(checkMode || (recordsToUpdate.length == 0 && recordsToUpdateSource.length == 0)) {
       AppUtils.log2('No Records to Update');
     }
-    if(recordsToUpdate.length > 0 && !duplicates){
+    if(recordsToUpdate.length > 0 && !checkMode){
       AppUtils.log2('Updating Target:'); 
       //console.log(recordsToUpdate);
-      await epcGlobalKeySync.updateRows(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
+      await DBUtils.bulkAPIUpdate(recordsToUpdate,connTarget,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
-    if(recordsToUpdateSource.length > 0 && !duplicates){
+    if(recordsToUpdateSource.length > 0 && !checkMode){
       AppUtils.log2('Updating Source:');
       //console.log(recordsToUpdateSource); 
-      await epcGlobalKeySync.updateRows(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
+      await DBUtils.bulkAPIUpdate(recordsToUpdateSource,connSource,AppUtils.replaceaNameSpace('%name-space%AttributeAssignment__c'));
     }
 
 
-  }
-
-  static async updateRows(records,conn,objectName) {
-    //console.log('Before Creating Job');
-    var job = await conn.bulk.createJob(objectName,'update');
-    //console.log('Before Opening Job');
-    await job.open();
-    //console.log('Open Job');
-    var numOfComonents = records.length;
-    var div = numOfComonents/this.batchSize;
-    var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;
-    var numberOfBatchesDone = 0;
-    AppUtils.log2('Number Of Batches to be created to Update Rows: ' + numberOfBatches);
-    try {
-      var promises = [];
-      for (var i=0; i<numberOfBatches; i++) {
-        
-        var arraytoupdate = records;
-        if(i<(numberOfBatches-1)) {
-          arraytoupdate = records.splice(0,this.batchSize);
-        }
-        let newp = new Promise((resolve, reject) => {
-          var batchNumber = i + 1;
-          var batch = job.createBatch()
-          AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoupdate.length);
-
-          //console.log('Enter Promise');
-          batch.execute(arraytoupdate)
-          .on("error",  function(err) { 
-            console.log('Error, batch Info:', err);
-            numberOfBatchesDone = numberOfBatchesDone +1;
-            //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
-            resolve();
-          })
-          .on("queue",  function(batchInfo) { 
-            batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
-            AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
-          })
-          .on("response",  function(rets) { 
-            numberOfBatchesDone = numberOfBatchesDone +1;
-            var hadErrors = epcGlobalKeySync.noErrors(rets);
-            //console.log(rets);
-            AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-            //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
-            resolve();
-          });
-          //console.log('batch: '+ batch);
-        }).catch(error => {
-          AppUtils.log2('Error Creating  batches - Error: ' + error);
-          //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
-        });
-        await promises.push(newp);
-      }
-      //console.log('Promise Size: '+ Promise.length);
-      await Promise.all(promises);
-      job.close();
-    } catch (error) {
-      job.close();
-      AppUtils.log2('Error Creating  batches - Error: ' + error);
-      //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
-    }
   }
 
   static createMapforNonAA(records,product2Map){
@@ -535,54 +473,6 @@ export default class epcGlobalKeySync extends SfdxCommand {
       }
     }
     return map;
-  }
-
-  static async query(conn, initialQuery) {
-    var query = AppUtils.replaceaNameSpace(initialQuery);
-    AppUtils.startSpinner('Fetching records');
-    //console.log('Query:  ' + query); 
-    var count = 0;
-    var records = [];
-    conn.bulk.pollInterval = 5000;
-    conn.bulk.pollTimeout = 240000; 
-    let promise = new Promise((resolve, reject) => {
-      conn.bulk.query(query)
-        .on('record', function(result) { 
-          records.push(result);
-          count++;
-          AppUtils.updateSpinnerMessage('Objects Fetched so far: ' + count);
-        })
-        .on("queue", function(batchInfo) {
-          AppUtils.log3('Fetch queued');
-          AppUtils.updateSpinnerMessage('Fetch queued');
-        })
-        .on("end", function() {
-          if (records.length > 0){
-            AppUtils.stopSpinnerMessage('Succesfully Fetched All Row records... Number of records: ' + records.length);
-            resolve('Done');
-          }
-          else {
-            AppUtils.stopSpinnerMessage('No Rows where found');
-            resolve('No');
-          }
-        })
-        .on('error', function(err) {
-          AppUtils.stopSpinnerMessage('Error Fetching: ' + err)
-          resolve(err);
-        });
-    });
-    await promise;
-    return records;
-  }
-
-  private static noErrors(rets){
-    for (let index = 0; index < rets.length; index++) {
-      const element = rets[index];
-      if(!element.success){
-        return false;
-      }
-    }
-    return true;
   }
     
 }
