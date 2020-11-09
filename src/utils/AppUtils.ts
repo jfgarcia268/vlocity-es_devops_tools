@@ -43,8 +43,12 @@ export class AppUtils  {
         //this.log('');
     }  
 
+    public static log4(message) {
+        this.log(' >>>> ' + message);
+    }
+
     public static log3(message) {
-        this.log(' >>> ' + message);
+        this.log('  >>> ' + message);
     }
 
     public static log2(message) {
@@ -52,7 +56,7 @@ export class AppUtils  {
     }
 
     public static log1(message) {
-        this.log('     > ' + message);
+        this.log('    > ' + message);
     }
 
     public static startSpinner(message) {

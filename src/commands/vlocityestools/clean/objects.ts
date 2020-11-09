@@ -1,6 +1,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -25,9 +26,6 @@ export default class cleanObjects extends SfdxCommand {
 
   public static args = [{name: 'file'}];
 
-  private static batchSize = 10000;
-  //private static batchSize = 10; //Testing
-
   private static bulkApiPollTimeout = 60;
 
   private static error = false;
@@ -35,10 +33,10 @@ export default class cleanObjects extends SfdxCommand {
   protected static flagsConfig = {
     package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
     datafile: flags.string({char: 'd', description: messages.getMessage('dataFile')}),
-    onlyquery: flags.string({char: 'q', description: messages.getMessage('onlyquery')}),
-    retry: flags.string({char: 'r', description: messages.getMessage('retry')}),
-    save: flags.string({char: 's', description: messages.getMessage('save')}),
-    hard: flags.string({char: 'h', description: messages.getMessage('hard')}),
+    onlyquery: flags.boolean({char: 'q', description: messages.getMessage('onlyquery')}),
+    retry: flags.boolean({char: 'r', description: messages.getMessage('retry')}),
+    save: flags.boolean({char: 's', description: messages.getMessage('save')}),
+    hard: flags.boolean({char: 'h', description: messages.getMessage('hard')}),
     polltimeout: flags.string({char: 't', description: messages.getMessage('polltimeout')}),
   };
 
@@ -113,136 +111,15 @@ export default class cleanObjects extends SfdxCommand {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
       query += ' WHERE ' + where;  
-      AppUtils.log2('SOQL:  ' + query);  
-      AppUtils.startSpinner('Fetching records for ' + objectName );
-    } else {
-      AppUtils.startSpinner('Fetching All records for ' + objectName );
-    }
-
-    //Testing
-    //query += ' LIMIT 200';
-    //
-
-    var count = 0;
-    var records = [];
-    let promise = new Promise((resolve, reject) => {
-      conn.bulk.query(query)
-        .on('record', function(result) { 
-          records.push(result);
-          count++;
-          AppUtils.updateSpinnerMessage('Objects Fetched so far: ' + count);
-        })
-        .on("queue", function(batchInfo) {
-          AppUtils.log3('Fetch queued');
-          AppUtils.updateSpinnerMessage('Fetch queued');
-        })
-        .on("end", function() {
-          if (records.length > 0){
-            AppUtils.stopSpinnerMessage('Succesfully Fetched All Row records... Number of records: ' + records.length);
-            resolve('Done');
-          }
-          else {
-            AppUtils.stopSpinnerMessage('No Rows where found for: ' + objectName);
-            resolve('No');
-          }
-        })
-        .on('error', function(err) {
-          AppUtils.stopSpinnerMessage('Error Fetching: ' + err)
-          resolve(err);
-        });
-    });
-    var value = await promise;
+    } 
+    var records = await DBUtils.bulkAPIquery(conn,query);
     //console.log('value: ' + value);
-    if(value == 'Done' && !onlyquery){
+    if(records.length > 1 && !onlyquery){
       //console.log(JSON.stringify(records));
-      await cleanObjects.deleteRows(records,conn,objectName,save,hard,resultData);
+      await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
     } else {
       resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
     }
   }
   
-
-  static async deleteRows(records,conn,objectName,save,hardelete,resultData) {
-    var deleteType = hardelete == true ? 'hardDelete' : 'Delete';
-    var job = await conn.bulk.createJob(objectName,deleteType);
-    await job.open();
-    //console.log(job);
-    var numOfComonents = records.length;
-    var div = numOfComonents/this.batchSize;
-    var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;
-    var numberOfBatchesDone = 0;
-    AppUtils.log2('Number Of Batches to be created to delete Rows: ' + numberOfBatches);
-    try {
-      var promises = [];
-      for (var i=0; i<numberOfBatches; i++) {
-        
-        var arraytoDelete = records;
-        if(i<(numberOfBatches-1)) {
-          arraytoDelete = records.splice(0,this.batchSize);
-        }
-        let newp = new Promise((resolve, reject) => {
-          var batchNumber = i + 1;
-          var batch = job.createBatch()
-          AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoDelete.length);
-
-          //console.log('Enter Promise');
-          batch.execute(arraytoDelete)
-          .on("error",  function(err) { 
-            console.log('Error, batch Info:', err);
-            numberOfBatchesDone = numberOfBatchesDone +1;
-            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
-            resolve();
-          })
-          .on("queue",  function(batchInfo) { 
-            batch.poll(5*1000 /* interval(ms) */, 1000*60*cleanObjects.bulkApiPollTimeout /* timeout(ms) */);
-            AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
-          })
-          .on("response",  function(rets) { 
-            numberOfBatchesDone = numberOfBatchesDone +1;
-            var hadErrors = cleanObjects.noErrors(rets);
-            //console.log(rets);
-            AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
-            if(save){
-              cleanObjects.saveResults(rets,batchNumber,objectName);
-            }
-            resolve();
-          });
-          //console.log('batch: '+ batch);
-        }).catch(error => {
-          AppUtils.log2('Error Creating  batches - Error: ' + error);
-          resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
-        });
-        await promises.push(newp);
-      }
-      //console.log('Promise Size: '+ Promise.length);
-      await Promise.all(promises);
-      job.close();
-    } catch (error) {
-      job.close();
-      AppUtils.log2('Error Creating  batches - Error: ' + error);
-      resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
-    }
-  }
-
-  private static saveResults(rets,batchNumber,objectName) {
-    var fileName = 'Results_' + objectName + '_' + batchNumber + '.json';
-    if (fsExtra.existsSync(fileName)) {
-      fsExtra.unlinkSync(fileName);
-    }
-    const createFiles = fsExtra.createWriteStream(fileName, {flags: 'a'});
-    createFiles.write(JSON.stringify(rets));  
-    AppUtils.log1('File Created: ' + fileName); 
-  }
-
-  private static noErrors(rets){
-    for (let index = 0; index < rets.length; index++) {
-      const element = rets[index];
-      if(!element.success){
-        return false;
-      }
-    }
-    return true;
-  }
-
 }
