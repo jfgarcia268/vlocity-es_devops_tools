@@ -122,7 +122,8 @@ Then, Sync Global Keys of OverrideDefinition.vlocity_namespace__OverridingProduc
 
 #### How to use a custom unique key for "OverrideDefinition" Match
 
-You can pass as an additional parameter a .yaml file to use custom unique key for "OverrideDefinition" Match sample File for PCI and AA.
+You can pass as an additional parameter a .yaml file (-d <File Name> ) to use custom unique key for "OverrideDefinition" Match sample File for PCI and AA.
+
 Sample File:
 
 ```
@@ -176,6 +177,8 @@ EXAMPLES
   $ sfdx vlocityestools:clean:epcgkfix -s myOrg@example.com -t myOrg2@example.com  -p cmt --pci --aa 
   
   $ sfdx vlocityestools:clean:epcgkfix --source myOrg --target myOrg2 --aa --check
+
+  $ sfdx vlocityestools:clean:epcgkfix --source myOrg --target myOrg2 --aa --check -d def.yaml
 
 ```
 
