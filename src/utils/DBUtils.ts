@@ -144,7 +144,7 @@ export class DBUtils  {
               })
               .on("response",  function(rets) { 
                 numberOfBatchesDone = numberOfBatchesDone +1;
-                var hadErrors = this.noErrors(rets);
+                var hadErrors = DBUtils.noErrors(rets);
                 //console.log(rets);
                 AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
                 if(resultData){
