@@ -144,11 +144,16 @@ export class DBUtils  {
               })
               .on("response",  function(rets) { 
                 numberOfBatchesDone = numberOfBatchesDone +1;
-                var hadErrors = DBUtils.noErrors(rets);
+                //var hadErrors = DBUtils.noErrors(rets);
+                var errorsNumber = DBUtils.numFail(rets);
+                var recordsGood = rets.length - errorsNumber;
+                //console.log(errorsNumber);
+                //console.log(recordsGood);
+                var hadErrors = (errorsNumber == 0);
                 //console.log(rets);
-                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + ' - Records Success: ' + recordsGood + ' Records Fail: ' + errorsNumber + ' - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
                 if(resultData){
-                  resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
+                  resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors, RecordsSuccess: recordsGood, RecordsFail: errorsNumber});
                 }
                   if(save){
                   DBUtils.saveResults(rets,batchNumber,objectName);
@@ -159,7 +164,7 @@ export class DBUtils  {
             }).catch(error => {
               AppUtils.log2('Error Creating  batches - Error: ' + error);
               if(resultData){
-                resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
+                resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error, RecordsSuccess: 'N/A', RecordsFail: 'N/A'});
               }
             });
             await promises.push(newp);
@@ -171,7 +176,7 @@ export class DBUtils  {
           job.close();
           AppUtils.log2('Error Creating  batches - Error: ' + error);
           if(resultData){
-            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
+            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error, RecordsSuccess: 'N/A', RecordsFail: 'N/A'});
           }
         }
       }
@@ -189,10 +194,22 @@ export class DBUtils  {
       private static noErrors(rets){
         for (let index = 0; index < rets.length; index++) {
           const element = rets[index];
-          if(!element.success){
+          if(element.success){
             return false;
           }
         }
         return true;
+      }
+
+      private static numFail(rets){
+        var recordsFail = 0;
+        for (let index = 0; index < rets.length; index++) {
+          const element = rets[index];
+          //console.log(element)
+          if(!element.success){
+            recordsFail = recordsFail + 1;
+          }
+        }
+        return recordsFail;
       }
 }
