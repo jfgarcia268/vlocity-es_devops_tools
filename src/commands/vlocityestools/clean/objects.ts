@@ -100,7 +100,7 @@ export default class cleanObjects extends SfdxCommand {
       console.log('');
     } while (retry && cleanObjects.error);
 
-    var tableColumnData = ['ObjectName', 'RecordsFound', 'DeleteSuccess']; 
+    var tableColumnData = ['ObjectName', 'RecordsFound', 'DeleteSuccess','RecordsSuccess','RecordsFail']; 
     AppUtils.ux.log('RESULTS:');
     //AppUtils.ux.log(' ');
     AppUtils.ux.table(resultData, tableColumnData);
