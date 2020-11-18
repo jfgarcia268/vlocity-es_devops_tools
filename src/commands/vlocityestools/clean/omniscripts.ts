@@ -2,6 +2,7 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -37,105 +38,78 @@ export default class deleteOldOS extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   //protected static requiresProject = false;
 
-  public async run(): Promise<AnyJson> {
+  public async run(){
 
     var versionsToKeep = this.flags.numberversions;
     var packageType = this.flags.package;
 
-    if(packageType == 'cmt'){
-      AppUtils.namespace = 'vlocity_cmt__';
-    } else if(packageType == 'ins'){
-      AppUtils.namespace = 'vlocity_ins__';
+    const conn = this.org.getConnection();
+
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    if(!nameSpaceSet){
+      throw new SfdxError("Error: Package was not set or incorrect was provided.");
     } else {
-      throw new Error("Error: -p, --package has to be either cmt or ins ");
-    }
-    
-    AppUtils.logInitial(messages.getMessage('command'));
-    AppUtils.log2('Versions To Keep: ' + versionsToKeep);
+      AppUtils.ux = this.ux;
+      AppUtils.logInitial(messages.getMessage('command'));
+      AppUtils.log2('Versions To Keep: ' + versionsToKeep);
 
-    if(versionsToKeep > 0){
-      // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-      const conn = this.org.getConnection();
-      const initialQuery = 'SELECT ID, Name, %name-space%Version__c, %name-space%IsActive__c, %name-space%Language__c, %name-space%Type__c, %name-space%SubType__c FROM %name-space%OmniScript__c  Order By Name, %name-space%Language__c, %name-space%Type__c,%name-space%SubType__c, %name-space%Version__c DESC';
-      const query = AppUtils.replaceaNameSpace(initialQuery);
-      // Query the org
-      const result = await conn.query(query);
+      if(versionsToKeep > 0){
+        // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
+        const initialQuery = 'SELECT ID, Name, %name-space%Version__c, %name-space%IsActive__c, %name-space%Language__c, %name-space%Type__c, %name-space%SubType__c FROM %name-space%OmniScript__c  Order By Name, %name-space%Language__c, %name-space%Type__c,%name-space%SubType__c, %name-space%Version__c DESC';
+        const query = AppUtils.replaceaNameSpace(initialQuery);
+        // Query the org
+        var result = await DBUtils.bulkAPIquery(conn,query);
+        // The output and --json will automatically be handled for you.
+        var nameField = 'Name';
+        var languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
+        var typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
+        var subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
+        var isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
+        var versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
 
-      // The output and --json will automatically be handled for you.
-      if (!result.records || result.records.length <= 0) {
-        throw new SfdxError(messages.getMessage('errorNoOrgResults', [this.org.getOrgId()]));
-      }
+        if(result.length == 0) {
+           AppUtils.log2('No OmniScritps in the Org');
+        } else {
+          var firstresult = result[0];
+          var currentComp = firstresult[nameField] + firstresult[languageField] + firstresult[typeField] + firstresult[subTypeField];
+          var count = 0;
+          var OStoDetele = [];
 
+          AppUtils.log2('The Following OmniScritps will be deteled:');
+          for (var i=0; i<result.length; i++) {
+            var record = result[i];
+            var componentid = record[nameField] + record[languageField]+ record[typeField] + record[subTypeField];
+            
+            if(currentComp==componentid) {
+              count++;
+            }
+            else {
+              currentComp = componentid;
+              count =  1;
+            }
+            
+            if(count > versionsToKeep && record[isActiveField] == 'false') {
+              var output = 'Name: ' + record[nameField] + ', Language: ' + record[languageField] + ', Type: '  + record[typeField] + ', SubType: ' + record[subTypeField] + ', Version: ' + record[versionField];
+              AppUtils.log1(output);
+              delete record[nameField];
+              delete record[versionField]; 
+              delete record[isActiveField]; 
+              delete record[languageField];
+              delete record[typeField]; 
+              delete record[subTypeField]; 
+              OStoDetele.push(record);
+            }
+          }
 
-      var nameField = 'Name';
-      var languageField = AppUtils.replaceaNameSpace('%name-space%Language__c');
-      var typeField = AppUtils.replaceaNameSpace('%name-space%Type__c');
-      var subTypeField = AppUtils.replaceaNameSpace('%name-space%SubType__c');
-      var isActiveField  = AppUtils.replaceaNameSpace('%name-space%IsActive__c');
-      var versionField  = AppUtils.replaceaNameSpace('%name-space%Version__c');
-
-      var firstresult = result.records[0]
-      var currentComp = firstresult[nameField] + firstresult[languageField] + firstresult[typeField] + firstresult[subTypeField];
-
-      var count = 0;
-
-      var OStoDetele = new Array();
-
-      AppUtils.log2('The Following OmniScritps will be deteled:');
-
-      for (var i=0; i<result.records.length; i++) {
-        var record = result.records[i];
-        var componentid = record[nameField] + record[languageField]+ record[typeField] + record[subTypeField];
-        
-        if(currentComp==componentid) {
-          count = count + 1;
+          if(OStoDetele.length > 0){
+            AppUtils.log3("Deleting Old OmniScrips");
+            var OSAPIName = AppUtils.replaceaNameSpace('%name-space%OmniScript__c');
+            await DBUtils.bulkAPIdelete(OStoDetele,conn,OSAPIName,false,false,null,120);
+          } else {
+            AppUtils.log2("Nothing to delete");
+          }
         }
-        else {
-          currentComp = componentid;
-          count =  1;
-        }
-
-        if(count > versionsToKeep && !record[isActiveField]) {
-          OStoDetele.push(record);
-          var output = 'Name: ' + record[nameField] + ', Language: ' + record[languageField] + ', Type: '  + record[typeField] + ', SubType: ' + record[subTypeField] + ', Version: ' + record[versionField];
-          AppUtils.log1(output);
-        }
       }
-
-      if(OStoDetele.length > 0) {
-        await new Promise((resolveBatch) => {
-            var job = conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%OmniScript__c"), "delete");
-            var batch = job.createBatch();
-            batch.execute(OStoDetele);
-
-            batch.on("error", function(err) { // fired when batch request is queued in server.
-              console.log('Error, batchInfo:', err);
-              resolveBatch();
-            });
-            batch.on("queue", function(batchInfo) { // fired when batch request is queued in server.
-              AppUtils.log2('Waiting for batch to finish');
-              batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-            });
-            batch.on("response", function(rets) { // fired when batch finished and result retrieved
-              for (var i=0; i < rets.length; i++) {
-                //AppUtils.log3(JSON.stringify(rets[i]));
-                if (rets[i].success) {
-                  AppUtils.log1("#" + (i+1) + " Delete successfully: " + rets[i].id);
-                } else {
-                  AppUtils.log1("#" + (i+1) + " Error occurred, message = " + rets[i].errors.join(', '));
-                }
-              }
-              resolveBatch();;
-            });
-        })
-      } else {
-        AppUtils.log2("Nothing to delete");
-      }
-
-      return { OStoDetele };
-
-    } else {
-      throw new Error("Error: -n, --numberversions has to be greated than 0");
-    }
+    } 
   }
 }
