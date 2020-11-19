@@ -1,6 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
 import { AppUtils } from '../../../utils/AppUtils';
 import { DBUtils } from '../../../utils/DBUtils';
 
