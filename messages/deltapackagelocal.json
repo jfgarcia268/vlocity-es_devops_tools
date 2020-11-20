@@ -1,0 +1,6 @@
+{
+  "commandDescription":"Create Delta Package based on Hash",
+  "sourcefolder":"Source Folder to create Delta Package",
+  "hash":"Git Hash Value",
+  "command":"createdeltapackagelocal"
+}

@@ -31,6 +31,7 @@ USAGE
 ### vlocityestools:report:dependencies:remote
 ### vlocityestools:report:activeomniscript
 ### vlocityestools:sfsource:createdeltapackage
+### vlocityestools:sfsource:createdeltapackagelocal
 ### vlocityestools:sfsource:updatedeltahash
 ### vlocityestools:clean:calcmatrix
 ### vlocityestools:login:login
@@ -491,6 +492,32 @@ EXAMPLES
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --package ins --sourcefolder force-app --gitcheckkey EPC
 
   $ sfdx vlocityestools:sfsource:createdeltapackage --targetusername myOrg@example.com --sourcefolder force-app --gitcheckkeykustom VBTDeployKey --customsettingobject DevOpsSettings__c
+
+```
+
+## vlocityestools:sfsource:createdeltapackagelocal
+
+Create Delta package for salforce based on HEAD and Input Hash.
+Note: Only works for SFDX Source Format
+
+```
+USAGE,
+
+  $ sfdx vlocityestools:sfsource:createdeltapackage -h <string> -d<string> 
+
+OPTIONS
+
+  -h, --hash=hash                                           Git Hash Value 
+
+  -d, --sourcefolder=sourcefolder                           Salesfroce sorce folder name
+
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:sfsource:createdeltapackagelocal -h f2a6eee1b509c3edd33ab070148be48e41242846 -d force-app
+  
+  $ sfdx vlocityestools:sfsource:createdeltapackagelocal --hash f2a6eee1b509c3edd33ab070148be48e41242846 --sourcefolder salesforce_sfdx
 
 ```
 
