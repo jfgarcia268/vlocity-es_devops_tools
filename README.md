@@ -503,7 +503,7 @@ Note: Only works for SFDX Source Format
 ```
 USAGE,
 
-  $ sfdx vlocityestools:sfsource:createdeltapackage -h <string> -d<string> 
+  $ sfdx vlocityestools:sfsource:createdeltapackagelocal -h <string> -d<string> 
 
 OPTIONS
 
