@@ -57,7 +57,12 @@ export default class compareFolders extends SfdxCommand {
     
     var resultData = [];
 
-    this.compareFolders(fs,foldera,folderb,resultData);
+    try {
+      this.compareFolders(fs,foldera,folderb,resultData);
+    } catch (error) {
+      console.log(error.stack);
+    }
+    
 
     if(resultData.length > 0){
       var tableColumnData = ['DatapackType','DatapackKey','Diff']; 
@@ -80,22 +85,26 @@ export default class compareFolders extends SfdxCommand {
     var firstLevelFoler = fs.readdirSync(foldera); 
     for (let index = 0; index < firstLevelFoler.length; index++) {
       const folder1 = firstLevelFoler[index];
-      AppUtils.log2('Finding Overlap For: ' + folder1); 
-      var secondLevelFoler = fs.readdirSync(foldera + path.sep + folder1); 
-      for (let indexb = 0; indexb < secondLevelFoler.length; indexb++) {
-        const folders2 = secondLevelFoler[indexb];
-        var pathLevel2_foldera = foldera + path.sep + folder1 + path.sep + folders2
-        //console.log('pathLevel2_foldera: ' + pathLevel2_foldera);
-        var pathLevel2_folderb = folderb + path.sep + folder1 + path.sep + folders2
-        //console.log('pathLevel2_folderb: ' + pathLevel2_folderb);
-        if (fs.lstatSync(pathLevel2_foldera).isDirectory() && fs.existsSync(pathLevel2_folderb) ){
-          AppUtils.log1('Overlap - Key: ' + DPKey); 
-          var options = {compareContent: true};
-          var res = dircompare.compareSync(pathLevel2_foldera, pathLevel2_folderb,options);
-          //console.log(res.same);
-          var diff = res.same? 'No' : 'Yes';
-          var DPKey = folder1 + '/' + folders2;
-          resultData.push({DatapackType: folder1, DatapackKey: DPKey, Diff: diff});
+      var secondLevelFolerPath = foldera + path.sep + folder1;
+      var stats1 = fs.lstatSync(secondLevelFolerPath);
+      if(stats1.isDirectory()){
+        var secondLevelFoler = fs.readdirSync(secondLevelFolerPath); 
+        AppUtils.log2('Finding Overlap For: ' + folder1); 
+        for (let indexb = 0; indexb < secondLevelFoler.length; indexb++) {
+          const folders2 = secondLevelFoler[indexb];
+          var pathLevel2_foldera = foldera + path.sep + folder1 + path.sep + folders2
+          //console.log('pathLevel2_foldera: ' + pathLevel2_foldera);
+          var pathLevel2_folderb = folderb + path.sep + folder1 + path.sep + folders2
+          //console.log('pathLevel2_folderb: ' + pathLevel2_folderb);
+          if (fs.lstatSync(pathLevel2_foldera).isDirectory() && fs.existsSync(pathLevel2_folderb) ){
+            AppUtils.log1('Overlap - Key: ' + DPKey); 
+            var options = {compareContent: true};
+            var res = dircompare.compareSync(pathLevel2_foldera, pathLevel2_folderb,options);
+            //console.log(res.same);
+            var diff = res.same? 'No' : 'Yes';
+            var DPKey = folder1 + '/' + folders2;
+            resultData.push({DatapackType: folder1, DatapackKey: DPKey, Diff: diff});
+          }
         }
       }
     }
