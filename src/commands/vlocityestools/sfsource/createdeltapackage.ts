@@ -147,7 +147,17 @@ export default class deltaPackage extends SfdxCommand {
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
               var splitResult = filePath.split(path.sep);
 
-              if (filePath.includes(path.sep + "staticresources" + path.sep) || filePath.includes(path.sep + "documents" + path.sep)) {
+              if (filePath.includes(path.sep + "objectTranslations" + path.sep) ) {
+                var objectTranslationsFolder = filePath.match(/.*\/objectTranslations\/.*?\/.*?/)[0];
+                //console.log(objectTranslationsFolder);
+                var newCompPath = objectTranslationsFolder.replace(sourceFolder, deltaPackageFolder);
+                if (!fsExtra.existsSync(newCompPath)) {
+                  AppUtils.log1("Moving Complete folder for objectTranslation -  " + newCompPath);
+                  fsExtra.copySync(objectTranslationsFolder, newCompPath);
+                } else {
+                  AppUtils.log1("Skiped - MetaData alredy moved: " + newCompPath);
+                }
+              } else if (filePath.includes(path.sep + "staticresources" + path.sep) || filePath.includes(path.sep + "documents" + path.sep)) {
                 /**
                  * Static Resources  and Scenario
                  */   
