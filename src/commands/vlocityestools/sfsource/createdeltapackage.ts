@@ -57,6 +57,10 @@ export default class deltaPackage extends SfdxCommand {
       throw new Error("Error: -c, --customsettingobject needs to passed when using gitcheckkeycustom");
     }
 
+    if (!fsExtra.existsSync(sourceFolder)) {
+      throw new Error("Folder '" + sourceFolder + "'  not found");
+    }
+
     //console.log("this.flags.gitcheckkey: " + this.flags.gitcheckkey);
 
     if(this.flags.gitcheckkey != undefined) {

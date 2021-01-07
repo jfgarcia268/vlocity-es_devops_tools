@@ -40,6 +40,10 @@ export default class deltaPackageLocal extends SfdxCommand {
     var sourceFolder = this.flags.sourcefolder;
     var deltaPackageFolder = sourceFolder + '_delta';
 
+    if (!fsExtra.existsSync(sourceFolder)) {
+      throw new Error("Folder '" + sourceFolder + "'  not found");
+    }
+
     const repoPath = path.normalize("./");
     const simpleGit = require("simple-git")(repoPath);
 
