@@ -1,6 +1,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages} from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -50,7 +51,7 @@ export default class deleteOldDataPacks extends SfdxCommand {
     AppUtils.logInitial(messages.getMessage('command'));
       // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
     const conn = this.org.getConnection();
-    const dataPacksQueryInitial = 'SELECT Id FROM %name-space%VlocityDataPack__c';
+    const dataPacksQueryInitial = 'SELECT Id FROM %name-space%VlocityDataPack__c WHERE IsDeleted = false ';
     const dataPacksAttachmentsQueryInitial  = 'SELECT id FROM attachment '
                                                     + 'WHERE ParentId in '
                                                     + '(SELECT Id '
@@ -62,11 +63,10 @@ export default class deleteOldDataPacks extends SfdxCommand {
   
     // Delete Attachmets
     const resultDataPacksAttachments = await conn.query(dataPacksAttachmentsQuery);
-    if (resultDataPacksAttachments == undefined || resultDataPacksAttachments.records.length <= 0) {
+    if ( !resultDataPacksAttachments || resultDataPacksAttachments.records.length == 0) {
       AppUtils.log2("No Attachments to delete");
-
     } else {
-      deleteOldDataPacks.deleteRecords(conn, AppUtils.replaceaNameSpace("attachment"),resultDataPacksAttachments.records );
+      await DBUtils.bulkAPIdelete(resultDataPacksAttachments.records ,conn,AppUtils.replaceaNameSpace("Attachment"),false,false,undefined,60);
     } 
 
     // Delete Old Saved OmniScripts
@@ -75,38 +75,8 @@ export default class deleteOldDataPacks extends SfdxCommand {
       AppUtils.log2("No DataPacks Found to delete");
     }
     else {
-      deleteOldDataPacks.deleteRecords(conn, AppUtils.replaceaNameSpace("%name-space%VlocityDataPack__c"),resultDataPacks.records );
+      await DBUtils.bulkAPIdelete(resultDataPacks.records  ,conn,AppUtils.replaceaNameSpace("%name-space%VlocityDataPack__c"),false,false,undefined,60);
     }
   }
-
-  static deleteRecords(conn,type,recordsToDelete){
-    new Promise((resolveBatch) => {
-      var job = conn.bulk.createJob(type, "delete");
-      var batch = job.createBatch();
-      batch.execute(recordsToDelete);
-
-      batch.on("error", function(err) { // fired when batch request is queued in server.
-        console.log('Error, batchInfo:', err);
-        resolveBatch();
-      });
-      batch.on("queue", function(batchInfo) { // fired when batch request is queued in server.
-        AppUtils.log2('Waiting for batch to finish');
-        batch.poll(1000 /* interval(ms) */, 20000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-      });
-      batch.on("response", function(rets) { // fired when batch finished and result retrieved
-        for (var i=0; i < rets.length; i++) {
-          //AppUtils.log3(JSON.stringify(rets[i]));
-          if (rets[i].success) {
-            AppUtils.log1("#" + (i+1) + " Delete successfully: " + rets[i].id);
-          } else {
-            AppUtils.log1("#" + (i+1) + " Error occurred, message = " + rets[i].errors.join(', '));
-          }
-        }
-        resolveBatch();;
-      });
-  })
-
-  }
-
 
 }
