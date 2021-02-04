@@ -38,44 +38,46 @@ export default class deleteOldDataPacks extends SfdxCommand {
 
   public async run(){
 
+    AppUtils.ux = this.ux;
+    AppUtils.logInitial(messages.getMessage("command"));
+    AppUtils.ux.log(' ');
+
+    const conn = this.org.getConnection();
+
     var packageType = this.flags.package;
 
-    if(packageType == 'cmt'){
-      AppUtils.namespace = 'vlocity_cmt__';
-    } else if(packageType == 'ins'){
-      AppUtils.namespace = 'vlocity_ins__';
-    } else {
-      throw new Error("Error: -p, --package has to be either cmt or ins ");
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    //console.log('nameSpaceSet: ' + nameSpaceSet);
+    if(!nameSpaceSet){
+      throw new Error("Error: Package was not set or incorrect was provided.");
     }
     
-    AppUtils.logInitial(messages.getMessage('command'));
       // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-    const conn = this.org.getConnection();
+    
     const dataPacksQueryInitial = 'SELECT Id FROM %name-space%VlocityDataPack__c WHERE IsDeleted = false ';
     const dataPacksAttachmentsQueryInitial  = 'SELECT id FROM attachment '
                                                     + 'WHERE ParentId in '
                                                     + '(SELECT Id '
                                                     + 'FROM %name-space%VlocityDataPack__c ) ';
 
-
     const dataPacksQuery = AppUtils.replaceaNameSpace(dataPacksQueryInitial);
     const dataPacksAttachmentsQuery = AppUtils.replaceaNameSpace(dataPacksAttachmentsQueryInitial);
   
     // Delete Attachmets
-    const resultDataPacksAttachments = await conn.query(dataPacksAttachmentsQuery);
-    if ( !resultDataPacksAttachments || resultDataPacksAttachments.records.length == 0) {
+    const resultDataPacksAttachments = await DBUtils.bulkAPIquery(conn, dataPacksAttachmentsQuery);
+    if ( !resultDataPacksAttachments || resultDataPacksAttachments.length == 0) {
       AppUtils.log2("No Attachments to delete");
     } else {
-      await DBUtils.bulkAPIdelete(resultDataPacksAttachments.records ,conn,AppUtils.replaceaNameSpace("Attachment"),false,false,undefined,60);
+      await DBUtils.bulkAPIdelete(resultDataPacksAttachments ,conn,AppUtils.replaceaNameSpace("Attachment"),false,false,undefined,60);
     } 
 
     // Delete Old Saved OmniScripts
-    const resultDataPacks = await conn.query(dataPacksQuery);
-    if (resultDataPacks == undefined || resultDataPacks.records.length <= 0) {
+    const resultDataPacks = await DBUtils.bulkAPIquery(conn, dataPacksQuery);
+    if (resultDataPacks == undefined || resultDataPacks.length <= 0) {
       AppUtils.log2("No DataPacks Found to delete");
     }
     else {
-      await DBUtils.bulkAPIdelete(resultDataPacks.records  ,conn,AppUtils.replaceaNameSpace("%name-space%VlocityDataPack__c"),false,false,undefined,60);
+      await DBUtils.bulkAPIdelete(resultDataPacks ,conn,AppUtils.replaceaNameSpace("%name-space%VlocityDataPack__c"),false,false,undefined,60);
     }
   }
 
