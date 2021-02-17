@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Create Mock LWC for missing OmniScript",
+  "packageType": "Package Type (ins or cmt)",
+  "command":"createmocklwcos",
+  "datapacksfolder":"DataPacks foler of OmniScript to compare"
+}

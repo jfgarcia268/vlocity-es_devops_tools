@@ -36,6 +36,7 @@ USAGE
 ### vlocityestools:clean:calcmatrix
 ### vlocityestools:login:login
 ### vlocityestools:clean:objects
+### vlocityestools:sfsource:createmocklwcos
   
 '    '
 
@@ -666,5 +667,30 @@ EXAMPLES
   $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml -r true
 
   $ sfdx vlocityestools:clean:objects --targetusername myOrg@example.com --dataFile objects.yaml -q true
+
+```
+
+
+## vlocityestools:sfsource:createmocklwcos
+
+Deploy Empty LWC for Missing OmniScript
+
+```
+USAGE
+
+  $ sfdx vlocityestools:sfsource:createmocklwcoss -d <string> 
+
+OPTIONS
+
+  -u, --username=username                                   Username to Autenticate
+
+  -d, --datapacksfolder=datapacksfolder                     DataPacks folder
+                                                                    
+
+EXAMPLES
+
+  $ sfdx vlocityestools:auth:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
+  
+  $ sfdx vlocityestools:auth:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
 
 ```
