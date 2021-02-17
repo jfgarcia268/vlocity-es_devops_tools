@@ -144,7 +144,7 @@ export default class createMockLWCOS extends SfdxCommand {
         var key = type + subType + Language;
         var label = type + "/" + subType + "/" + Language;
         //console.log(key);
-        omniScriptMap[key] = key;
+        omniScriptMap[key] = label;
       }
     } 
     return omniScriptMap
