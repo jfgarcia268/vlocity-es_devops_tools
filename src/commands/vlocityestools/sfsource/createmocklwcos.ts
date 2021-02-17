@@ -65,7 +65,7 @@ export default class createMockLWCOS extends SfdxCommand {
     var localOSkeys = Object.keys(localOSMap);
 
     var missingLWC = {};
-    AppUtils.log3("Missin LWC: ");
+    AppUtils.log3("Missing LWC OmniScript: ");
     for (let i = 0; i < localOSkeys.length; i++) {
       const element = localOSkeys[i];
       if (!orgOSMap[element]) {
@@ -84,7 +84,7 @@ export default class createMockLWCOS extends SfdxCommand {
     var keys = Object.keys(missingLWC);
     for (let i = 0; i < keys.length; i++) {
       const element = keys[i];
-      AppUtils.log3("Creating LWC: " + element);
+      AppUtils.log3("Creating LWC for: " + element);
       var metadata = [];
       var tempLwc = {};
       tempLwc["fullName"] = element;
