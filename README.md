@@ -301,7 +301,7 @@ EXAMPLES
 
 ## vlocityestools:compare:folders
 
-Compare two local Vlocity Metadata folder 
+Compare two local Vlocity DataPacks folder 
 The output will be a CSV file with the results
 
 ```
