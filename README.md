@@ -689,8 +689,8 @@ OPTIONS
 
 EXAMPLES
 
-  $ sfdx vlocityestools:auth:login -u jgonzalez@vlocity.com.de1 -p 'pass123' -t eXUTfa9gpIxfaytnONqnlWFG -a dev1
+  $ sfdx vlocityestools:sfsource:createmocklwcos -u myOrg@example.com -d vlocity
   
-  $ sfdx vlocityestools:auth:login --username jgonzalez@vlocity.com.de1 --password 'pass123' --url 'https://test.salesforce.com' --alias dev1
+  $ sfdx vlocityestools:sfsource:createmocklwcos --targetusername myOrg@example.com --datapacksfolder vlocity
 
 ```
