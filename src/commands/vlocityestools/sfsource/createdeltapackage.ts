@@ -149,6 +149,7 @@ export default class deltaPackage extends SfdxCommand {
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
+              AppUtils.log2("path.sep: " + path.sep);
               var splitResult = filePath.split(path.sep);
 
               if (filePath.includes(path.sep + "objectTranslations" + path.sep) ) {
