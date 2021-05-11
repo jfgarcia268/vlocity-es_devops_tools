@@ -678,7 +678,7 @@ Deploy Empty LWC for Missing OmniScript
 ```
 USAGE
 
-  $ sfdx vlocityestools:sfsource:createmocklwcoss -d <string> 
+  $ sfdx vlocityestools:sfsource:createmocklwcoss -d <string> -u <string>
 
 OPTIONS
 
