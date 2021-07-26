@@ -134,7 +134,7 @@ export default class deltaPackage extends SfdxCommand {
   }
 
   static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
-    simpleGit.diffSummary([previousHash], (err, status) => {
+    simpleGit.diffSummary([previousHash,'--no-renames'], (err, status) => {
       if (err) {
         throw new Error( "Error with GitDiff, Nothing was copied - Error: " + err );
         //deltaPackage.copyCompleteFolder( sourceFolder, deltaPackageFolder, fsExtra);
