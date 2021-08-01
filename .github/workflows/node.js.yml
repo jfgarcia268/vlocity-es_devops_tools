@@ -20,4 +20,6 @@ jobs:
     - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
     - run: pwd 
     - run: ls
+    - run: npm config set unsafe-perm=true
+    - run: npm install .
     - run: npm publish .
