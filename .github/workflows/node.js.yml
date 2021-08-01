@@ -18,4 +18,4 @@ jobs:
       with:
         fetch-depth: 0
     - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
-    - run: sudo npm publish
+    - run: npm publish --unsafe-perm
