@@ -12,11 +12,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     container:
-      image: node:stretch-slim
+      image: jfgarcia268/npm_publish:latest
     steps:  
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - run: npm install -g npm-cli-login
     - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
     - run: npm publish
