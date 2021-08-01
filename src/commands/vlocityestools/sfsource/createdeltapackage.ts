@@ -99,7 +99,7 @@ export default class deltaPackage extends SfdxCommand {
         AppUtils.log2("Old delta folder was found... deleting before creating new delta: " + deltaPackageFolder );
         fsExtra.removeSync(deltaPackageFolder);
       }
-      AppUtils.log3("Hash not found in the environment, Coping full Package");
+      AppUtils.log3("Hash not found in the environment, Coping full Package...");
       deltaPackage.copyCompleteFolder(sourceFolder, deltaPackageFolder, fsExtra);
     } else if (!simpleGit.checkIsRepo()) {
       throw new Error("Error: Current directory is not a repository");
