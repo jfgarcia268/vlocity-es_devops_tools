@@ -551,7 +551,7 @@ EXAMPLES
 
   $ sfdx vlocityestools:sfsource:updatedeltahash  --customsettingobject DevOpsSettings__c --gitcheckkeycustom DeployKey --targetusername myOrg@example.com
    
-  $ sfdx vlocityestools:sfsource:updatedeltahash  --customsettingobject DevOpsSettings__c --gitcheckkeycustom DeployKey --targetusername myOrg@example.com -- 0603ab92ff7cf9adf7ca10228807f6bb6b57a894
+  $ sfdx vlocityestools:sfsource:updatedeltahash  --customsettingobject DevOpsSettings__c --gitcheckkeycustom DeployKey --targetusername myOrg@example.com --customhash 0603ab92ff7cf9adf7ca10228807f6bb6b57a894
 
 ```
 
