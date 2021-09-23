@@ -17,9 +17,9 @@ export default class upsert extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:data:upsert -u myOrg@example.com -p ins -d objects.yaml
+  `$ sfdx vlocityestools:data:upsert -u myOrg@example.com -f accounts.csv -o Account -i Name2__c
   `,
-  `$ sfdx vlocityestools:data:upsert --targetusername myOrg@example.com --dataFile objects.yaml
+  `$ sfdx vlocityestools:data:upsert --targetusername --csv accounts.csv --object Account --id Name2__c
   `
   ];
 

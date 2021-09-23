@@ -37,6 +37,7 @@ USAGE
 ### vlocityestools:login:login
 ### vlocityestools:clean:objects
 ### vlocityestools:sfsource:createmocklwcos
+### vlocityestools:data:upsert
   
 '    '
 
@@ -692,5 +693,34 @@ EXAMPLES
   $ sfdx vlocityestools:sfsource:createmocklwcos -u myOrg@example.com -d vlocity
   
   $ sfdx vlocityestools:sfsource:createmocklwcos --targetusername myOrg@example.com --datapacksfolder vlocity
+
+```
+
+
+
+## vlocityestools:data:upsert
+
+Upsert Data From CSV
+
+```
+USAGE
+
+  $ sfdx vlocityestools:data:upsert -u <string> -f <string> -o <string> -i <string>
+
+OPTIONS
+
+  -u, --username=username                                   Username to Autenticate
+
+  -f, --csv=csv                                             Path to the CSV File
+
+  -o, --object=object                                       Object API Name
+  
+  -i, --id=id                                               API Name of the field to Upsert
+
+EXAMPLES
+
+  $ sfdx vlocityestools:data:upsert -u myOrg@example.com -f accounts.csv -o Account -i Name2__c
+  
+  $ sfdx vlocityestools:data:upsert --targetusername --csv accounts.csv --object Account --id Name2__c
 
 ```
