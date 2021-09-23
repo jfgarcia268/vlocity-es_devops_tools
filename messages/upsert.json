@@ -1,0 +1,9 @@
+{
+  "commandDescription": "Upserts SObjects",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"upsert",
+  "csv":"CSV File With Records to be Upsert",
+  "object":"Object API Name",
+  "id":"External Id for Upsert",
+  "save":"Save Batches Results"
+}

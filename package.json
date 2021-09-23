@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.16.9",
+  "version": "0.17.3",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -34,12 +34,6 @@
   "engines": {
     "node": ">=10.10.0"
   },
-  "files": [
-    "/lib",
-    "/messages",
-    "/npm-shrinkwrap.json",
-    "/oclif.manifest.json"
-  ],
   "homepage": "https://github.com/jfgarcia268/vlocity-es_devops_tools",
   "keywords": [
     "sfdx-plugin"
@@ -63,6 +57,9 @@
       },
       "vlocityestools:sfsource": {
         "description": "Salesforce Source Tools"
+      },
+      "vlocityestools:data": {
+        "description": "Data Tools"
       }
     },
     "devPlugins": [

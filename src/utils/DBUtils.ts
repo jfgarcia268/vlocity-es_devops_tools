@@ -54,6 +54,67 @@ export class DBUtils  {
         var div = numOfComonents/this.batchSize;
         var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;
         var numberOfBatchesDone = 0;
+        AppUtils.log2('Number Of Batches to be created to Upsert Rows: ' + numberOfBatches);
+        try {
+          var promises = [];
+          for (var i=0; i<numberOfBatches; i++) {
+            
+            var arraytoupdate = records;
+            if(i<(numberOfBatches-1)) {
+              arraytoupdate = records.splice(0,this.batchSize);
+            }
+            let newp = new Promise((resolve, reject) => {
+              var batchNumber = i + 1;
+              var batch = job.createBatch()
+              AppUtils.log1('Creating Batch # ' + batchNumber + ' Number of Records: ' + arraytoupdate.length);
+    
+              //console.log('Enter Promise');
+              batch.execute(arraytoupdate)
+              .on("error",  function(err) { 
+                console.log('Error, batch Info:', err);
+                numberOfBatchesDone = numberOfBatchesDone +1;
+                //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
+                resolve("error");
+              })
+              .on("queue",  function(batchInfo) { 
+                batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
+                AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
+              })
+              .on("response",  function(rets) { 
+                numberOfBatchesDone = numberOfBatchesDone +1;
+                var hadErrors = DBUtils.noErrors(rets);
+                //console.log(rets);
+                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+                //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
+                resolve("response");
+              });
+              //console.log('batch: '+ batch);
+            }).catch(error => {
+              AppUtils.log2('Error Creating  batches - Error: ' + error);
+              //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
+            });
+            await promises.push(newp);
+          }
+          //console.log('Promise Size: '+ Promise.length);
+          await Promise.all(promises);
+          job.close();
+        } catch (error) {
+          job.close();
+          AppUtils.log2('Error Creating  batches - Error: ' + error);
+          //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
+        }
+      }
+
+      static async bulkAPIUpsert(records,conn,objectName,id,save) {
+        //console.log('Before Creating Job');
+        var job = await conn.bulk.createJob(objectName,'upsert',{extIdField: id,});
+        //console.log('Before Opening Job');
+        await job.open();
+        //console.log('Open Job');
+        var numOfComonents = records.length;
+        var div = numOfComonents/this.batchSize;
+        var numberOfBatches = Math.floor(div) == div ? div : Math.floor(div)  + 1;
+        var numberOfBatchesDone = 0;
         AppUtils.log2('Number Of Batches to be created to Update Rows: ' + numberOfBatches);
         try {
           var promises = [];
@@ -74,7 +135,7 @@ export class DBUtils  {
                 console.log('Error, batch Info:', err);
                 numberOfBatchesDone = numberOfBatchesDone +1;
                 //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
-                resolve();
+                resolve("error");
               })
               .on("queue",  function(batchInfo) { 
                 batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
@@ -86,7 +147,10 @@ export class DBUtils  {
                 //console.log(rets);
                 AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
                 //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
-                resolve();
+                if(save){
+                  DBUtils.saveResults(rets,batchNumber,objectName);
+                }
+                resolve("response");
               });
               //console.log('batch: '+ batch);
             }).catch(error => {
@@ -103,6 +167,26 @@ export class DBUtils  {
           AppUtils.log2('Error Creating  batches - Error: ' + error);
           //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + error});
         }
+      }
+
+      static async csvToJson(csv) {
+        var lines=csv.split("\n");
+        var result = [];
+      
+        var headers=lines[0].split(",");
+        for(var i=1;i<lines.length;i++){
+      
+            var obj = {};
+            var currentline=lines[i].split(",");
+      
+            for(var j=0;j<headers.length;j++){
+                obj[headers[j].replace('\r','')] = currentline[j].replace('\r','');
+            }
+            //console.log(obj);
+            result.push(obj);
+      
+        }
+        return result;
       }
 
       static async bulkAPIdelete(records,conn,objectName,save,hardelete,resultData,bulkApiPollTimeout) {
@@ -136,7 +220,7 @@ export class DBUtils  {
                 if(resultData){
                   resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'No Error: ' + err});
                 }
-                resolve();
+                resolve("error");
               })
               .on("queue",  function(batchInfo) { 
                 batch.poll(5*1000 /* interval(ms) */, 1000*60*bulkApiPollTimeout /* timeout(ms) */);
@@ -158,7 +242,7 @@ export class DBUtils  {
                   if(save){
                   DBUtils.saveResults(rets,batchNumber,objectName);
                 }
-                resolve();
+                resolve("response");
               });
               //console.log('batch: '+ batch);
             }).catch(error => {
