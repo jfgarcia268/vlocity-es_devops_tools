@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.17.4",
+  "version": "0.17.5",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -31,6 +31,7 @@
     "ts-node": "^8",
     "tslint": "^5"
   },
+  "files":["*"],
   "engines": {
     "node": ">=10.10.0"
   },
