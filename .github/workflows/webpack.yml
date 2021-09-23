@@ -16,4 +16,7 @@ jobs:
     steps:  
     - uses: actions/checkout@v2
     - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
+    - run: pwd 
+    - run: ls
     - run: npm publish . --tag beta
+
