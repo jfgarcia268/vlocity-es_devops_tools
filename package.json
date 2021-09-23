@@ -63,6 +63,9 @@
       },
       "vlocityestools:sfsource": {
         "description": "Salesforce Source Tools"
+      },
+      "vlocityestools:data": {
+        "description": "Data Tools"
       }
     },
     "devPlugins": [
