@@ -50,7 +50,7 @@ Sync Global Keys between two orgs (from source to target org) for the descrived 
 Use -v,--check to only check and do not insert the records. 
 
 Notes: 
-- For now, this only works for CMT Package. 
+- For now, this only works for CMT Package and without Product Versioning
 - Please read carefully the documentation and check with the EPC implemtation team that this fits your needs and that the match Scenarios do apply for your implementation, Used it at your own risk. 
 - Avoid Using it in Production. Create a Full or partial copy if necessary. 
 
