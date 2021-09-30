@@ -17,16 +17,17 @@ export default class executejobs extends SfdxCommand {
   public static description = messages.getMessage('commandDescription');
 
   public static examples = [
-  `$ sfdx vlocityestools:jobs:executejobs -u myOrg@example.com -j jobs.yaml
+  `$ sfdx vlocityestools:jobs:executejobs -u myOrg@example.com -j jobs.yaml -p 20
   `,
-  `$ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml 
+  `$ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20
   `
   ];
 
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    jobs: flags.string({char: 'j', description: messages.getMessage('jobs')})
+    jobs: flags.string({char: 'j', description: messages.getMessage('jobs')}),
+    pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')})
   };
 
   // Comment this out if your command does not require an org username
@@ -41,8 +42,11 @@ export default class executejobs extends SfdxCommand {
   public async run() {
 
     var jobs = this.flags.jobs;
+    var pooltime = this.flags.pooltime;
 
     const conn = this.org.getConnection();
+
+    var poolTimeSec = pooltime? pooltime : 10;
 
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
@@ -61,7 +65,7 @@ export default class executejobs extends SfdxCommand {
       while(!isDone){
         AppUtils.log2("Waiting For Job... " + jobsList[job]);
         //console.log("isDone: " + isDone);
-        AppUtils.sleep(10);
+        await AppUtils.sleep(poolTimeSec);
         isDone = await executejobs.checkStatus(conn);
       }
       AppUtils.log3("Job Done: " + jobsList[job]);
