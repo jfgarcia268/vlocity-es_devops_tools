@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Run CMT Jobs in Parallel",
+  "packageType": "Vlocity Package Type, Options: ins and cmt",
+  "jobs": "Job File",
+  "command":"executejobs"
+}

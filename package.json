@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.17.6",
+  "version": "0.18.0",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -61,6 +61,9 @@
       },
       "vlocityestools:data": {
         "description": "Data Tools"
+      },
+      "vlocityestools:jobs": {
+        "description": "Execute Jobs"
       }
     },
     "devPlugins": [
