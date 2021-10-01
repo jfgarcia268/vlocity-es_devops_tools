@@ -1,6 +1,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -59,17 +60,31 @@ export default class executejobs extends SfdxCommand {
     var jobsList = doc.jobs;
     for (const job in jobsList) {
       AppUtils.log4("Running Job: " + jobsList[job]);
-      var body = { job: jobsList[job] };
-      executejobs.callJob(conn,body); 
-      var isDone = false;
-      while(!isDone){
-        AppUtils.log2("Waiting For Job... " + jobsList[job]);
-        //console.log("isDone: " + isDone);
-        await AppUtils.sleep(poolTimeSec);
-        isDone = await executejobs.checkStatus(conn);
+      var startTime, endTime;
+      startTime = new Date();
+      if(jobsList[job].includes('jobdelete:')){
+        var objectName = jobsList[job].split(':')[1];
+        AppUtils.log3("Delete Job - Object: " + objectName);
+        await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,2);
+      } else {
+        var body = { job: jobsList[job] };
+        executejobs.callJob(conn,body); 
+        var isDone = false;
+        AppUtils.startSpinner("Job: " + jobsList[job]);
+        while(!isDone){
+          endTime = new Date();
+          var timeDiff = endTime - startTime;
+          timeDiff /= 1000;
+          var seconds = Math.round(timeDiff);
+          AppUtils.updateSpinnerMessage('Waiting For Job... Time Elapsed : ' + seconds  + ' seconds - Pooling every ' + poolTimeSec + ' seconds.');
+          await AppUtils.sleep(poolTimeSec);
+          isDone = await executejobs.checkStatus(conn);
+        }
+        AppUtils.stopSpinnerMessage('Job Done in ' + seconds + ' Seconds' );
       }
-      AppUtils.log3("Job Done: " + jobsList[job]);
+      AppUtils.log3("Done: " + jobsList[job]);
     }
+    AppUtils.log4("Done Running Jobs ");
   }
 
   static async callJob(conn,body){

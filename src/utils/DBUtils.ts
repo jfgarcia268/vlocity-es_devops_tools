@@ -189,6 +189,14 @@ export class DBUtils  {
         return result;
       }
 
+      static async bulkAPIQueryAndDelete(conn,objectName,hardelete,bulkApiPollTimeout) {
+        var query = 'SELECT ID FROM ' + objectName;
+        var records = await DBUtils.bulkAPIquery(conn, query);
+        if(records.length > 0){
+          await DBUtils.bulkAPIdelete(records,conn,objectName,false,hardelete,null,bulkApiPollTimeout);
+        }
+      }
+
       static async bulkAPIdelete(records,conn,objectName,save,hardelete,resultData,bulkApiPollTimeout) {
         var deleteType = hardelete == true ? 'hardDelete' : 'Delete';
         var job = await conn.bulk.createJob(objectName,deleteType);
