@@ -60,7 +60,7 @@ export default class executejobs extends SfdxCommand {
     var jobsList = doc.jobs;
     for (const job in jobsList) {
       AppUtils.log4("Running Job: " + jobsList[job]);
-      var startTime, endTime;
+      var startTime, endTime, timeDiff, seconds;
       startTime = new Date();
       if(jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
@@ -73,13 +73,17 @@ export default class executejobs extends SfdxCommand {
         AppUtils.startSpinner("Job: " + jobsList[job]);
         while(!isDone){
           endTime = new Date();
-          var timeDiff = endTime - startTime;
+          timeDiff = endTime - startTime;
           timeDiff /= 1000;
-          var seconds = Math.round(timeDiff);
+          seconds = Math.round(timeDiff);
           AppUtils.updateSpinnerMessage('Waiting For Job... Time Elapsed : ' + seconds  + ' seconds - Pooling every ' + poolTimeSec + ' seconds.');
           await AppUtils.sleep(poolTimeSec);
           isDone = await executejobs.checkStatus(conn);
         }
+        endTime = new Date();
+        timeDiff = endTime - startTime;
+        timeDiff /= 1000;
+        seconds = Math.round(timeDiff);
         AppUtils.stopSpinnerMessage('Job Done in ' + seconds + ' Seconds' );
       }
       AppUtils.log3("Done: " + jobsList[job]);
