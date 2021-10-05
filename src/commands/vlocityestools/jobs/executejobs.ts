@@ -56,6 +56,8 @@ export default class executejobs extends SfdxCommand {
       throw new Error("Error: File: " + jobs + " does not exist");
     }
 
+    var totalStartTime,totalEndTime, ttimeDiff  
+    totalStartTime= new Date();
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
     for (const job in jobsList) {
@@ -69,6 +71,7 @@ export default class executejobs extends SfdxCommand {
       } else {
         var body = { job: jobsList[job] };
         executejobs.callJob(conn,body); 
+        await AppUtils.sleep(2);
         var isDone = false;
         AppUtils.startSpinner("Job: " + jobsList[job]);
         while(!isDone){
@@ -88,7 +91,13 @@ export default class executejobs extends SfdxCommand {
       }
       AppUtils.log3("Done: " + jobsList[job]);
     }
-    AppUtils.log4("Done Running Jobs ");
+
+    totalEndTime = new Date();
+    ttimeDiff = totalEndTime - totalStartTime;
+    ttimeDiff /= 1000;
+    var tseconds = Math.round(ttimeDiff)/60;
+
+    AppUtils.log4("Done Running Jobs in " + tseconds.toFixed(2) + ' Minutes');
   }
 
   static async callJob(conn,body){
