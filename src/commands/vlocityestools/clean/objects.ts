@@ -38,7 +38,7 @@ export default class cleanObjects extends SfdxCommand {
     save: flags.boolean({char: 's', description: messages.getMessage('save')}),
     hard: flags.boolean({char: 'h', description: messages.getMessage('hard')}),
     polltimeout: flags.string({char: 't', description: messages.getMessage('polltimeout')}),
-    big: flags.string({char: 'b', description: messages.getMessage('big')}),
+    big: flags.boolean({char: 'b', description: messages.getMessage('big')}),
   };
 
   // Comment this out if your command does not require an org username
