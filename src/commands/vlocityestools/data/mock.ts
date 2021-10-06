@@ -6,8 +6,6 @@ import { DBUtils } from '../../../utils/DBUtils';
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
-const fsExtra = require("fs-extra");
-
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('vlocityestools', 'mock');
