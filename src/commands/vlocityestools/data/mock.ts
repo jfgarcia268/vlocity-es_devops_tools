@@ -62,7 +62,7 @@ export default class upsert extends SfdxCommand {
       missing = missing - batchSize;
       AppUtils.log3('Batch # ' + (index+1) + ' - ' +  numForThisBatch + ' Records');
       for (let index2 = 0; index2 < numForThisBatch; index2++) {
-        var mockName = 'Mock' + index2 + "." + index2;
+        var mockName = 'Mock' + index + "." + index2;
         var element = {"Name" : mockName};
         records.push(element);
       }
