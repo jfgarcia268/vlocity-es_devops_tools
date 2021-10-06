@@ -110,10 +110,10 @@ export default class cleanObjects extends SfdxCommand {
   static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
-      query += ' WHERE ' + where;  
+      query += ' ' + where;  
+      AppUtils.log3('Query: ' + query);
     } 
     var records = await DBUtils.bulkAPIquery(conn,query);
-    //console.log('value: ' + value);
     if(records.length > 1 && !onlyquery){
       //console.log(JSON.stringify(records));
       await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
