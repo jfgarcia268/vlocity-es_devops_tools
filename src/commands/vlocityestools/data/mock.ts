@@ -28,6 +28,7 @@ export default class upsert extends SfdxCommand {
   protected static flagsConfig = {
     object: flags.string({char: 'o', description: messages.getMessage('object')}),
     count: flags.integer({char: 'c', description: messages.getMessage('count')}),
+    batch: flags.integer({char: 'b', description: messages.getMessage('batch')}),
   };
 
   // Comment this out if your command does not require an org username
@@ -43,12 +44,13 @@ export default class upsert extends SfdxCommand {
 
     var object = this.flags.object;
     var count = this.flags.count;
+    var batch = this.flags.batch;
 
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
 
     const conn = this.org.getConnection();
-    const batchSize = 100000;
+    const batchSize = batch? batch: 100000;
 
     AppUtils.log4('Creating Mock Records...');
 
@@ -60,7 +62,7 @@ export default class upsert extends SfdxCommand {
       var records = [];
       var numForThisBatch = missing > batchSize? batchSize : missing;
       missing = missing - batchSize;
-      AppUtils.log3('Batch # ' + index + ' - ' +  numForThisBatch + ' Records');
+      AppUtils.log3('Batch # ' + (index+1) + ' - ' +  numForThisBatch + ' Records');
       for (let index2 = 0; index2 < numForThisBatch; index2++) {
         var mockName = 'Mock' + index2 + "." + index2;
         var element = {"Name" : mockName};
