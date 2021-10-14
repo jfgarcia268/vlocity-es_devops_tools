@@ -143,11 +143,11 @@ export default class deltaPackage extends SfdxCommand {
         if (numOfDiffs > 0) {
           AppUtils.log3("Creating delta Folder: " + deltaPackageFolder);
           AppUtils.log3("Checking GitDiff.. Deltas: ");
+          AppUtils.log2("path.sep: " + path.sep);
           status.files.forEach(files => {
             //console.log('File: ' + files.file);
             var filePath = files.file;
             AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
-            AppUtils.log2("path.sep: " + path.sep);
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
               var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               var splitResult = filePath.split(path.sep);
