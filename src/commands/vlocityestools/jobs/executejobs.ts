@@ -64,10 +64,16 @@ export default class executejobs extends SfdxCommand {
       AppUtils.log4("Running Job: " + jobsList[job]);
       var startTime, endTime, timeDiff, seconds;
       startTime = new Date();
-      if(jobsList[job].includes('jobdelete:')){
+      if(jobsList[job].includes('jobdeletequery:')){
+        var query = jobsList[job].split(':')[1];
+        var object = jobsList[job].split(':')[2];
+        AppUtils.log3("Delete Job - Query: " + objectName);
+        await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,2);
+      } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
         AppUtils.log3("Delete Job - Object: " + objectName);
         await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,2);
+        
       } else {
         var body = { job: jobsList[job] };
         executejobs.callJob(conn,body); 

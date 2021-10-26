@@ -32,7 +32,7 @@ export default class deltaPackage extends SfdxCommand {
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
     customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")}),
     valuecolumn: flags.string({ char: "h", description: messages.getMessage("valuecolumn")}),
-    more: flags.boolean({ char: "m", description: messages.getMessage("more")}),
+    more: flags.boolean({ char: "m", description: messages.getMessage("more")})
   };
 
   protected static requiresUsername = true;
