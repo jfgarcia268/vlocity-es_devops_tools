@@ -1,5 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
+import { Messages, SfdxError } from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
 import { DBUtils } from '../../../utils/DBUtils';
 
@@ -95,8 +95,8 @@ export default class executejobs extends SfdxCommand {
               const jobObject = resultJobs[i];
               var status = jobObject.Status;
               var numberOfErrors = jobObject.NumberOfErrors;
-              if(numberOfErrors > 0 && status == 'Failed') {
-                jobFail = false;
+              if(numberOfErrors > 0 || status == 'Failed' || status == 'Aborted') {
+                jobFail = true;
               }
               if(status != 'Completed' && status != 'Failed' && status != 'Aborted'){
                 //'Completed','Failed','Aborted'
@@ -108,7 +108,7 @@ export default class executejobs extends SfdxCommand {
                 var JobItemsProcessed = jobObject.JobItemsProcessed;
                 var extendedStatus = jobObject.ExtendedStatus;
                 var apexClass = jobObject.ApexClass.Name;
-                resultData.push({ ID: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
+                resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
               }
             }
           } else {
@@ -120,15 +120,18 @@ export default class executejobs extends SfdxCommand {
         }
         AppUtils.stopSpinnerMessage('Job Done');
         if(jobsFound){
-          var tableColumnData = ['ID', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
+          var tableColumnData = ['Id', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
           AppUtils.ux.log('Apex Jobs Results:');
+          console.log('');
           AppUtils.ux.table(resultData, tableColumnData);
+          console.log('');
         }  
 
       }
       AppUtils.log3("Done: " + jobsList[job]);
+      console.log('');
       if(jobFail && stopOnError){
-        AppUtils.log3("Execution was ended becuase of last job failure");
+        throw new SfdxError("Execution was ended becuase of last job failure ");
         break;
       }
     }
