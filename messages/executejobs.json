@@ -3,5 +3,6 @@
   "packageType": "Vlocity Package Type, Options: ins and cmt",
   "jobs": "Job File",
   "pooltime": "Pooltime",
+  "stopOnError":"Stop When Error",
   "command":"executejobs"
 }

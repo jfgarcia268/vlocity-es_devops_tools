@@ -28,7 +28,8 @@ export default class executejobs extends SfdxCommand {
 
   protected static flagsConfig = {
     jobs: flags.string({char: 'j', description: messages.getMessage('jobs')}),
-    pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')})
+    pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
+    stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')})
   };
 
   // Comment this out if your command does not require an org username
@@ -44,6 +45,7 @@ export default class executejobs extends SfdxCommand {
 
     var jobs = this.flags.jobs;
     var pooltime = this.flags.pooltime;
+    var stopOnError = this.flags.stoponerror;
 
     const conn = this.org.getConnection();
 
@@ -60,10 +62,9 @@ export default class executejobs extends SfdxCommand {
     totalStartTime= new Date();
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
+    var jobFail = false;
     for (const job in jobsList) {
       AppUtils.log4("Running Job: " + jobsList[job]);
-      var startTime, endTime, timeDiff, seconds;
-      startTime = new Date();
       if(jobsList[job].includes('jobdeletequery:')){
         var query = jobsList[job].split(':')[1];
         var object = jobsList[job].split(':')[2];
@@ -76,26 +77,60 @@ export default class executejobs extends SfdxCommand {
         
       } else {
         var body = { job: jobsList[job] };
-        executejobs.callJob(conn,body); 
         await AppUtils.sleep(2);
+        var jobStartTime = (new Date()).toISOString();
+        await executejobs.callJob(conn,body); 
         var isDone = false;
+        var jobsFound = true;
         AppUtils.startSpinner("Job: " + jobsList[job]);
+        //console.log(jobStartTime);
+        var resultData = [];
         while(!isDone){
-          endTime = new Date();
-          timeDiff = endTime - startTime;
-          timeDiff /= 1000;
-          seconds = Math.round(timeDiff);
-          AppUtils.updateSpinnerMessage('Waiting For Job... Time Elapsed : ' + seconds  + ' seconds - Pooling every ' + poolTimeSec + ' seconds.');
           await AppUtils.sleep(poolTimeSec);
-          isDone = await executejobs.checkStatus(conn);
+          var resultJobs = await executejobs.checkStatus(conn,jobStartTime);
+          resultData = [];
+          if(resultJobs.length > 0){
+            isDone = true;
+            for (let i = 0; i < resultJobs.length; i++) {
+              const jobObject = resultJobs[i];
+              var status = jobObject.Status;
+              var numberOfErrors = jobObject.NumberOfErrors;
+              if(numberOfErrors > 0 && status == 'Failed') {
+                jobFail = false;
+              }
+              if(status != 'Completed' && status != 'Failed' && status != 'Aborted'){
+                //'Completed','Failed','Aborted'
+                isDone = false;
+                
+              } else {
+                var id = jobObject.Id;
+                var totalJobItems = jobObject.TotalJobItems;
+                var JobItemsProcessed = jobObject.JobItemsProcessed;
+                var extendedStatus = jobObject.ExtendedStatus;
+                var apexClass = jobObject.ApexClass.Name;
+                resultData.push({ ID: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
+              }
+            }
+          } else {
+            AppUtils.stopSpinnerMessage("No Jobs where triggers");
+            isDone = true;
+            jobsFound = false;
+            break; 
+          }
         }
-        endTime = new Date();
-        timeDiff = endTime - startTime;
-        timeDiff /= 1000;
-        seconds = Math.round(timeDiff);
-        AppUtils.stopSpinnerMessage('Job Done in ' + seconds + ' Seconds' );
+        AppUtils.stopSpinnerMessage('Job Done');
+        if(jobsFound){
+          var tableColumnData = ['ID', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
+          AppUtils.ux.log('Apex Jobs Results:');
+          AppUtils.ux.table(resultData, tableColumnData);
+        }  
+
       }
       AppUtils.log3("Done: " + jobsList[job]);
+      if(jobFail && stopOnError){
+        AppUtils.log3("Execution was ended becuase of last job failure");
+        break;
+      }
     }
 
     totalEndTime = new Date();
@@ -104,6 +139,7 @@ export default class executejobs extends SfdxCommand {
     var tseconds = Math.round(ttimeDiff)/60;
 
     AppUtils.log4("Done Running Jobs in " + tseconds.toFixed(2) + ' Minutes');
+
   }
 
   static async callJob(conn,body){
@@ -115,16 +151,13 @@ export default class executejobs extends SfdxCommand {
     });
   }
 
-  static  async checkStatus(conn){
-    var isDone = await conn.apex.get("/CMTJobsUtil/", {}, function(err, res) {
+  static  async checkStatus(conn,jobStartTime){
+    var jobs = await conn.apex.get("/CMTJobsUtil?jobStartTime="+jobStartTime, {}, function(err, res) {
       if (err) { 
         return console.error(err); 
       }
-      //console.log("res: " + res);
-      return res;
     });
-    //console.log("isDone: " + isDone);
-    return isDone;
+    return jobs;
   }
   
 }
