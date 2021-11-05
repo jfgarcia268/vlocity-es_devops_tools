@@ -67,7 +67,7 @@ export default class executejobs extends SfdxCommand {
       if(jobsList[job].includes('jobdeletequery:')){
         var query = jobsList[job].split(':')[1];
         var object = jobsList[job].split(':')[2];
-        AppUtils.log3("Delete Job - Query: " + objectName);
+        AppUtils.log3("Delete Job - Query: " + query);
         await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,2);
       } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
