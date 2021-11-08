@@ -38,6 +38,7 @@ export default class cleanObjects extends SfdxCommand {
     save: flags.boolean({char: 's', description: messages.getMessage('save')}),
     hard: flags.boolean({char: 'h', description: messages.getMessage('hard')}),
     polltimeout: flags.string({char: 't', description: messages.getMessage('polltimeout')}),
+    big: flags.boolean({char: 'b', description: messages.getMessage('big')}),
   };
 
   // Comment this out if your command does not require an org username
@@ -57,6 +58,7 @@ export default class cleanObjects extends SfdxCommand {
     var save = this.flags.save;
     var hard = this.flags.hard;
     var polltimeout = this.flags.polltimeout;
+    var big = this.flags.big;
 
     if(polltimeout){
       cleanObjects.bulkApiPollTimeout = polltimeout;
@@ -92,7 +94,7 @@ export default class cleanObjects extends SfdxCommand {
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
         AppUtils.log3('Object: ' + objectAPIName);
         try {
-          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData);
+          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big);
         } catch (error) {
           AppUtils.log2('Error Deleting: '  + objectAPIName + '  Error: ' + error);
         }
@@ -107,19 +109,31 @@ export default class cleanObjects extends SfdxCommand {
     AppUtils.ux.log(' ');
   }
 
-  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData) {
+  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
-      query += ' WHERE ' + where;  
-    } 
-    var records = await DBUtils.bulkAPIquery(conn,query);
-    //console.log('value: ' + value);
-    if(records.length > 1 && !onlyquery){
-      //console.log(JSON.stringify(records));
-      await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
-    } else {
-      resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
+      query += ' ' + where;  
     }
+    if (big){
+      query += ' LIMIT 500000';
+    } 
+    AppUtils.log3('Query: ' + query);
+    var records = await DBUtils.bulkAPIquery(conn,query);
+    if(!big){
+      if(records.length > 1 && !onlyquery){
+        //console.log(JSON.stringify(records));
+        await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
+      } else {
+        resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
+      }
+    } else {
+      AppUtils.log3('Big size...');
+      while(records.length > 1 && !onlyquery){
+        await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
+        records = await DBUtils.bulkAPIquery(conn,query);
+      }
+    }
+    
   }
   
 }

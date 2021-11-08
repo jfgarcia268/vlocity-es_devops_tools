@@ -1,0 +1,8 @@
+{
+  "commandDescription": "Insert Mock SObjects",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"upsert",
+  "object":"Object API Name",
+  "count":"Number Of Records to Insert",
+  "batch":"Local batch size"
+}

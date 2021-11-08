@@ -31,7 +31,8 @@ export default class deltaPackage extends SfdxCommand {
     gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")}),
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
     customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")}),
-    valuecolumn: flags.string({ char: "h", description: messages.getMessage("valuecolumn")})
+    valuecolumn: flags.string({ char: "h", description: messages.getMessage("valuecolumn")}),
+    more: flags.boolean({ char: "m", description: messages.getMessage("more")})
   };
 
   protected static requiresUsername = true;
@@ -48,6 +49,7 @@ export default class deltaPackage extends SfdxCommand {
     var gitcheckkeycustom = this.flags.gitcheckkeycustom;
     var customsettingobject = this.flags.customsettingobject;
     var valueColumn = this.flags.valuecolumn;
+    var verbose = this.flags.more;
 
     if(customsettingobject != undefined && gitcheckkeycustom == undefined) {
       throw new Error("Error: -v, --gitcheckkeycustom needs to passed when using customsettingobject");
@@ -120,7 +122,7 @@ export default class deltaPackage extends SfdxCommand {
           AppUtils.log2("Old delta folder was found... deleting before creating new delta: " + deltaPackageFolder );
           fsExtra.removeSync(deltaPackageFolder);
         }
-        deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);
+        deltaPackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path,verbose);
       }
     }    
   }
@@ -133,7 +135,7 @@ export default class deltaPackage extends SfdxCommand {
     fsExtra.copySync(sourceFolder, deltaPackageFolder);
   }
 
-  static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path) {
+  static doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path,verbose) {
     simpleGit.diffSummary([previousHash,'--no-renames'], (err, status) => {
       if (err) {
         throw new Error( "Error with GitDiff, Nothing was copied - Error: " + err );
@@ -143,15 +145,19 @@ export default class deltaPackage extends SfdxCommand {
         if (numOfDiffs > 0) {
           AppUtils.log3("Creating delta Folder: " + deltaPackageFolder);
           AppUtils.log3("Checking GitDiff.. Deltas: ");
+          AppUtils.log2("path.sep: " + path.sep);
+          if(verbose){
+            console.log(status);
+          }
           status.files.forEach(files => {
-            //console.log('File: ' + files.file);
+            if(verbose){
+              console.log('File: ' + files.file);
+            }
             var filePath = files.file;
             if (fsExtra.existsSync(filePath) && filePath.includes(sourceFolder)) {
-              var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               AppUtils.log2("Delta File: " + filePath); //+ ' /////// newfilePath: ' + newfilePath);
-              AppUtils.log2("path.sep: " + path.sep);
+              var newfilePath = filePath.replace(sourceFolder,deltaPackageFolder);
               var splitResult = filePath.split(path.sep);
-
               if (filePath.includes(path.sep + "objectTranslations" + path.sep) ) {
                 var objectTranslationsFolder = filePath.match(/.*\/objectTranslations\/.*?\/.*?/)[0];
                 //console.log(objectTranslationsFolder);

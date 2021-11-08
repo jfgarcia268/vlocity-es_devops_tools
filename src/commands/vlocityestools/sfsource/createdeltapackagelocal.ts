@@ -53,6 +53,6 @@ export default class deltaPackageLocal extends SfdxCommand {
       AppUtils.log2("Old delta folder was found... deleting before creating new delta: " + deltaPackageFolder );
       fsExtra.removeSync(deltaPackageFolder);
     }
-    createdeltapackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path);  
+    createdeltapackage.doDelta(simpleGit, sourceFolder, deltaPackageFolder, fsExtra, previousHash,path,false);  
   } 
 }
