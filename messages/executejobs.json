@@ -4,5 +4,6 @@
   "jobs": "Job File",
   "pooltime": "Pooltime",
   "stopOnError":"Stop When Error",
-  "command":"executejobs"
+  "command":"executejobs",
+  "more":"Verbose logs"
 }
