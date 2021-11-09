@@ -46,14 +46,14 @@ export class AppUtils  {
     }
 
     public static logInitial(command: string) {
-        this.log(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA) <<<<');
+        this.logStyledHeader(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA) <<<<');
         //this.log('');
         this.log3('Command: ' + command);
         //this.log('');
     }  
 
     public static log4(message) {
-        this.log(' >>>> ' + message);
+        this.logStyledHeader(' >>>> ' + message);
     }
 
     public static log3(message) {
@@ -87,6 +87,15 @@ export class AppUtils  {
     private static log(message){
         if(this.ux != undefined){
             this.ux.log(message); 
+        }
+        else {
+            console.log(message); 
+        }
+    }
+
+    private static logStyledHeader(message){
+        if(this.ux != undefined){
+            this.ux.styledHeader(message); 
         }
         else {
             console.log(message); 

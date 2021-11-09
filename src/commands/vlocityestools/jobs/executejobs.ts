@@ -73,11 +73,11 @@ export default class executejobs extends SfdxCommand {
         var query = jobsList[job].split(':')[1];
         var object = jobsList[job].split(':')[2];
         AppUtils.log3("Delete Job - Query: " + query);
-        await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,2);
+        await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,4);
       } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
         AppUtils.log3("Delete Job - Object: " + objectName);
-        await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,2);
+        await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,4);
         
       } else {
         var body = { job: jobsList[job] };
@@ -89,6 +89,7 @@ export default class executejobs extends SfdxCommand {
         AppUtils.startSpinner("Checking Status every " + poolTimeSec + " seconds");
         //console.log(jobStartTime);
         var resultData = [];
+        var tableColumnData = ['Id', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
         while(!isDone){
           endTime = new Date();
           timeDiff = endTime - startTime;
@@ -112,14 +113,13 @@ export default class executejobs extends SfdxCommand {
                 //'Completed','Failed','Aborted'
                 isDone = false;
                 
-              } else {
-                var id = jobObject.Id;
-                var totalJobItems = jobObject.TotalJobItems;
-                var JobItemsProcessed = jobObject.JobItemsProcessed;
-                var extendedStatus = jobObject.ExtendedStatus;
-                var apexClass = jobObject.ApexClass.Name;
-                resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
-              }
+              } 
+              var id = jobObject.Id;
+              var totalJobItems = jobObject.TotalJobItems;
+              var JobItemsProcessed = jobObject.JobItemsProcessed;
+              var extendedStatus = jobObject.ExtendedStatus;
+              var apexClass = jobObject.ApexClass.Name;
+              resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
             }
             if(more){
               AppUtils.ux.log('Apex Jobs Results:');
@@ -140,7 +140,6 @@ export default class executejobs extends SfdxCommand {
         var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
         AppUtils.stopSpinnerMessage('Job Done in ' + timeMessage);
         if(jobsFound){
-          var tableColumnData = ['Id', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
           AppUtils.ux.log('Apex Jobs Results:');
           AppUtils.ux.table(resultData, tableColumnData);
           console.log('');
