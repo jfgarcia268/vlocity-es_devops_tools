@@ -29,7 +29,8 @@ export default class executejobs extends SfdxCommand {
   protected static flagsConfig = {
     jobs: flags.string({char: 'j', description: messages.getMessage('jobs')}),
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
-    stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')})
+    stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
+    more: flags.boolean({char: 'm', description: messages.getMessage('more')})
   };
 
   // Comment this out if your command does not require an org username
@@ -46,6 +47,7 @@ export default class executejobs extends SfdxCommand {
     var jobs = this.flags.jobs;
     var pooltime = this.flags.pooltime;
     var stopOnError = this.flags.stoponerror;
+    var more = this.flags.more;
 
     const conn = this.org.getConnection();
 
@@ -58,22 +60,24 @@ export default class executejobs extends SfdxCommand {
       throw new Error("Error: File: " + jobs + " does not exist");
     }
 
-    var totalStartTime,totalEndTime, ttimeDiff  
+    var totalStartTime,totalEndTime, ttimeDiff;
     totalStartTime= new Date();
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
     var jobFail = false;
     for (const job in jobsList) {
+      var startTime,endTime, timeDiff;
+      startTime= new Date();
       AppUtils.log4("Running Job: " + jobsList[job]);
       if(jobsList[job].includes('jobdeletequery:')){
         var query = jobsList[job].split(':')[1];
         var object = jobsList[job].split(':')[2];
         AppUtils.log3("Delete Job - Query: " + query);
-        await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,2);
+        await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,4);
       } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
         AppUtils.log3("Delete Job - Object: " + objectName);
-        await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,2);
+        await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,4);
         
       } else {
         var body = { job: jobsList[job] };
@@ -82,10 +86,17 @@ export default class executejobs extends SfdxCommand {
         await executejobs.callJob(conn,body); 
         var isDone = false;
         var jobsFound = true;
-        AppUtils.startSpinner("Job: " + jobsList[job]);
+        AppUtils.startSpinner("Checking Status every " + poolTimeSec + " seconds");
         //console.log(jobStartTime);
         var resultData = [];
+        var tableColumnData = ['Id', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
         while(!isDone){
+          endTime = new Date();
+          timeDiff = endTime - startTime;
+          timeDiff /= 1000;
+          var tsecondsp = Math.round(timeDiff);
+          var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
+          AppUtils.updateSpinnerMessage("Time Elapsed: " + timeMessage);
           await AppUtils.sleep(poolTimeSec);
           var resultJobs = await executejobs.checkStatus(conn,jobStartTime);
           resultData = [];
@@ -102,27 +113,34 @@ export default class executejobs extends SfdxCommand {
                 //'Completed','Failed','Aborted'
                 isDone = false;
                 
-              } else {
-                var id = jobObject.Id;
-                var totalJobItems = jobObject.TotalJobItems;
-                var JobItemsProcessed = jobObject.JobItemsProcessed;
-                var extendedStatus = jobObject.ExtendedStatus;
-                var apexClass = jobObject.ApexClass.Name;
-                resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
-              }
+              } 
+              var id = jobObject.Id;
+              var totalJobItems = jobObject.TotalJobItems;
+              var JobItemsProcessed = jobObject.JobItemsProcessed;
+              var extendedStatus = jobObject.ExtendedStatus;
+              var apexClass = jobObject.ApexClass.Name;
+              resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
+            }
+            if(more){
+              AppUtils.ux.log('Apex Jobs Results:');
+              AppUtils.ux.table(resultData, tableColumnData);
+              console.log('');
             }
           } else {
-            AppUtils.stopSpinnerMessage("No Jobs where triggers");
+            AppUtils.stopSpinnerMessage("No Jobs where triggered");
             isDone = true;
             jobsFound = false;
             break; 
           }
         }
-        AppUtils.stopSpinnerMessage('Job Done');
+        endTime = new Date();
+        timeDiff = endTime - startTime;
+        timeDiff /= 1000;
+        var tsecondsp = Math.round(timeDiff);
+        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
+        AppUtils.stopSpinnerMessage('Job Done in ' + timeMessage);
         if(jobsFound){
-          var tableColumnData = ['Id', 'Status', 'TotalJobItems', 'JobItemsProcessed','NumberOfErrors','ExtendedStatus','ApexClass']; 
           AppUtils.ux.log('Apex Jobs Results:');
-          console.log('');
           AppUtils.ux.table(resultData, tableColumnData);
           console.log('');
         }  
@@ -139,9 +157,9 @@ export default class executejobs extends SfdxCommand {
     totalEndTime = new Date();
     ttimeDiff = totalEndTime - totalStartTime;
     ttimeDiff /= 1000;
-    var tseconds = Math.round(ttimeDiff)/60;
+    var tminutes = Math.round(ttimeDiff)/60;
 
-    AppUtils.log4("Done Running Jobs in " + tseconds.toFixed(2) + ' Minutes');
+    AppUtils.log4("Done Running Jobs in " + tminutes.toFixed(2) + ' Minutes');
 
   }
 
