@@ -64,9 +64,9 @@ export default class executejobs extends SfdxCommand {
     totalStartTime= new Date();
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
-    var jobFail = false;
     var resultDataJobsTime = [];
     for (const job in jobsList) {
+      var jobFail = false;
       var startTime,endTime, timeDiff;
       startTime= new Date();
       AppUtils.log4("Running Job: " + jobsList[job]);
