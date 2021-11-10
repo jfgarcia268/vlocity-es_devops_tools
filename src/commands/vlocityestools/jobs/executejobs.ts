@@ -76,24 +76,12 @@ export default class executejobs extends SfdxCommand {
         var object = jobsList[job].split(':')[2];
         AppUtils.log3("Delete Job - Query: " + query);
         await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,4);
-        endTime = new Date();
-        timeDiff = endTime - startTime;
-        timeDiff /= 1000;
-        var tsecondsp = Math.round(timeDiff);
-        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
-        AppUtils.log2('Job Done in ' + timeMessage);
-        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
+        AppUtils.log2('Job Done');
       } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
         AppUtils.log3("Delete Job - Object: " + objectName);
         await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,4);
-        endTime = new Date();
-        timeDiff = endTime - startTime;
-        timeDiff /= 1000;
-        var tsecondsp = Math.round(timeDiff);
-        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
-        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
-        AppUtils.log2('Job Done in ' + timeMessage);
+        AppUtils.log2('Job Done' );
       } else {
         var body = { job: jobsList[job] };
         await AppUtils.sleep(2);
@@ -137,7 +125,7 @@ export default class executejobs extends SfdxCommand {
               resultData.push({ Id: id, Status: status, TotalJobItems: totalJobItems, JobItemsProcessed: JobItemsProcessed, NumberOfErrors: numberOfErrors, ExtendedStatus: extendedStatus, ApexClass: apexClass });
             }
             if(more){
-              AppUtils.ux.log('Apex Jobs Results:');
+              AppUtils.ux.log('Partial Apex Jobs Results:');
               AppUtils.ux.table(resultData, tableColumnData);
               console.log('');
             }
@@ -148,13 +136,7 @@ export default class executejobs extends SfdxCommand {
             break; 
           }
         }
-        endTime = new Date();
-        timeDiff = endTime - startTime;
-        timeDiff /= 1000;
-        var tsecondsp = Math.round(timeDiff);
-        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
-        AppUtils.stopSpinnerMessage('Job Done in ' + timeMessage);
-        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
+        AppUtils.stopSpinnerMessage('Job Done');
         if(jobsFound){
           AppUtils.ux.log('Apex Jobs Results:');
           AppUtils.ux.table(resultData, tableColumnData);
@@ -162,7 +144,14 @@ export default class executejobs extends SfdxCommand {
         }  
 
       }
-      AppUtils.log3("Done: " + jobsList[job]);
+      endTime = new Date();
+      timeDiff = endTime - startTime;
+      timeDiff /= 1000;
+      var tsecondsp = Math.round(timeDiff);
+      var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
+      resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
+      AppUtils.log3("Job Done: " + jobsList[job]);
+      AppUtils.log3("Done in " + timeMessage);
       console.log('');
       if(jobFail && stopOnError){
         throw new SfdxError("Execution was ended becuase of last job failure ");
@@ -174,7 +163,6 @@ export default class executejobs extends SfdxCommand {
     ttimeDiff = totalEndTime - totalStartTime;
     ttimeDiff /= 1000;
     var tminutes = Math.round(ttimeDiff)/60;
-
     AppUtils.log4("Done Running Jobs in " + tminutes.toFixed(2) + ' Minutes');
 
     AppUtils.log3("Summary: ");
