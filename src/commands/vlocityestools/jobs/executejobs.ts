@@ -66,7 +66,6 @@ export default class executejobs extends SfdxCommand {
     var jobsList = doc.jobs;
     var jobFail = false;
     var resultDataJobsTime = [];
-    var tableColumnDataJobsTime = ['Job', 'Time',]; 
     for (const job in jobsList) {
       var startTime,endTime, timeDiff;
       startTime= new Date();
@@ -149,7 +148,7 @@ export default class executejobs extends SfdxCommand {
       timeDiff /= 1000;
       var tsecondsp = Math.round(timeDiff);
       var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
-      resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
+      resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage, Success: !jobFail});
       AppUtils.log3("Job Done: " + jobsList[job]);
       AppUtils.log3("Done in " + timeMessage);
       console.log('');
@@ -166,6 +165,7 @@ export default class executejobs extends SfdxCommand {
     AppUtils.log4("Done Running Jobs in " + tminutes.toFixed(2) + ' Minutes');
 
     AppUtils.log3("Summary: ");
+    var tableColumnDataJobsTime = ['Job', 'Time','Success']; 
     AppUtils.ux.table(resultDataJobsTime, tableColumnDataJobsTime);
     console.log('');
   }
