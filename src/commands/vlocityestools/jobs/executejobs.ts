@@ -65,6 +65,8 @@ export default class executejobs extends SfdxCommand {
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
     var jobFail = false;
+    var resultDataJobsTime = [];
+    var tableColumnDataJobsTime = ['Job', 'Time',]; 
     for (const job in jobsList) {
       var startTime,endTime, timeDiff;
       startTime= new Date();
@@ -74,11 +76,24 @@ export default class executejobs extends SfdxCommand {
         var object = jobsList[job].split(':')[2];
         AppUtils.log3("Delete Job - Query: " + query);
         await DBUtils.bulkAPIQueryAndDeleteWithQuery(conn,object,query,false,4);
+        endTime = new Date();
+        timeDiff = endTime - startTime;
+        timeDiff /= 1000;
+        var tsecondsp = Math.round(timeDiff);
+        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
+        AppUtils.log2('Job Done in ' + timeMessage);
+        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
       } else if  (jobsList[job].includes('jobdelete:')){
         var objectName = jobsList[job].split(':')[1];
         AppUtils.log3("Delete Job - Object: " + objectName);
         await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,4);
-        
+        endTime = new Date();
+        timeDiff = endTime - startTime;
+        timeDiff /= 1000;
+        var tsecondsp = Math.round(timeDiff);
+        var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
+        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
+        AppUtils.log2('Job Done in ' + timeMessage);
       } else {
         var body = { job: jobsList[job] };
         await AppUtils.sleep(2);
@@ -139,6 +154,7 @@ export default class executejobs extends SfdxCommand {
         var tsecondsp = Math.round(timeDiff);
         var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
         AppUtils.stopSpinnerMessage('Job Done in ' + timeMessage);
+        resultDataJobsTime.push({ Job: jobsList[job], Time: timeMessage });
         if(jobsFound){
           AppUtils.ux.log('Apex Jobs Results:');
           AppUtils.ux.table(resultData, tableColumnData);
@@ -161,6 +177,9 @@ export default class executejobs extends SfdxCommand {
 
     AppUtils.log4("Done Running Jobs in " + tminutes.toFixed(2) + ' Minutes');
 
+    AppUtils.log3("Summary: ");
+    AppUtils.ux.table(resultDataJobsTime, tableColumnDataJobsTime);
+    console.log('');
   }
 
   static async callJob(conn,body){
