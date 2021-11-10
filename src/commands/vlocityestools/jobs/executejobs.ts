@@ -65,8 +65,10 @@ export default class executejobs extends SfdxCommand {
     var doc = yaml.safeLoad(fsExtra.readFileSync(jobs, 'utf8'));
     var jobsList = doc.jobs;
     var resultDataJobsTime = [];
+    var tableColumnDataJobsTime = ['Job', 'Time','Success']; 
+    var jobFail = false;
     for (const job in jobsList) {
-      var jobFail = false;
+      jobFail = false;
       var startTime,endTime, timeDiff;
       startTime= new Date();
       AppUtils.log4("Running Job: " + jobsList[job]);
@@ -153,21 +155,23 @@ export default class executejobs extends SfdxCommand {
       AppUtils.log3("Done in " + timeMessage);
       console.log('');
       if(jobFail && stopOnError){
-        throw new SfdxError("Execution was ended becuase of last job failure ");
         break;
       }
     }
+
 
     totalEndTime = new Date();
     ttimeDiff = totalEndTime - totalStartTime;
     ttimeDiff /= 1000;
     var tminutes = Math.round(ttimeDiff)/60;
     AppUtils.log4("Done Running Jobs in " + tminutes.toFixed(2) + ' Minutes');
-
     AppUtils.log3("Summary: ");
-    var tableColumnDataJobsTime = ['Job', 'Time','Success']; 
     AppUtils.ux.table(resultDataJobsTime, tableColumnDataJobsTime);
     console.log('');
+
+    if(jobFail && stopOnError){
+      throw new SfdxError("Execution was ended becuase of last job failure ");
+    }
   }
 
   static async callJob(conn,body){
