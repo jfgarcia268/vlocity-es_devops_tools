@@ -258,10 +258,12 @@ export default class epcGlobalKeySync extends SfdxCommand {
       var object = objectArray[0];
       if(objectArray.length > 1) {
         var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
+        AppUtils.log2('Source duplicated Found - Records Will be Updated with Same GlobalKey if necessary - Related IDs: ' ); 
+        AppUtils.log1(object.Id); 
         for (let index = 1; index < objectArray.length; index++) {
           var duplicateObjectToUpdate = objectArray[index];
+          AppUtils.log1(duplicateObjectToUpdate.Id); 
           var targetgk = duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
-          AppUtils.log2('Source duplicated Found - Records Will be Updated with Same GlobalKey if necessary' ); 
           if(sourcegk != targetgk) {
             duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')] = sourcegk;
             delete duplicateObjectToUpdate[AppUtils.replaceaNameSpace('%name-space%ParentProductId__r.%name-space%GlobalKey__c')];
@@ -330,7 +332,7 @@ export default class epcGlobalKeySync extends SfdxCommand {
       var object = objectArray[0];
       if(objectArray.length > 1) {
         var sourcegk = object[AppUtils.replaceaNameSpace('%name-space%GlobalKey__c')];
-        AppUtils.log2('Source Duplicates - Related IDs: '); 
+        AppUtils.log2('Source duplicated Found - Records Will be Updated with Same GlobalKey if necessary - Related IDs: '); 
         AppUtils.log1(object.Id); 
         for (let index = 1; index < objectArray.length; index++) {
           var duplicateObjectToUpdate = objectArray[index];
