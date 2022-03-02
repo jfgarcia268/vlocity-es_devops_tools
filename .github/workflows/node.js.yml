@@ -16,7 +16,6 @@ jobs:
     steps:  
     - uses: actions/checkout@v2
     - run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_PASS }}
-    - run: npm login
     - run: npm config set unsafe-perm=true
     - run: npm install .
     - run: npm publish .
