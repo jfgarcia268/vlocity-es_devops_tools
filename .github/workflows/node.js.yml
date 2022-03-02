@@ -14,8 +14,11 @@ jobs:
     container:
       image: jfgarcia268/npm_publish:latest
     steps:  
+    - env:
+      NPM_TOKEN: ${{ secrets.NPM_PASS }}
     - uses: actions/checkout@v2
-    - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
+    #- run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
+    - run: npm login
     - run: npm config set unsafe-perm=true
     - run: npm install .
     - run: npm publish .
