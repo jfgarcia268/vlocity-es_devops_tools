@@ -14,9 +14,8 @@ jobs:
     container:
       image: jfgarcia268/npm_publish:latest
     steps:  
-    - env:
-      NPM_TOKEN: ${{ secrets.NPM_PASS }}
     - uses: actions/checkout@v2
+    - run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_PASS }}
     - run: npm login
     - run: npm config set unsafe-perm=true
     - run: npm install .
