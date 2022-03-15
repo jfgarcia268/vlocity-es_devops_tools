@@ -15,7 +15,7 @@ jobs:
       image: jfgarcia268/npm_publish:latest
     steps:  
     - uses: actions/checkout@v2
-    - run: npm-cli-login -u jfgarcia268 -p ${{ secrets.NPM_PASS }}  -e jf.garcia268@gmail.com
+    - run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_PASS }}
     - run: npm config set unsafe-perm=true
     - run: npm install .
     - run: npm publish . --tag beta
