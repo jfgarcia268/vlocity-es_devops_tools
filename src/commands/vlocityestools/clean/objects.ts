@@ -86,13 +86,13 @@ export default class cleanObjects extends SfdxCommand {
     var resultData = [];
 
     do {
-      AppUtils.log3('Deleting....');
+      AppUtils.log4('Deleting....');
       console.log('');
       for (let index = 0; index < Object.keys(doc.Objects).length; index++) {
         var element = Object.keys(doc.Objects)[index];
         var where = doc.Objects[element] != null? doc.Objects[element] : undefined;
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
-        AppUtils.log3('Object: ' + objectAPIName);
+        AppUtils.log4('Object: ' + objectAPIName);
         try {
           await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big);
         } catch (error) {
