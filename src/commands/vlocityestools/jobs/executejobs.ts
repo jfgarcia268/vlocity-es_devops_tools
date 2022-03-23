@@ -30,7 +30,8 @@ export default class executejobs extends SfdxCommand {
     jobs: flags.string({char: 'j', description: messages.getMessage('jobs')}),
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
-    more: flags.boolean({char: 'm', description: messages.getMessage('more')})
+    more: flags.boolean({char: 'm', description: messages.getMessage('more')}),
+    local: flags.boolean({char: 'l', description: messages.getMessage('local')})
   };
 
   // Comment this out if your command does not require an org username
@@ -48,9 +49,8 @@ export default class executejobs extends SfdxCommand {
     var pooltime = this.flags.pooltime;
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
-
+    var local = this.flags.local;
     const conn = this.org.getConnection();
-
     var poolTimeSec = pooltime? pooltime : 10;
 
     AppUtils.ux = this.ux;
@@ -59,6 +59,10 @@ export default class executejobs extends SfdxCommand {
     if (!fsExtra.existsSync(jobs)) {
       throw new Error("Error: File: " + jobs + " does not exist");
     }
+
+    var userIdQuery = "SELECT Id FROM User WHERE  UserName ='" + this.org.getUsername() + "'";
+    const resultId = await conn.query(userIdQuery);
+    var runningUserId = resultId.records[0].Id;
 
     var totalStartTime,totalEndTime, ttimeDiff;
     totalStartTime= new Date();
@@ -87,7 +91,12 @@ export default class executejobs extends SfdxCommand {
         var body = { job: jobsList[job] };
         await AppUtils.sleep(2);
         var jobStartTime = (new Date()).toISOString();
-        await executejobs.callJob(conn,body); 
+        
+        if(local){
+          await executejobs.callJobLocal(conn,body); 
+        } else {
+          await executejobs.callJob(conn,body); 
+        }
         var isDone = false;
         var jobsFound = true;
         AppUtils.startSpinner("Checking Status every " + poolTimeSec + " seconds");
@@ -102,7 +111,8 @@ export default class executejobs extends SfdxCommand {
           var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
           AppUtils.updateSpinnerMessage("Time Elapsed: " + timeMessage);
           await AppUtils.sleep(poolTimeSec);
-          var resultJobs = await executejobs.checkStatus(conn,jobStartTime);
+          var resultJobs = local? await executejobs.checkStatusLocal(conn,jobStartTime,runningUserId) : await executejobs.checkStatus(conn,jobStartTime);
+          //console.log(resultJobs);
           resultData = [];
           if(resultJobs.length > 0){
             isDone = true;
@@ -174,6 +184,27 @@ export default class executejobs extends SfdxCommand {
     }
   }
 
+  static async callJobLocal(conn,job){
+    var apexBody = "";
+    if(job == 'EPCFixCompiledAttributeOverrideBatchJob'){
+      apexBody = "Database.executeBatch(new vlocity_cmt.EPCFixCompiledAttributeOverrideBatchJob (), 1);";
+    } else if(job == 'FixProductAttribJSONBatchJob'){ 
+      apexBody = "Database.executeBatch(new vlocity_cmt.FixProductAttribJSONBatchJob(), 1); "; // OLD METHOD
+    } else if(job == 'EPCProductAttribJSONBatchJob'){    
+      apexBody += "List<Id> productIds = new List<Id>();"
+      apexBody += "for (Product2 prod : [ Select Id from Product2 where vlocity_cmt__ObjectTypeId__c != null ]){"
+      apexBody +=     "productIds.add(prod.Id);"
+      apexBody += "}"
+      apexBody += "Database.executeBatch(new vlocity_cmt.EPCProductAttribJSONBatchJob(productIds), 1);"
+    } else {
+      apexBody += "vlocity_cmt.TelcoAdminConsoleController telcoAdminConsoleController = new vlocity_cmt.TelcoAdminConsoleController();"
+      apexBody += "telcoAdminConsoleController.setParameters('" + job.job + "');"
+      apexBody += "telcoAdminConsoleController.invokeMethod();"
+    }
+    await AppUtils.runApex(conn,apexBody);
+  }
+
+
   static async callJob(conn,body){
     await conn.apex.post("/CMTJobsUtil/", body, function(err, res) {
       if (err) { 
@@ -190,6 +221,18 @@ export default class executejobs extends SfdxCommand {
       }
     });
     return jobs;
+  }
+
+  static  async checkStatusLocal(conn,jobStartTime,runningUserId){
+    var query = "SELECT Status,CreatedDate,TotalJobItems,JobItemsProcessed,ApexClass.Name,NumberOfErrors,ExtendedStatus "
+    query +=    "FROM AsyncApexJob "
+    query +=    "WHERE CreatedById='" + runningUserId + "' "
+    query +=       "AND JobType='BatchApex' "
+    query +=       "AND CreatedDate>=" + jobStartTime
+    const result = await conn.query(query);
+    //console.log(query);
+    //console.log(result.records);
+    return result.records; 
   }
   
 }
