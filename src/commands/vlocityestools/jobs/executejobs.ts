@@ -93,7 +93,7 @@ export default class executejobs extends SfdxCommand {
         var jobStartTime = (new Date()).toISOString();
         
         if(local){
-          await executejobs.callJobLocal(conn,body); 
+          await executejobs.callJobLocal(conn,body.job); 
         } else {
           await executejobs.callJob(conn,body); 
         }
@@ -186,6 +186,7 @@ export default class executejobs extends SfdxCommand {
 
   static async callJobLocal(conn,job){
     var apexBody = "";
+    //console.log(job);
     if(job == 'EPCFixCompiledAttributeOverrideBatchJob'){
       apexBody = "Database.executeBatch(new vlocity_cmt.EPCFixCompiledAttributeOverrideBatchJob (), 1);";
     } else if(job == 'FixProductAttribJSONBatchJob'){ 
@@ -198,7 +199,7 @@ export default class executejobs extends SfdxCommand {
       apexBody += "Database.executeBatch(new vlocity_cmt.EPCProductAttribJSONBatchJob(productIds), 1);"
     } else {
       apexBody += "vlocity_cmt.TelcoAdminConsoleController telcoAdminConsoleController = new vlocity_cmt.TelcoAdminConsoleController();"
-      apexBody += "telcoAdminConsoleController.setParameters('" + job.job + "');"
+      apexBody += "telcoAdminConsoleController.setParameters('" + job + "');"
       apexBody += "telcoAdminConsoleController.invokeMethod();"
     }
     await AppUtils.runApex(conn,apexBody);
