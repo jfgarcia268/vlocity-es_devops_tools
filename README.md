@@ -9,6 +9,11 @@ Vlocity ES Tools (Beta)
 $ sfdx plugins:install vlocityestools # Requires SFDX-CLI
 ```
 
+# Install with no promt
+```sh-session
+$ echo "yes" | sfdx plugins:install vlocityestools # Requires SFDX-CLI
+```
+
 # Usage
 ```sh-session
 $ sfdx COMMAND
@@ -17,28 +22,7 @@ running command...
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
-```
-
-# Commands:
-
-### vlocityestools:clean:epcgkfix
-### vlocityestools:clean:omniscripts
-### vlocityestools:clean:templates
-### vlocityestools:compare:folders
-### vlocityestools:clean:datapacks
-### vlocityestools:clean:savedomniscripts
-### vlocityestools:report:dependencies:local
-### vlocityestools:report:dependencies:remote
-### vlocityestools:report:activeomniscript
-### vlocityestools:sfsource:createdeltapackage
-### vlocityestools:sfsource:createdeltapackagelocal
-### vlocityestools:sfsource:updatedeltahash
-### vlocityestools:clean:calcmatrix
-### vlocityestools:login:login
-### vlocityestools:clean:objects
-### vlocityestools:sfsource:createmocklwcos
-### vlocityestools:data:upsert
-  
+```  
 '    '
 
 # Commands Info:
@@ -722,5 +706,109 @@ EXAMPLES
   $ sfdx vlocityestools:data:upsert -u myOrg@example.com -f accounts.csv -o Account -i Name2__c
   
   $ sfdx vlocityestools:data:upsert --targetusername --csv accounts.csv --object Account --id Name2__c
+
+```
+
+
+## vlocityestools:jobs:executejobs
+
+CMT Jobs Automation (Only for CMT Package)
+
+Sample Jobs File
+```
+jobs: 
+  - 'jobdelete:vlocity_cmt__CachedAPIResponse__c' 
+  - 'EPCProductAttribJSONBatchJob'  
+  - 'EPCFixCompiledAttributeOverrideBatchJob'  
+  - '{"methodName":"startProductHierarchyJob"}' 
+  - '{"methodName":"clearPlatformCache"}' 
+  - '{"methodName":"refreshPricebook"}'
+  - '{"methodName":"populateCacheCAJob","selectedList":["ContextEligibilityGenerator","GetOffersHierarchyHelper","GetOffers","GetContainOffers","GetPrices","GetOfferDetails"]}'
+
+#### Delete Records
+
+# 'jobdelete:<Object API Name>'
+
+#### Custom Apex Jobs:
+
+# 'EPCProductAttribJSONBatchJob'
+# 'EPCFixCompiledAttributeOverrideBatchJob'
+
+#### CMT Admin Jobs:
+
+# '{"methodName":"<Job>"}'
+
+# 'startRootAccountJob'
+# 'refreshBatchJobLists'
+# 'refreshXLIBatchJobLists'
+# 'resetInterfaceImplementations'
+# 'mergeInterfaceImplementations'
+# 'resetFieldMaps'
+# 'startXLIBatchValidationJob'
+# 'resetXLIBatchValidtionData'
+# 'startAttributesBindingJob' // Aditional Parameters: 'objectNames');
+# 'startRootProductChildItemJob'
+# 'resetObjectMaps'
+# 'createEpcObjectClasses'
+# 'createEpcDefaultLayouts'
+# 'deleteEpcDefaultLayouts'
+# 'createDefaultPricingVariables'
+# 'generateEPCGlobalKeys'
+# 'startProductHierarchyJob'
+# 'clearPlatformCache'
+# 'refreshPriceBook' // Aditional Parameters: 'priceBookId'
+# 'createDefContextualAdjData'
+# 'startTranslationJob'
+# 'loadDefaultObjectFieldsConfigMLS'
+# 'startTranslationCacheJob'
+# 'startConvertProductJSONToV2' // Aditional Parameters: 'convertProductBatchSize' and 'productFiltersListString'
+# 'startConvertXliJSONToV2' // Aditional Parameters: 'convertXliInput', 'convertXliBatchSize' and 'xliFiltersListString';
+# 'loadAPIMetadataCAJob'
+# 'getCAJobList'
+# 'populateCacheCAJob'
+# 'startPopulateSellingPeriodDatesJob'
+# 'populateMissingActionFieldInXLIs'
+# 'startPopulateRequestedStartDatesJobs'
+# 'startDeleteExpiredCacheJobs'
+# 'startDeleteQuasiRecordsJobs'
+# 'regenerateCacheAPIRecordsJobs'
+# 'cacheMigrationJobs'
+# 'getUpgradeData'
+# 'startPopulateGKPathJobs'
+# 'startUpdateEncryptAttrJob'
+# 'createDefaultTimePolicy'
+# 'startCreateRelationshipRecords' // Aditional Parameters:  'createRelationshipBatchSize' and 'createRelationshipHeaderFiltersListString'
+# 'startReportNullSpecTypeBatchJob'
+# 'startReportMismatchedSpecTypeBatchJob'
+# 'startPopulateCatalogCodeBatchJob'
+  
+```
+
+```
+USAGE
+
+  $ sfdx vlocityestools:jobs:executejobs [-j <string>] [-p <integer>] [-s] [-m] [-l] [-u <string>]
+
+OPTIONS
+
+  -j, --jobs=jobs                                            Job File
+
+  -l, --local                                                Dont use remote Apex
+
+  -m, --more                                                 Verbose logs
+
+  -p, --pooltime=pooltime                                    Pooltime in seconds (default 10)
+
+  -s, --stoponerror                                          Stop When Error
+
+  -u, --targetusername=targetusername                        username or alias for the target org; overrides default target org
+
+EXAMPLES
+
+  $ sfdx vlocityestools:jobs:executejobs -u myOrg@example.com -j jobs.yaml -p 20
+
+  $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20
+
+  $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20 --local
 
 ```

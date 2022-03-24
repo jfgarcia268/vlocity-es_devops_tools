@@ -45,6 +45,20 @@ export class AppUtils  {
         return this.namespace;
     }
 
+    public static async runApex(conn,apexBody) {
+        //console.log(apexBody);
+        var res = await conn.tooling.executeAnonymous(apexBody, function(err, res) {
+          if (err) { 
+              return console.error(err);
+          }
+          //console.log("compiled?: " + res.compiled); // compiled successfully
+          //console.log("executed?: " + res.success); // executed successfully
+          //console.log(res, 'res')
+        });
+        //console.log(res);
+        return res;
+    }
+
     public static logInitial(command: string) {
         this.logStyledHeader(' >>>> Vlocity ES Tools v' + AppUtils.appVersion + ' (BETA) <<<<');
         //this.log('');
