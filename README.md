@@ -714,6 +714,76 @@ EXAMPLES
 
 CMT Jobs Automation (Only for CMT Package)
 
+Sample Jobs File
+```
+jobs: 
+  - 'jobdelete:vlocity_cmt__CachedAPIResponse__c' 
+  - 'EPCProductAttribJSONBatchJob'  
+  - 'EPCFixCompiledAttributeOverrideBatchJob'  
+  - '{"methodName":"startProductHierarchyJob"}' 
+  - '{"methodName":"clearPlatformCache"}' 
+  - '{"methodName":"refreshPricebook"}'
+  - '{"methodName":"populateCacheCAJob","selectedList":["ContextEligibilityGenerator","GetOffersHierarchyHelper","GetOffers","GetContainOffers","GetPrices","GetOfferDetails"]}'
+
+#### Delete Records
+
+# 'jobdelete:<Object API Name>'
+
+#### Custom Apex Jobs:
+
+# 'EPCProductAttribJSONBatchJob'
+# 'EPCFixCompiledAttributeOverrideBatchJob'
+
+#### CMT Admin Jobs:
+
+# '{"methodName":"<Job>"}'
+
+# 'startRootAccountJob'
+# 'refreshBatchJobLists'
+# 'refreshXLIBatchJobLists'
+# 'resetInterfaceImplementations'
+# 'mergeInterfaceImplementations'
+# 'resetFieldMaps'
+# 'startXLIBatchValidationJob'
+# 'resetXLIBatchValidtionData'
+# 'startAttributesBindingJob' // Aditional Parameters: 'objectNames');
+# 'startRootProductChildItemJob'
+# 'resetObjectMaps'
+# 'createEpcObjectClasses'
+# 'createEpcDefaultLayouts'
+# 'deleteEpcDefaultLayouts'
+# 'createDefaultPricingVariables'
+# 'generateEPCGlobalKeys'
+# 'startProductHierarchyJob'
+# 'clearPlatformCache'
+# 'refreshPriceBook' // Aditional Parameters: 'priceBookId'
+# 'createDefContextualAdjData'
+# 'startTranslationJob'
+# 'loadDefaultObjectFieldsConfigMLS'
+# 'startTranslationCacheJob'
+# 'startConvertProductJSONToV2' // Aditional Parameters: 'convertProductBatchSize' and 'productFiltersListString'
+# 'startConvertXliJSONToV2' // Aditional Parameters: 'convertXliInput', 'convertXliBatchSize' and 'xliFiltersListString';
+# 'loadAPIMetadataCAJob'
+# 'getCAJobList'
+# 'populateCacheCAJob'
+# 'startPopulateSellingPeriodDatesJob'
+# 'populateMissingActionFieldInXLIs'
+# 'startPopulateRequestedStartDatesJobs'
+# 'startDeleteExpiredCacheJobs'
+# 'startDeleteQuasiRecordsJobs'
+# 'regenerateCacheAPIRecordsJobs'
+# 'cacheMigrationJobs'
+# 'getUpgradeData'
+# 'startPopulateGKPathJobs'
+# 'startUpdateEncryptAttrJob'
+# 'createDefaultTimePolicy'
+# 'startCreateRelationshipRecords' // Aditional Parameters:  'createRelationshipBatchSize' and 'createRelationshipHeaderFiltersListString'
+# 'startReportNullSpecTypeBatchJob'
+# 'startReportMismatchedSpecTypeBatchJob'
+# 'startPopulateCatalogCodeBatchJob'
+  
+```
+
 ```
 USAGE
 
