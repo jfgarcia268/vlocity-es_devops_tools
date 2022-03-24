@@ -22,30 +22,7 @@ running command...
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
-```
-
-# Commands:
-
--  [vlocityestools:clean:epcgkfix] (#vlocityestoolscleanepcgkfix)
--  [vlocityestools:clean:omniscripts] (#vlocityestoolscleanomniscripts)
--  [vlocityestools:clean:templates] (#vlocityestoolscleantemplates)
--  [vlocityestools:compare:folders] (#vlocityestoolscomparefolders)
--  [vlocityestools:clean:datapacks] (#vlocityestoolscleandatapacks)
--  [vlocityestools:clean:savedomniscripts] (#vlocityestoolscleansavedomniscripts)
--  [vlocityestools:report:dependencies:local] (#vlocityestoolsreportdependencieslocal)
--  [vlocityestools:report:dependencies:remote] (#vlocityestoolsreportdependenciesremote)
--  [vlocityestools:report:activeomniscript] (#vlocityestoolsreportactiveomniscript)
--  [vlocityestools:sfsource:createdeltapackage] (#vlocityestoolssfsourcecreatedeltapackage)
--  [vlocityestools:sfsource:createdeltapackagelocal] (#vlocityestoolssfsourcecreatedeltapackagelocal)
--  [vlocityestools:sfsource:updatedeltahash] (#vlocityestoolssfsourceupdatedeltahash)
--  [vlocityestools:clean:calcmatrix] (#vlocityestoolscleancalcmatrix)
--  [vlocityestools:login:login] (#vlocityestoolsloginlogin)
--  [vlocityestools:clean:objects] (#vlocityestoolscleanobjects)
--  [vlocityestools:sfsource:createmocklwcos] (#vlocityestoolssfsourcecreatemocklwcos)
--  [vlocityestools:data:upsert] (#vlocityestoolsdataupsert)
--  [vlocityestools:jobs:executejobs] (#vlocityestoolsjobsexecutejobs)
-  
-  
+```  
 '    '
 
 # Commands Info:
