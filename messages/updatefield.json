@@ -1,0 +1,9 @@
+{
+  "commandDescription": "Mass Update a field with a value",
+  "errorNoOrgResults": "No results found for the org '%s'.",
+  "command":"updatefield",
+  "object":"API Name of the Object",
+  "field":"API Name of the field to update",
+  "value":"Value to update",
+  "where":"'WHERE' to only update certain records"
+}
