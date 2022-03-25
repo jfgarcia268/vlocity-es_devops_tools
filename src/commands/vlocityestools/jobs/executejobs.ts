@@ -27,7 +27,7 @@ export default class executejobs extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    jobs: flags.string({char: 'j', description: messages.getMessage('jobs')}),
+    jobs: flags.string({char: 'j', description: messages.getMessage('jobs'), required: true}),
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
     more: flags.boolean({char: 'm', description: messages.getMessage('more')}),

@@ -26,9 +26,9 @@ export default class upsert extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    csv: flags.string({char: 'f', description: messages.getMessage('csv')}),
-    object: flags.string({char: 'o', description: messages.getMessage('object')}),
-    id: flags.string({char: 'i', description: messages.getMessage('id')}),
+    csv: flags.string({char: 'f', description: messages.getMessage('csv'), required: true}),
+    object: flags.string({char: 'o', description: messages.getMessage('object'), required: true}),
+    id: flags.string({char: 'i', description: messages.getMessage('id'), required: true}),
     save: flags.boolean({char: 's', description: messages.getMessage('save')}),
   };
 

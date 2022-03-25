@@ -24,7 +24,7 @@ export default class deltaPackageLocal extends SfdxCommand {
   public static args = [{ name: "file" }];
 
   protected static flagsConfig = {
-    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
+    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder"), required: true}),
     hash: flags.string({ char: "h", description: messages.getMessage("hash")})
   };
 

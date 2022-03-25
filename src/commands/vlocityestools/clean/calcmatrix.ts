@@ -25,7 +25,7 @@ export default class deleteCalMatrix extends SfdxCommand {
   private static batchSize = 10000;
 
   protected static flagsConfig = {
-    matrixid: flags.string({char: 'i', description: messages.getMessage('numberRecentVersions')}),
+    matrixid: flags.string({char: 'i', description: messages.getMessage('numberRecentVersions'), required: true}),
     package: flags.string({char: 'p', description: messages.getMessage('packageType')})
   };
 
@@ -144,7 +144,7 @@ export default class deleteCalMatrix extends SfdxCommand {
         .on("error", function(err) { // fired when batch request is queued in server.
           console.log('Error, batch # ' + batchNumber + 'Info:', err);
           numberOfBatchesDone = numberOfBatchesDone +1;
-          resolve();
+          resolve('Error: ' + err);
         })
         .on("queue", function(batchInfo) { // fired when batch request is queued in server.
           AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
@@ -153,7 +153,7 @@ export default class deleteCalMatrix extends SfdxCommand {
         .on("response", function(rets) { // fired when batch finished and result retrieved
           numberOfBatchesDone = numberOfBatchesDone +1;
           AppUtils.log1('Batch # ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-          resolve();
+          resolve('Batch # ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
         });
       });
       promises.push(newp);

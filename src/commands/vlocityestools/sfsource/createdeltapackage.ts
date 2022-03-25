@@ -27,7 +27,7 @@ export default class deltaPackage extends SfdxCommand {
 
   protected static flagsConfig = {
     package: flags.string({char: "p", description: messages.getMessage("packageType")}),
-    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder")}),
+    sourcefolder: flags.string({ char: "d", description: messages.getMessage("sourcefolder"), required: true}),
     gitcheckkey: flags.string({ char: "k", description: messages.getMessage("gitcheckkey")}),
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
     customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")}),
