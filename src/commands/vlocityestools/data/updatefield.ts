@@ -24,10 +24,10 @@ export default class updatefield extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    object: flags.string({char: 'o', description: messages.getMessage('object')}),
-    field: flags.string({char: 'f', description: messages.getMessage('field')}),
-    value: flags.string({char: 'v', description: messages.getMessage('value')}),
-    where: flags.string({char: 'w', description: messages.getMessage('where')}),
+    object: flags.string({char: 'o', description: messages.getMessage('object'), required: true}),
+    field: flags.string({char: 'f', description: messages.getMessage('field'), required: true}),
+    value: flags.string({char: 'v', description: messages.getMessage('value'), required: true}),
+    where: flags.string({char: 'w', description: messages.getMessage('where'), required: false}),
   };
 
   // Comment this out if your command does not require an org username
@@ -49,18 +49,7 @@ export default class updatefield extends SfdxCommand {
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
 
-    const conn = this.org.getConnection();
-    
-
-    if (!object) {
-      throw new Error("Object API Name is needed");
-    }
-    if (!field) {
-      throw new Error("Field API Name is needed");
-    }
-    if (!value) {
-      throw new Error("Value is needed");
-    }
+    const conn = this.org.getConnection();  
     
     var query = "SELECT Id, " + field + " FROM " + object
     if(where){

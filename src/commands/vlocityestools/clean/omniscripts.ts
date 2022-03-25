@@ -24,7 +24,7 @@ export default class deleteOldOS extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    numberversions: flags.integer({char: 'n', description: messages.getMessage('numberRecentVersions')}),
+    numberversions: flags.integer({char: 'n', description: messages.getMessage('numberRecentVersions'), required: true}),
     package: flags.string({char: 'p', description: messages.getMessage('packageType')})
   };
 

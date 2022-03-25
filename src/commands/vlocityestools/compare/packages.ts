@@ -27,8 +27,8 @@ export default class compareFolders extends SfdxCommand {
   public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    folder1: flags.string({char: 's', description: messages.getMessage('folder1')}),
-    folder2: flags.string({char: 't', description: messages.getMessage('folder2')})
+    folder1: flags.string({char: 's', description: messages.getMessage('folder1'), required: true}),
+    folder2: flags.string({char: 't', description: messages.getMessage('folder2'), required: true})
   };
 
   // Comment this out if your command does not require an org username
