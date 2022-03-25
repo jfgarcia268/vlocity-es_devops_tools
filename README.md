@@ -734,7 +734,7 @@ EXAMPLES
 
   $ sfdx vlocityestools:data:updatefield -u myOrg@example.com -o Product2 -f IsActive -v true
 
-  $ sfdx vlocityestools:data:updatefield --targetusername --object Product2 --field IsActive --value false --where "ProductCode LIKE 'VLO%'"
+  $ sfdx vlocityestools:data:updatefield --targetusername myOrg@example.com --object Product2 --field IsActive --value false --where "ProductCode LIKE 'VLO%'"
 
 ```
 
