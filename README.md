@@ -709,6 +709,35 @@ EXAMPLES
 
 ```
 
+## vlocityestools:data:updatefield
+
+Bulk Update a field with one value. Optional "WHERE" to filter records
+
+```
+USAGE
+
+  $ sfdx vlocityestools:data:updatefield -o <string> -f <string> -v <string> [-w <string>] -u <string>
+
+OPTIONS
+
+  -f, --field=field                                          API Name of the field to update
+ 
+  -o, --object=object                                        API Name of the Object
+ 
+  -u, --targetusername=targetusername                        username or alias for the target org; overrides default target org
+ 
+  -v, --value=value                                          Value to update
+ 
+  -w, --where=where                                          'WHERE' to only update certain records (Optional)
+
+EXAMPLES
+
+  $ sfdx vlocityestools:data:updatefield -u myOrg@example.com -o Product2 -f IsActive -v true
+
+  $ sfdx vlocityestools:data:updatefield --targetusername --object Product2 --field IsActive --value false --where "ProductCode LIKE 'VLO%'"
+
+```
+
 
 ## vlocityestools:jobs:executejobs
 
