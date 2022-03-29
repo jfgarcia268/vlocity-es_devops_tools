@@ -31,8 +31,8 @@ export default class executejobs extends SfdxCommand {
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
     more: flags.boolean({char: 'm', description: messages.getMessage('more')}),
-    local: flags.boolean({char: 'l', description: messages.getMessage('local')})
-  };
+    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')})
+  }
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = true;
@@ -49,7 +49,7 @@ export default class executejobs extends SfdxCommand {
     var pooltime = this.flags.pooltime;
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
-    var local = this.flags.local;
+    var remoteapex = this.flags.remoteapex;
     const conn = this.org.getConnection();
     var poolTimeSec = pooltime? pooltime : 10;
 
@@ -92,7 +92,7 @@ export default class executejobs extends SfdxCommand {
         await AppUtils.sleep(2);
         var jobStartTime = (new Date()).toISOString();
         
-        if(local){
+        if(!remoteapex){
           await executejobs.callJobLocal(conn,body.job); 
         } else {
           await executejobs.callJob(conn,body); 
@@ -111,7 +111,7 @@ export default class executejobs extends SfdxCommand {
           var timeMessage = tsecondsp > 60 ? (tsecondsp/60).toFixed(2) + ' Minutes' : tsecondsp.toFixed(0) + ' Seconds';
           AppUtils.updateSpinnerMessage("Time Elapsed: " + timeMessage);
           await AppUtils.sleep(poolTimeSec);
-          var resultJobs = local? await executejobs.checkStatusLocal(conn,jobStartTime,runningUserId) : await executejobs.checkStatus(conn,jobStartTime);
+          var resultJobs = remoteapex? await executejobs.checkStatus(conn,jobStartTime): await executejobs.checkStatusLocal(conn,jobStartTime,runningUserId);
           //console.log(resultJobs);
           resultData = [];
           if(resultJobs.length > 0){
