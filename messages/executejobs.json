@@ -6,5 +6,5 @@
   "stopOnError":"Stop When Error",
   "command":"executejobs",
   "more":"Verbose logs",
-  "local":"Dont use remote Apex"
+  "remoteapex":"Use remote Apex"
 }

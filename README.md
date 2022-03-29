@@ -822,7 +822,7 @@ OPTIONS
 
   -j, --jobs=jobs                                            Job File
 
-  -l, --local                                                Dont use remote Apex
+  -r, --remoteapex                                           Use remote Apex
 
   -m, --more                                                 Verbose logs
 
@@ -838,6 +838,6 @@ EXAMPLES
 
   $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20
 
-  $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20 --local
+  $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20 --remoteapex
 
 ```
