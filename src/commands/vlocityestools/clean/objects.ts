@@ -94,7 +94,7 @@ export default class cleanObjects extends SfdxCommand {
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
         AppUtils.log4('Object: ' + objectAPIName);
         try {
-          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big);
+          await this.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big);
         } catch (error) {
           AppUtils.log2('Error Deleting: '  + objectAPIName + '  Error: ' + error);
         }
@@ -109,7 +109,7 @@ export default class cleanObjects extends SfdxCommand {
     AppUtils.ux.log(' ');
   }
 
-  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big) {
+   async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where){
       query += ' ' + where;  
@@ -119,7 +119,10 @@ export default class cleanObjects extends SfdxCommand {
     } 
     AppUtils.log3('Query: ' + query);
     var records = await DBUtils.bulkAPIquery(conn,query);
-    if(!big){
+    if(records.length < 2000 && records.length > 1 && !onlyquery && !hard ){
+      AppUtils.log3('Not using Bulk API for less than 2000 records');
+      await DBUtils.delete(records,conn,objectName,resultData);
+    } else if(!big){
       if(records.length > 1 && !onlyquery){
         //console.log(JSON.stringify(records));
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);

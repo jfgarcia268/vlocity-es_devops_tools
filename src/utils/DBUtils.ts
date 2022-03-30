@@ -1,4 +1,5 @@
 import { AppUtils } from './AppUtils';
+import { SfdxError } from '@salesforce/core';
 
 const fsExtra = require("fs-extra");
 
@@ -273,6 +274,23 @@ export class DBUtils  {
         if(records.length > 0){
           await DBUtils.bulkAPIdelete(records,conn,object,false,hardelete,null,bulkApiPollTimeout);
         }
+      }
+
+      static async delete(records,conn,objectName,resultData) {
+        await conn.sobject(objectName).del(records, function(err, rets) {
+          if (err) { 
+            throw new SfdxError("Error deleting Object: " + err);
+          }
+          var success = 0;
+          for (var i=0; i < rets.length; i++) {
+            if (rets[i].success) {
+              success++;
+            }
+          }
+          if(resultData){
+            resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: (success==rets.length)});
+          }
+        });
       }
 
       static async bulkAPIdelete(records,conn,objectName,save,hardelete,resultData,bulkApiPollTimeout) {
