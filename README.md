@@ -31,7 +31,7 @@ SF Source
 
 Loging
 
--  [vlocityestools:login:login](#vlocityestoolsloginlogin).
+-  [vlocityestools:login:login](#vlocityestoolsloginlogin)
 
 Data
 -  [vlocityestools:data:upsert](#vlocityestoolsdataupsert)
