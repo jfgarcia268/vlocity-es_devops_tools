@@ -4,24 +4,58 @@ Vlocity ES Tools (Beta)
 ##### Disclaimer: This tool is not an offical tool from Vlocity or Salesforce. It was created with the intent of distributing certain uitlility tools, Use it at your own risk.
 
 
+# Command List
+
+Clean Commands
+-  [vlocityestools:clean:epcgkfix](#vlocityestoolscleanepcgkfix)
+-  [vlocityestools:clean:omniscripts](#vlocityestoolscleanomniscripts)
+-  [vlocityestools:clean:templates](#vlocityestoolscleantemplates)
+-  [vlocityestools:clean:datapacks](#vlocityestoolscleandatapacks)
+-  [vlocityestools:clean:savedomniscripts](#vlocityestoolscleansavedomniscripts)
+-  [vlocityestools:clean:calcmatrix](#vlocityestoolscleancalcmatrix)
+-  [vlocityestools:clean:objects](#vlocityestoolscleanobjects)
+
+Compare/ Report
+
+-  [vlocityestools:compare:folders](#vlocityestoolscomparefolders)
+-  [vlocityestools:report:dependencies:local](#vlocityestoolsreportdependencieslocal)
+-  [vlocityestools:report:dependencies:remote](#vlocityestoolsreportdependenciesremote)
+-  [vlocityestools:report:activeomniscript](#vlocityestoolsreportactiveomniscript)
+
+SF Source
+
+-  [vlocityestools:sfsource:createdeltapackage](#vlocityestoolssfsourcecreatedeltapackage)
+-  [vlocityestools:sfsource:createdeltapackagelocal](#vlocityestoolssfsourcecreatedeltapackagelocal)
+-  [vlocityestools:sfsource:updatedeltahash](#vlocityestoolssfsourceupdatedeltahash)
+-  [vlocityestools:sfsource:createmocklwcos](#vlocityestoolssfsourcecreatemocklwcos)
+
+Loging
+
+-  [vlocityestools:login:login](#vlocityestoolsloginlogin).
+
+Data
+-  [vlocityestools:data:upsert](#vlocityestoolsdataupsert)
+
+CMT 
+
+-  [vlocityestools:jobs:executejobs](#vlocityestoolsjobsexecutejobs)
+
 # Install
 ```sh-session
 $ sfdx plugins:install vlocityestools # Requires SFDX-CLI
 ```
 
-# Install with no promt
+
+#### Install with no promt:
 ```sh-session
 $ echo "yes" | sfdx plugins:install vlocityestools # Requires SFDX-CLI
 ```
 
 # Usage
 ```sh-session
-$ sfdx COMMAND
-running command...
+$ sfdx vlocityestools:...
 
-$ sfdx --help [COMMAND]
-USAGE
-  $ sfdx COMMAND
+$ sfdx vlocityestools:... --help
 ```  
 '    '
 
@@ -113,7 +147,7 @@ You can pass as an additional parameter a .yaml file (-d <File Name> ) to use cu
 
 Sample File:
 
-```
+```yaml
 PCI:
   - namespace__ProductHierarchyGlobalKeyPath__c
   - namespace__ProductId__r.namespace__GlobalKey__c
@@ -609,9 +643,86 @@ EXAMPLES
 
 Delets SObjects from org defined by File. SOQL 'WHERE' can be specified
 
-Sample File:
+Sample File for EPC: (May not represent 100% EPC)
 
-![Org to Org Comparison](images/SampleObjectsFile.png)
+```yaml
+Objects: 
+  namespace__OrderAppliedPromotionItem__c:
+  namespace__OrderAppliedPromotion__c:
+  namespace__OrderDiscountItem__c:
+  namespace__OrderGroup__c:
+  namespace__OrderDiscount__c:
+  namespace__OrderPriceAdjustment__c:
+  namespace__OrderMember__c:
+  namespace__OrderItemRelationship__c:
+  namespace__OrderProductRollup__c:
+  namespace__OrderRelationship__c:
+  OrderItem:
+  Order:
+  WorkOrder:
+  WorkOrderLineItem:
+    
+  namespace__OrchestrationDependency__c:
+  namespace__OrchestrationDependencyDefinition__c:
+  namespace__OrchestrationItem__c:
+  namespace__OrchestrationItemDefinition__c:
+  namespace__OrchestrationItemSource__c:
+  namespace__OrchestrationScenario__c:
+  namespace__OrchestrationPlan__c:
+  namespace__OrchestrationPlanDefinition__c:
+  namespace__OrchestrationQueue__c:
+  namespace__OrchestrationQueueAssignmentRule__c:
+  namespace__OrchestrationSchedulerImplementation__c:
+  namespace__ThorOrchestrationQueue__c:
+  namespace__CompiledAttributeOverride__c:
+  namespace__OverrideDefinition__c:
+  namespace__AttributeAssignment__c:
+  namespace__ProductChildItem__c:
+  namespace__ObjectFieldAttribute__c:
+  namespace__ObjectElement__c:
+  namespace__ObjectFacet__c:
+  namespace__ObjectSection__c:
+  namespace__ObjectLayout__c :
+  namespace__ObjectClass__c:
+  namespace__UISection__c:
+  namespace__UIFacet__c:
+  namespace__PriceListEntry__c:
+  namespace__PriceList__c:
+  namespace__PricingElement__c:
+  namespace__Attribute__c:
+  namespace__AttributeCategory__c:
+  namespace__PicklistValue__c:
+  namespace__Picklist__c:
+
+  namespace__CalculationProcedureVariable__c:
+  namespace__CalculationProcedureStep__c:
+  namespace__CalculationProcedureVersion__c:
+  namespace__CalculationProcedure__c:
+  namespace__CalculationMatrixRow__c:
+  namespace__CalculationMatrixVersion__c:
+  namespace__CalculationMatrix__c:
+
+  namespace__ProductAvailability__c:
+  namespace__ProductEligibility__c:
+  namespace__ProductRelationshipType__c:
+  namespace__ProductRelationship__c:
+
+  namespace__OpportunityLineItemRelationship__c:
+  namespace__Interface_ProductAttribute__c:
+  namespace__ProductConfigurationProcedure__c:
+  namespace__QuoteLineItemRelationship__c:
+ 
+  namespace__PromotionItem__c:
+  namespace__Promotion__c:
+  namespace__CatalogRelationship__c:
+  namespace__CatalogProductRelationship__c:
+  namespace__Catalog__c:
+
+  Product2: ProductCode like 'PHONE_%'
+
+
+```
+
 
 ```
 USAGE
@@ -744,7 +855,8 @@ EXAMPLES
 CMT Jobs Automation (Only for CMT Package)
 
 Sample Jobs File
-```
+
+```yaml
 jobs: 
   - 'jobdelete:vlocity_cmt__CachedAPIResponse__c' 
   - 'EPCProductAttribJSONBatchJob'  
@@ -753,6 +865,8 @@ jobs:
   - '{"methodName":"clearPlatformCache"}' 
   - '{"methodName":"refreshPricebook"}'
   - '{"methodName":"populateCacheCAJob","selectedList":["ContextEligibilityGenerator","GetOffersHierarchyHelper","GetOffers","GetContainOffers","GetPrices","GetOfferDetails"]}'
+
+##### Posible configuration:
 
 #### Delete Records
 
