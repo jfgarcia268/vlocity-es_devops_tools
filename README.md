@@ -29,7 +29,7 @@ SF Source
 -  [vlocityestools:sfsource:updatedeltahash](#vlocityestoolssfsourceupdatedeltahash)
 -  [vlocityestools:sfsource:createmocklwcos](#vlocityestoolssfsourcecreatemocklwcos)
 
-Loging
+Login
 
 -  [vlocityestools:login:login](#vlocityestoolsauthlogin)
 
@@ -39,6 +39,10 @@ Data
 CMT 
 
 -  [vlocityestools:jobs:executejobs](#vlocityestoolsjobsexecutejobs)
+
+Copadp
+
+- [vlocityestools:copado:copadomanifest](#vlocityestoolscopadocopadomanifest)
 
 # Install
 ```sh-session
@@ -953,5 +957,31 @@ EXAMPLES
   $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20
 
   $ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20 --remoteapex
+
+```
+
+
+
+
+## vlocityestools:copado:copadomanifest
+
+Creates Json for bulk commit a User Story in Copado
+
+```
+USAGE,
+
+  $ sfdx vlocityestools:copado:copadomanifest -p <string>
+
+OPTIONS
+
+  -p, --package=package                                     (required) Package.xml file location
+
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:copado:copadomanifest -p Package.xml
+
+  $ sfdx vlocityestools:copado:copadomanifest --package Package.xml
 
 ```

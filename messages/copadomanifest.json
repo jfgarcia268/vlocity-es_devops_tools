@@ -1,0 +1,5 @@
+{
+  "commandDescription": "Creates Json to Bulk Update an User Story",
+  "command":"copadomanifest",
+  "package":"Package.xml file location"
+}

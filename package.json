@@ -1,7 +1,7 @@
 {
   "name": "vlocityestools",
   "description": "Vlocity ES DevOps Tools",
-  "version": "0.21.2",
+  "version": "0.22.0",
   "author": "Juan Garcia",
   "bugs": "https://github.com/jfgarcia268/vlocity-es_devops_tools/issues",
   "dependencies": {
@@ -14,7 +14,8 @@
     "js-yaml": "3.14.0",
     "jsforce": "^1.9.3",
     "simple-git": "2.38.0",
-    "tslib": "^1"
+    "tslib": "^1",
+    "xml2js": "^0.4.22"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1",
@@ -66,6 +67,9 @@
       },
       "vlocityestools:jobs": {
         "description": "Execute Jobs"
+      },
+      "vlocityestools:copado": {
+        "description": "Copado Extras"
       }
     },
     "devPlugins": [
