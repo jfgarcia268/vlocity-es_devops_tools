@@ -2,6 +2,8 @@ export class AppUtils  {
 
     public static appVersion = require('../../package.json').version;
 
+    public static xml2js = require("xml2js");
+
     public static namespace;
 
     public static ux;
@@ -132,7 +134,16 @@ export class AppUtils  {
         return new Promise(resolve => setTimeout(resolve, seconds*1000));
     }
 
-
+    public static extractXML(xml) {
+        return new Promise((resolve, reject) => {
+          this.xml2js.parseString(xml, (err, result) => {
+                if (err) {
+                  reject(err);
+                } else {
+                  resolve(result);
+                }
+            });
+        });
+      }
       
-
 }
