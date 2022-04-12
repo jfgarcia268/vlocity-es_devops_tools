@@ -2,5 +2,6 @@
   "commandDescription": "Creates Json to Bulk Update an User Story",
   "command":"copadomanifest",
   "package":"Package.xml file location",
-  "username":"Username to use"
+  "username":"Username to use",
+  "vlocity":"Is a Vlocity Manifest"
 }

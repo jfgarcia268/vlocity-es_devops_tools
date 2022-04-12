@@ -970,19 +970,21 @@ Creates Json for bulk commit a User Story in Copado
 ```
 USAGE,
 
-  $ sfdx vlocityestools:copado:copadomanifest -p <string> [-n <string>]
+  $ sfdx vlocityestools:copado:copadomanifest -p <string> [-n <string>] [-s]
 
 OPTIONS
 
   -p, --package=package                                     Package.xml file location (required)
 
   -n, --username=username                                   Username to use (Optional, Default: "None")
+
+  -s, --vlocity                                             Is a Vlocity Manifest (.yaml File)
                           
 
 EXAMPLES
 
   $ sfdx vlocityestools:copado:copadomanifest -p package.xml
 
-  $ sfdx vlocityestools:copado:copadomanifest --package package.xml --username User123
+  $ sfdx vlocityestools:copado:copadomanifest --package package.xml --username User123 --vlocity
 
 ```
