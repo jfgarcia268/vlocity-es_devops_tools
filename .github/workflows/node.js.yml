@@ -4,12 +4,13 @@
 name: Node.js CI
 
 on:
-  push:
+  pull_request:
     branches:
       - master
-
+    types: [closed]
 jobs:
-  deploy:
+  publish:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     container:
       image: jfgarcia268/npm_publish:latest
