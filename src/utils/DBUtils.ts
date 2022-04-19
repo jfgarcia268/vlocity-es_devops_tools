@@ -6,7 +6,7 @@ export class DBUtils  {
 
     private static batchSize = 10000;
 
-    private static bulkApiPollTimeout = 60;
+    public static bulkApiPollTimeout = 120;
 
     static async bulkAPIquery(conn, initialQuery) {
         var query = AppUtils.replaceaNameSpace(initialQuery);
@@ -89,7 +89,7 @@ export class DBUtils  {
                 resolve("error");
               })
               .on("queue",  function(batchInfo) { 
-                batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
+                batch.poll(5*1000 /* interval(ms) */, 1000*60*this.bulkApiPollTimeout /* timeout(ms) */);
                 AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
               })
               .on("response",  function(rets) { 
@@ -150,7 +150,7 @@ export class DBUtils  {
                 resolve("error");
               })
               .on("queue",  function(batchInfo) { 
-                batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
+                batch.poll(5*1000 /* interval(ms) */, 1000*60*this.bulkApiPollTimeout /* timeout(ms) */);
                 AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
               })
               .on("response",  function(rets) { 
@@ -211,7 +211,7 @@ export class DBUtils  {
                 resolve("error");
               })
               .on("queue",  function(batchInfo) { 
-                batch.poll(5*1000 /* interval(ms) */, 1000*60*120 /* timeout(ms) */);
+                batch.poll(5*1000 /* interval(ms) */, 1000*60*this.bulkApiPollTimeout /* timeout(ms) */);
                 AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
               })
               .on("response",  function(rets) { 
@@ -277,6 +277,10 @@ export class DBUtils  {
         if(records.length > 0){
           await DBUtils.bulkAPIdelete(records,conn,object,false,hardelete,null,bulkApiPollTimeoutFinal);
         }
+      }
+
+      static async easyBulkAPIdelete(records,conn,objectName) {
+        await this.bulkAPIdelete(records,conn,objectName,false,false,null,this.bulkApiPollTimeout);
       }
 
       static async bulkAPIdelete(records,conn,objectName,save,hardelete,resultData,bulkApiPollTimeout) {
