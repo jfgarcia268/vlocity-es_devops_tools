@@ -599,7 +599,7 @@ OPTIONS
   -p, --package=package                                     Vlocity Package Type, Options:
                                                             'cmt' or 'ins' 
                                                            
-                          
+  -h, --hard                                                Use Hard Delete     
 
 EXAMPLES
 

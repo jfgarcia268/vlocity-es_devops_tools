@@ -1,6 +1,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages} from '@salesforce/core';
+import { Messages, SfdxError} from '@salesforce/core';
 import { AppUtils } from '../../../utils/AppUtils';
+import { DBUtils } from '../../../utils/DBUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -22,11 +23,10 @@ export default class deleteCalMatrix extends SfdxCommand {
 
   public static args = [{name: 'file'}];
 
-  private static batchSize = 10000;
-
   protected static flagsConfig = {
     matrixid: flags.string({char: 'i', description: messages.getMessage('numberRecentVersions'), required: true}),
-    package: flags.string({char: 'p', description: messages.getMessage('packageType')})
+    package: flags.string({char: 'p', description: messages.getMessage('packageType')}),
+    hard: flags.boolean({char: 'h', description: messages.getMessage('hard')})
   };
 
   // Comment this out if your command does not require an org username
@@ -42,26 +42,27 @@ export default class deleteCalMatrix extends SfdxCommand {
 
     var matrixid = this.flags.matrixid;
     var packageType = this.flags.package;
+    var hard = this.flags.hard;
 
-    if(packageType == 'cmt'){
-      AppUtils.namespace = 'vlocity_cmt__';
-    } else if(packageType == 'ins'){
-      AppUtils.namespace = 'vlocity_ins__';
-    } else {
-      throw new Error("Error: -p, --package has to be either cmt or ins ");
+    const conn = this.org.getConnection();
+
+    AppUtils.ux = this.ux;
+
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    //console.log('nameSpaceSet: ' + nameSpaceSet);
+    if(!nameSpaceSet){
+      throw new SfdxError("Error: Package was not set or incorrect was provided.");
     }
     
     AppUtils.logInitial(messages.getMessage('command'));  
-    // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-    const conn = this.org.getConnection();
-
 
     const initialQuery = "SELECT Id FROM %name-space%CalculationMatrixRow__c WHERE %name-space%CalculationMatrixVersionId__c = '" + matrixid + "'";
     var query = AppUtils.replaceaNameSpace(initialQuery);
-    deleteCalMatrix.deleteMatrixAndRows(query,conn,matrixid);
+    console.log(query);
+    await this.deleteMatrixAndRows(query,conn,matrixid,hard);
   }
 
-  static async updateOldCalMatrixVersion(matrixid,conn) {
+  async updateOldCalMatrixVersion(matrixid,conn) {
     AppUtils.log3('Updating Matrix Version with Dummny Data to be delete later');
     //var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c, %name-space%EndDateTime__c, %name-space%StartDateTime__c, %name-space%Priority__c, %name-space%VersionNumber__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
     var initialQuery = "SELECT Id, Name, %name-space%CalculationMatrixId__c FROM %name-space%CalculationMatrixVersion__c WHERE ID = '" + matrixid + "' LIMIT 1";
@@ -75,7 +76,7 @@ export default class deleteCalMatrix extends SfdxCommand {
     var numOfTodelte = result2.records.
     length;
 
-    conn.sobject(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c')).update({ 
+    await conn.sobject(AppUtils.replaceaNameSpace('%name-space%CalculationMatrixVersion__c')).update({ 
       Id : matrixid,
       Name : 'TO_DELETE_' + result.records[0].Name,
       [AppUtils.replaceaNameSpace('%name-space%EndDateTime__c')] : '2200-12-30T13:39:00.000+0000',
@@ -95,75 +96,20 @@ export default class deleteCalMatrix extends SfdxCommand {
   }
 
 
-  static deleteMatrixAndRows(initialQuery,conn,matrixid) {
-    AppUtils.log3('Fetching All Row records... This may take a while');
-    var records = [];
-    conn.bulk.query(initialQuery)
-      .on('record', function(result) { 
-        records.push(result);
-      })
-      .on("queue", function(batchInfo) {
-        AppUtils.log3('Fetch queued');
-      })
-      .on("end", function() {
-        if (records.length > 0){
-          AppUtils.log3('Succesfully Fetched All Row records... Number of records: ' + records.length);
-          deleteCalMatrix.deleteRows(records,conn,matrixid)
-        }
-        else {
-          AppUtils.log3('No Rows where found for Matrix version with ID: ' + matrixid );
-          deleteCalMatrix.updateOldCalMatrixVersion(matrixid,conn);
-        }
-
-      })
-      .on('error', function(err) {
-        console.log('Error Fetching: ' + err); 
-      })
-  }
-  
-
-  static async deleteRows(records,conn,matrixid) {
-    var job = await conn.bulk.createJob(AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),'hardDelete');
-    var numOfComonents = records.length;
-    var numberOfBatches = Math.floor(numOfComonents/this.batchSize) + 1
-    var numberOfBatchesDone = 0;
-    AppUtils.log2('Number Of Batches to be created to delete Rows: ' + numberOfBatches);
-    var promises = [];
-    for (var i=0; i<numberOfBatches; i++) {
-      var newp = new Promise(async(resolve) => {
-        var batchNumber = i + 1;
-        AppUtils.log1('Creating Batch # ' + batchNumber );
-        var ArraytoDelete = records;
-        if(i<(numberOfBatches-1)) {
-          ArraytoDelete = records.splice(0,this.batchSize);
-        }
-        var batch = job.createBatch();
-        //console.log('batch: ' + batch );
-        var batchNumber = i + 1;
-        batch.execute(ArraytoDelete)
-        .on("error", function(err) { // fired when batch request is queued in server.
-          console.log('Error, batch # ' + batchNumber + 'Info:', err);
-          numberOfBatchesDone = numberOfBatchesDone +1;
-          resolve('Error: ' + err);
-        })
-        .on("queue", function(batchInfo) { // fired when batch request is queued in server.
-          AppUtils.log1('Waiting for batch # ' + batchNumber + ' to finish');
-          batch.poll(1000 /* interval(ms) */, 600000 /* timeout(ms) */); // start polling - Do not poll until the batch has started
-        })
-        .on("response", function(rets) { // fired when batch finished and result retrieved
-          numberOfBatchesDone = numberOfBatchesDone +1;
-          AppUtils.log1('Batch # ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-          resolve('Batch # ' + batchNumber + ' Finished - ' + numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
-        });
-      });
-      promises.push(newp);
-    }
-    Promise.all(promises).then(values => {
-      job.close();
+   async deleteMatrixAndRows(initialQuery,conn,matrixid,hard) {
+    AppUtils.log3('Fetching All Row records...');
+    var records = await DBUtils.bulkAPIquery(conn, initialQuery) 
+    if (records.length > 0){
+      AppUtils.log3('Succesfully Fetched All Row records... Number of records: ' + records.length);
+      DBUtils.bulkAPIdelete(records,conn,AppUtils.replaceaNameSpace("%name-space%CalculationMatrixRow__c"),false,hard,null,null)
       this.updateOldCalMatrixVersion(matrixid,conn);
-    });
+    }
+    else {
+      AppUtils.log3('No Rows where found for Matrix version with ID: ' + matrixid );
+      this.updateOldCalMatrixVersion(matrixid,conn);
+    }
   }
-
   
+
 
 }

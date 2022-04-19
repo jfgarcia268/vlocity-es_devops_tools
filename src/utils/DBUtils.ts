@@ -6,6 +6,8 @@ export class DBUtils  {
 
     private static batchSize = 10000;
 
+    private static bulkApiPollTimeout = 60;
+
     static async bulkAPIquery(conn, initialQuery) {
         var query = AppUtils.replaceaNameSpace(initialQuery);
         AppUtils.startSpinner('Fetching records');
@@ -276,6 +278,7 @@ export class DBUtils  {
       }
 
       static async bulkAPIdelete(records,conn,objectName,save,hardelete,resultData,bulkApiPollTimeout) {
+        var bulkApiPollTimeoutFinal = bulkApiPollTimeout? bulkApiPollTimeout:this.bulkApiPollTimeout;
         var deleteType = hardelete == true ? 'hardDelete' : 'Delete';
         var job = await conn.bulk.createJob(objectName,deleteType);
         await job.open();
@@ -309,7 +312,7 @@ export class DBUtils  {
                 resolve("error");
               })
               .on("queue",  function(batchInfo) { 
-                batch.poll(5*1000 /* interval(ms) */, 1000*60*bulkApiPollTimeout /* timeout(ms) */);
+                batch.poll(5*1000 /* interval(ms) */, 1000*60*bulkApiPollTimeoutFinal /* timeout(ms) */);
                 AppUtils.log1('Batch #' + batchNumber +' with Id: ' + batch.id + ' Has started');
               })
               .on("response",  function(rets) { 
