@@ -3,5 +3,6 @@
   "packageType": "Vlocity Package Type, Options: ins and cmt",
   "errorNoOrgResults": "No results found for the org '%s'.",
   "command":"calcmatrix",
-  "numberRecentVersions":"Calculation Matrix Version ID to delete"
+  "numberRecentVersions":"Calculation Matrix Version ID to delete",
+  "hard":"Use Hard Delete"
 }
