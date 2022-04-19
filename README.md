@@ -856,8 +856,7 @@ EXAMPLES
 
 ## vlocityestools:jobs:executejobs
 
-CMT Jobs Automation (Only for CMT Package)
-Based on the Jobs file, it will run then in sequence.
+CMT Jobs Automation (Only for CMT Package). Based on the Jobs file, it will run then in sequence.
 
 Sample Jobs File
 
