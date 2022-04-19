@@ -263,17 +263,19 @@ export class DBUtils  {
       }
 
       static async bulkAPIQueryAndDelete(conn,objectName,hardelete,bulkApiPollTimeout) {
+        var bulkApiPollTimeoutFinal = bulkApiPollTimeout? bulkApiPollTimeout:this.bulkApiPollTimeout;
         var query = 'SELECT ID FROM ' + objectName;
         var records = await DBUtils.bulkAPIquery(conn, query);
         if(records.length > 0){
-          await DBUtils.bulkAPIdelete(records,conn,objectName,false,hardelete,null,bulkApiPollTimeout);
+          await DBUtils.bulkAPIdelete(records,conn,objectName,false,hardelete,null,bulkApiPollTimeoutFinal);
         }
       }
 
       static async bulkAPIQueryAndDeleteWithQuery(conn,object,query,hardelete,bulkApiPollTimeout) {
+        var bulkApiPollTimeoutFinal = bulkApiPollTimeout? bulkApiPollTimeout:this.bulkApiPollTimeout;
         var records = await DBUtils.bulkAPIquery(conn, query);
         if(records.length > 0){
-          await DBUtils.bulkAPIdelete(records,conn,object,false,hardelete,null,bulkApiPollTimeout);
+          await DBUtils.bulkAPIdelete(records,conn,object,false,hardelete,null,bulkApiPollTimeoutFinal);
         }
       }
 
