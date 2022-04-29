@@ -197,6 +197,8 @@ export default class executejobs extends SfdxCommand {
       apexBody +=     "productIds.add(prod.Id);"
       apexBody += "}"
       apexBody += "Database.executeBatch(new vlocity_cmt.EPCProductAttribJSONBatchJob(productIds), 1);"
+    } else if(job == 'EPCAttributeOverrideBatchJob'){
+      apexBody += "Database.executeBatch(new vlocity_cmt.EPCAttributeOverrideBatchJob (), 2000);" 
     } else {
       apexBody += "vlocity_cmt.TelcoAdminConsoleController telcoAdminConsoleController = new vlocity_cmt.TelcoAdminConsoleController();"
       apexBody += "telcoAdminConsoleController.setParameters('" + job + "');"
