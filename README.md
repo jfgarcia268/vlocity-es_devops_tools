@@ -974,7 +974,7 @@ USAGE,
 
 OPTIONS
 
-  -p, --package=package                                     Package.xml file location (required)
+  -p, --package=package                                     Package.xml (or manifest.yaml when --vlocity) file location (required)
 
   -n, --username=username                                   Username to use (Optional, Default: "None")
 
