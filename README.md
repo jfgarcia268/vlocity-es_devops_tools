@@ -213,7 +213,7 @@ EXAMPLES
 
 ## vlocityestools:clean:omniscripts
 
-Delete old versions of OmniScritps and leave N amount of latest versions
+Delete old versions of OmniScritps and Integration Procedures and leave N amount of latest versions
 Active versions will be ignored and wont get deleted.
 
 ```
