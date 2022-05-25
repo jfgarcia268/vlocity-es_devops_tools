@@ -46,6 +46,7 @@ export default class updateDeltaHash extends SfdxCommand {
     }
 
     var hashToUpdate;
+    var fieldname;
 
     if(this.flags.customhash != undefined) {
       hashToUpdate = this.flags.customhash;
@@ -54,15 +55,22 @@ export default class updateDeltaHash extends SfdxCommand {
       hashToUpdate = updateDeltaHash.getHEADHash();
       AppUtils.log2( "Updating Hash using Current HEAD: " + hashToUpdate);
     }
+    if(customsettingobject.indexOf('vlocity_cmt') >= 0){
+        fieldname = "vlocity_cmt__Value__c";
+    }
+    else{
+       fieldname = "Value__c";
+    }
     const conn = this.org.getConnection();
-    updateDeltaHash.upsertRecord(conn, gitcheckkeycustom, customsettingobject,hashToUpdate);
+    AppUtils.log2( "FieldName Updated as: " + fieldname);
+    updateDeltaHash.upsertRecord(conn, gitcheckkeycustom, customsettingobject,hashToUpdate,fieldname);
   }
 
-  static upsertRecord(conn, gitcheckkeycustom,customsettingobject,hashToUpdate) {
-    conn.sobject(customsettingobject).upsert({ 
-      Name : gitcheckkeycustom,
-      Value__c : hashToUpdate + ""
-    }, 'Name', function(err, ret) {
+  static upsertRecord(conn, gitcheckkeycustom,customsettingobject,hashToUpdate,fieldname) {
+    var settings = {};
+    settings.Name = gitcheckkeycustom;
+    settings[fieldname] = hashToUpdate + "";
+    conn.sobject(customsettingobject).upsert( settings , 'Name', function(err, ret) {
       if (err || !ret.success) 
       { 
         throw new Error("Error Upserting Record: " + err);
