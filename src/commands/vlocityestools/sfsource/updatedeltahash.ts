@@ -68,9 +68,9 @@ export default class updateDeltaHash extends SfdxCommand {
 
   static upsertRecord(conn, gitcheckkeycustom,customsettingobject,hashToUpdate,fieldname) {
     var settings = {};
-    settings['Name'] = gitcheckkeycustom;
-    settings[fieldname] = gitcheckkeycustom;
-    conn.sobject(customsettingobject).upsert(settings, 'Name', function(err, ret) {
+    settings.Name = gitcheckkeycustom;
+    settings[fieldname] = hashToUpdate + "";
+    conn.sobject(customsettingobject).upsert( settings , 'Name', function(err, ret) {
       if (err || !ret.success) 
       { 
         throw new Error("Error Upserting Record: " + err);
