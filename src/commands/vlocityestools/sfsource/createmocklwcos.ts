@@ -97,7 +97,7 @@ export default class createMockLWCOS extends SfdxCommand {
           console.log("Error: " + err); 
         }
         if(results.success){
-          AppUtils.log2("Mock LWC Created" + element);
+          AppUtils.log2("Mock LWC Created: " + element);
         } else {
           AppUtils.log2("Error: " + results.errors.message);
         }
@@ -122,7 +122,8 @@ export default class createMockLWCOS extends SfdxCommand {
         if (isLWC){
           //console.log(omniScriptMap);
           //console.log(oSFolderName);
-          var key = oSFolderName.replace(/_/g, "");
+          var key = oSFolderName.replace(/_|-/g, "");
+          key = key[0].toLowerCase() + key.slice(1);
           omniScriptMap[key] = oSFolderName.replace(/_/g, "/");
         }
       }
