@@ -10,6 +10,7 @@ Clean Commands
 -  [vlocityestools:clean:epcgkfix](#vlocityestoolscleanepcgkfix)
 -  [vlocityestools:clean:omniscripts](#vlocityestoolscleanomniscripts)
 -  [vlocityestools:clean:templates](#vlocityestoolscleantemplates)
+-  [vlocityestools:clean:cards](#vlocityestoolscleancards)
 -  [vlocityestools:clean:datapacks](#vlocityestoolscleandatapacks)
 -  [vlocityestools:clean:savedomniscripts](#vlocityestoolscleansavedomniscripts)
 -  [vlocityestools:clean:calcmatrix](#vlocityestoolscleancalcmatrix)
@@ -269,6 +270,36 @@ EXAMPLES
   $ sfdx vlocityestools:clean:templates -u myOrg@example.com -n 5 -p cmt
   
   $ sfdx vlocityestools:clean:templates --targetusername myOrg@example.com --numberversions 5 --package ins
+
+```
+
+## vlocityestools:clean:cards
+
+Delete old versions of Cards and leave N amount of latest versions.
+Active versions will be ignored and wont get deleted.
+
+```
+USAGE
+
+  $ sfdx vlocityestools:clean:cards -u <string> -n <integer> -p <string>
+
+OPTIONS
+
+  -u, --targetusername=targetusername                       username or alias for the target
+                                                            org; overrides default target org
+
+  -n, --numberversions=numberversions                       Number of most recent versions of
+                                                            cards to keep for each one.
+                                                            Has to be greater than 1.
+
+  -p, --package=package                                     Vlocity Package Type, Options:
+                                                            'cmt' or 'ins' 
+
+EXAMPLES
+
+  $ sfdx vlocityestools:clean:cards -u myOrg@example.com -n 5 -p cmt
+  
+  $ sfdx vlocityestools:clean:cards --targetusername myOrg@example.com --numberversions 5 --package ins
 
 ```
 
