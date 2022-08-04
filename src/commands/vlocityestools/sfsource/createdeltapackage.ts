@@ -86,8 +86,9 @@ export default class deltaPackage extends SfdxCommand {
     if(customsettingobject != undefined) {
       var valueColumName = valueColumn? valueColumn : 'Value__c';
       query = "SELECT Name, " + valueColumName  + " FROM " + customsettingobject + " WHERE Name = '" + gitcheckkeycustom + "'";
-    }
-    else {
+    } else if (packageType == "omnistudio") {
+      query = "Select Value from OmniInteractionConfig where DeveloperName =  '" + deployKey + "'";
+    } else {
       const initialQuery = "SELECT Name, %name-space%Value__c FROM %name-space%GeneralSettings__c WHERE Name = '" + deployKey + "'";
       query = AppUtils.replaceaNameSpace(initialQuery);
     }
@@ -109,6 +110,8 @@ export default class deltaPackage extends SfdxCommand {
       var previousHash;
       if(customsettingobject != undefined) {
         previousHash = result.records[0][AppUtils.replaceaNameSpace(valueColumn? valueColumn : 'Value__c')];
+      } else if (packageType == "omnistudio"){
+        previousHash = result.records[0]['Value']
       }
       else {
         previousHash = result.records[0][AppUtils.replaceaNameSpace("%name-space%Value__c")];
