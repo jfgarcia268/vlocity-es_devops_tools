@@ -37,7 +37,7 @@ export class AppUtils  {
         } else if(packageType == 'ins'){
             AppUtils.namespace = 'vlocity_ins__';
         }else if(packageType == 'omnistudio'){
-            AppUtils.namespace = 'omnistudio';
+            AppUtils.namespace = 'omnistudio__';
         } else if(!packageType) {
             var query = "Select Name, NamespacePrefix from ApexClass where Name = 'DRDataPackService'";
             const result = await conn.query(query);
