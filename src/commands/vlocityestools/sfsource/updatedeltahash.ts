@@ -26,6 +26,7 @@ export default class updateDeltaHash extends SfdxCommand {
   protected static flagsConfig = {
     gitcheckkeycustom: flags.string({ char: "v", description: messages.getMessage("gitcheckkeycustom")}),
     customsettingobject: flags.string({ char: "c", description: messages.getMessage("customsettingobject")}),
+    valuecolumn: flags.string({ char: "a", description: messages.getMessage("valuecolumn")}),
     customhash: flags.string({ char: "h", description: messages.getMessage("customhash")})
   };
 
@@ -55,12 +56,15 @@ export default class updateDeltaHash extends SfdxCommand {
       hashToUpdate = updateDeltaHash.getHEADHash();
       AppUtils.log2( "Updating Hash using Current HEAD: " + hashToUpdate);
     }
-    if(customsettingobject.indexOf('vlocity_cmt') >= 0){
-        fieldname = "vlocity_cmt__Value__c";
+
+    if(this.flags.valuecolumn != undefined){
+      fieldname = this.flags.valuecolumn;
+    } else if(customsettingobject.indexOf('vlocity_cmt') >= 0){
+      fieldname = "vlocity_cmt__Value__c";
+    } else {
+      fieldname = "Value__c";
     }
-    else{
-       fieldname = "Value__c";
-    }
+
     const conn = this.org.getConnection();
     AppUtils.log2( "FieldName Updated as: " + fieldname);
     updateDeltaHash.upsertRecord(conn, gitcheckkeycustom, customsettingobject,hashToUpdate,fieldname);
