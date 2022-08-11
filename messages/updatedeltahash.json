@@ -3,5 +3,6 @@
   "command":"updatedeltahash",
   "gitcheckkeycustom":"Custom Setting record Name",
   "customsettingobject":"Custom Setting API Name",
-  "customhash":"(Optional) Custom Hash to Update"
+  "customhash":"(Optional) Custom Hash to Update",
+  "valuecolumn":"(Optional) Custom Value Column"
 }

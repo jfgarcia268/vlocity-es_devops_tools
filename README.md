@@ -596,6 +596,8 @@ OPTIONS
 
   -h, --customhash=customhash                               (Optional) Custom Hash Value to be updated
 
+  -a, --valuecolumn=valuecolumn                             (Optional) Custom Value Column
+
                                                            
                           
 
