@@ -57,6 +57,7 @@ export default class executejobs extends SfdxCommand {
     var poolTimeSec = pooltime? pooltime : 10;
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
+    AppUtils.logInitialExtra(conn); 
 
     if (!fsExtra.existsSync(jobs)) {
       throw new Error("Error: File: " + jobs + " does not exist");

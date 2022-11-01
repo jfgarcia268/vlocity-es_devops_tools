@@ -68,6 +68,10 @@ export class AppUtils  {
         //this.log('');
         this.log3('Command: ' + command);
         //this.log('');
+    } 
+    
+    public static logInitialExtra(conn) {
+        this.log3('UserName: ' + conn.getUsername());
     }  
 
     public static log4(message) {
