@@ -68,7 +68,7 @@ export default class executejobs extends SfdxCommand {
     const resultId = await conn.query(userIdQuery);
     if(more){
       AppUtils.log2("resultId:" + userIdQuery);
-      AppUtils.log2(resultId);
+      console.log(resultId);
     }
     var runningUserId = resultId.records[0]['Id'];
 
