@@ -66,6 +66,10 @@ export default class executejobs extends SfdxCommand {
 
     var userIdQuery = "SELECT Id FROM User WHERE  UserName ='" + sfusername + "'";
     const resultId = await conn.query(userIdQuery);
+    if(more){
+      AppUtils.log2("resultId:" + userIdQuery);
+      AppUtils.log2(resultId);
+    }
     var runningUserId = resultId.records[0]['Id'];
 
     var totalStartTime,totalEndTime, ttimeDiff;
