@@ -64,13 +64,18 @@ export default class executejobs extends SfdxCommand {
       throw new Error("Error: File: " + jobs + " does not exist");
     }
 
-    var userIdQuery = "SELECT Id FROM User WHERE  UserName ='" + sfusername + "'";
+    var apexBodyTest = "Id UserId = UserInfo.getUserId();";
+    apexBodyTest += " vlocity_cmt__GeneralSettings__c setting = New vlocity_cmt__GeneralSettings__c( Name = 'UserId' , vlocity_cmt__Value__c = UserId);";
+    apexBodyTest += " upsert setting Name;";
+    await AppUtils.runApex(conn,apexBodyTest);
+    
+    var userIdQuery = "SELECT vlocity_cmt__Value__c FROM vlocity_cmt__GeneralSettings__c WHERE Name = 'UserId'";
     const resultId = await conn.query(userIdQuery);
     if(more){
       AppUtils.log2("resultId:" + userIdQuery);
       console.log(resultId);
     }
-    var runningUserId = resultId.records[0]['Id'];
+    var runningUserId = resultId.records[0]['vlocity_cmt__Value__c'];
 
     var totalStartTime,totalEndTime, ttimeDiff;
     totalStartTime= new Date();
