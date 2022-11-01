@@ -46,15 +46,15 @@ export default class executejobs extends SfdxCommand {
 
   public async run() {
 
+    const conn = this.org.getConnection();
+
     var jobs = this.flags.jobs;
     var pooltime = this.flags.pooltime;
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
     var remoteapex = this.flags.remoteapex;
-    var sfusername = this.flags.sfusername ? this.flags.sfusername : this.org.getUsername();
-    const conn = this.org.getConnection();
+    var sfusername = this.flags.sfusername ? this.flags.sfusername : conn.getUsername();
     var poolTimeSec = pooltime? pooltime : 10;
-
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
 
