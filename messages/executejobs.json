@@ -6,6 +6,5 @@
   "stopOnError":"Stop When Error",
   "command":"executejobs",
   "more":"Verbose logs",
-  "remoteapex":"Use remote Apex",
-  "sfusername":"SF Username whe usign OAuth"
+  "remoteapex":"Use remote Apex"
 }

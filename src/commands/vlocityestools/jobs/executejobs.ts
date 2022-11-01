@@ -31,8 +31,7 @@ export default class executejobs extends SfdxCommand {
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
     more: flags.boolean({char: 'm', description: messages.getMessage('more')}),
-    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')}),
-    sfusername: flags.string({char: 'n', description: messages.getMessage('sfusername')})
+    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')})
   }
 
   // Comment this out if your command does not require an org username
@@ -53,7 +52,6 @@ export default class executejobs extends SfdxCommand {
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
     var remoteapex = this.flags.remoteapex;
-    var sfusername = this.flags.sfusername ? this.flags.sfusername : conn.getAuthInfoFields().username;
     var poolTimeSec = pooltime? pooltime : 10;
     //console.log("Username: " + conn.getAuthInfoFields().username);
     AppUtils.ux = this.ux;
