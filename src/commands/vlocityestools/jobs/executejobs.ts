@@ -20,7 +20,7 @@ export default class executejobs extends SfdxCommand {
   public static examples = [
   `$ sfdx vlocityestools:jobs:executejobs -u myOrg@example.com -j jobs.yaml -p 20
   `,
-  `$ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 20
+  `$ sfdx vlocityestools:jobs:executejobs --targetusername myOrg@example.com  --jobs jobs.yaml --pooltime 30
   `
   ];
 
@@ -31,7 +31,8 @@ export default class executejobs extends SfdxCommand {
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
     more: flags.boolean({char: 'm', description: messages.getMessage('more')}),
-    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')})
+    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')}),
+    sfusername: flags.string({char: 'n', description: messages.getMessage('sfusername')})
   }
 
   // Comment this out if your command does not require an org username
@@ -45,14 +46,15 @@ export default class executejobs extends SfdxCommand {
 
   public async run() {
 
+    const conn = this.org.getConnection();
+
     var jobs = this.flags.jobs;
     var pooltime = this.flags.pooltime;
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
     var remoteapex = this.flags.remoteapex;
-    const conn = this.org.getConnection();
+    var sfusername = this.flags.sfusername ? this.flags.sfusername : conn.getUsername();
     var poolTimeSec = pooltime? pooltime : 10;
-
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
 
@@ -60,7 +62,7 @@ export default class executejobs extends SfdxCommand {
       throw new Error("Error: File: " + jobs + " does not exist");
     }
 
-    var userIdQuery = "SELECT Id FROM User WHERE  UserName ='" + this.org.getUsername() + "'";
+    var userIdQuery = "SELECT Id FROM User WHERE  UserName ='" + sfusername + "'";
     const resultId = await conn.query(userIdQuery);
     var runningUserId = resultId.records[0]['Id'];
 
