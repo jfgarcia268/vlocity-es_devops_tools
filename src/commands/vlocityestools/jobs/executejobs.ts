@@ -53,8 +53,9 @@ export default class executejobs extends SfdxCommand {
     var stopOnError = this.flags.stoponerror;
     var more = this.flags.more;
     var remoteapex = this.flags.remoteapex;
-    var sfusername = this.flags.sfusername ? this.flags.sfusername : conn.getUsername();
+    var sfusername = this.flags.sfusername ? this.flags.sfusername : conn.getAuthInfoFields().username;
     var poolTimeSec = pooltime? pooltime : 10;
+    //console.log("Username: " + conn.getAuthInfoFields().username);
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
     AppUtils.logInitialExtra(conn); 
