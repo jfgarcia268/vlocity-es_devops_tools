@@ -71,7 +71,8 @@ export class AppUtils  {
     } 
     
     public static logInitialExtra(conn) {
-        this.log3('UserName: ' + conn.getUsername());
+        this.log3('Username: ' + conn.getUsername());
+        this.log3('LoginUrl: ' + conn.oauth2.loginUrl);
     }  
 
     public static log4(message) {
