@@ -7,9 +7,7 @@ cache:
 install:
   - ps: Install-Product node $env:nodejs_version x64
   - yarn
-build_script:
-  - ps: Write-Host “Prepack plugin”
-  - yarn prepack
+  
 test_script:
   - yarn test
 
