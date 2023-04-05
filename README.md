@@ -44,6 +44,7 @@ CMT
 Copadp
 
 - [vlocityestools:copado:copadomanifest](#vlocityestoolscopadocopadomanifest)
+- [vlocityestools:copado:copadolist](#vlocityestoolscopadocopadolist)
 
 # Install
 ```sh-session
@@ -1019,5 +1020,30 @@ EXAMPLES
   $ sfdx vlocityestools:copado:copadomanifest -p package.xml
 
   $ sfdx vlocityestools:copado:copadomanifest --package package.xml --username User123 --vlocity
+
+```
+
+
+## vlocityestools:copado:copadolist
+
+Creates Json to Bulk Update an User Story from a List of <Type>.<API Name> Text File
+
+```
+USAGE,
+
+  $ sfdx vlocityestools copado copadolist -m <string> [-n <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+
+  -m, --manifest=<value>                                           (required) List.txt file location
+
+  -n, --username=<value>                                           Username to use
+                          
+
+EXAMPLES
+
+  $ sfdx vlocityestools:copado:copadolist -m manifest.txt
+
+  $ sfdx vlocityestools:copado:copadolist --manifest manifest.txt --username User123
 
 ```
