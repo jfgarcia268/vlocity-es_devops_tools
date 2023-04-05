@@ -1,0 +1,6 @@
+{
+  "commandDescription": "Creates Json to Bulk Update an User Story from a List of <Type>.<API Name> Text File",
+  "command":"copadolist",
+  "manifest":"List.txt file location",
+  "username":"Username to use"
+}
