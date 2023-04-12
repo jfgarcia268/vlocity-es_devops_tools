@@ -31,7 +31,8 @@ export default class executejobs extends SfdxCommand {
     pooltime: flags.integer({char: 'p', description: messages.getMessage('pooltime')}),
     stoponerror: flags.boolean({char: 's', description: messages.getMessage('stopOnError')}),
     more: flags.boolean({char: 'm', description: messages.getMessage('more')}),
-    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')})
+    remoteapex: flags.boolean({char: 'r', description: messages.getMessage('remoteapex')}),
+    package: flags.string({char: "p", description: messages.getMessage("packageType")})
   }
 
   // Comment this out if your command does not require an org username
@@ -53,6 +54,14 @@ export default class executejobs extends SfdxCommand {
     var more = this.flags.more;
     var remoteapex = this.flags.remoteapex;
     var poolTimeSec = pooltime? pooltime : 10;
+    var packageType = this.flags.package;
+
+    var nameSpaceSet = await AppUtils.setNameSpace(conn,packageType);
+    //console.log('nameSpaceSet: ' + nameSpaceSet);
+    if(!nameSpaceSet){
+      throw new SfdxError("Error: Package was not set or incorrect was provided.");
+    }
+
     //console.log("Username: " + conn.getAuthInfoFields().username);
     AppUtils.ux = this.ux;
     AppUtils.logInitial(messages.getMessage('command')); 
@@ -98,6 +107,25 @@ export default class executejobs extends SfdxCommand {
         AppUtils.log3("Delete Job - Object: " + objectName);
         await DBUtils.bulkAPIQueryAndDelete(conn,objectName,false,4);
         AppUtils.log2('Job Done' );
+      } else if  (jobsList[job].includes('clearepcjson:')){
+        var Product2query = jobsList[job].split(':')[1];
+        AppUtils.log3("Clear Product2 JSON - Query: " + Product2query);
+        AppUtils.log3("Getting Records...");
+        var records = await DBUtils.bulkAPIquery(conn, Product2query);
+        if(records.length>0){
+          for (let index = 0; index < records.length; index++) {
+            const element = records[index];
+            element[AppUtils.replaceaNameSpace('%name-space%AttributeDefaultValues__c')] = null;
+            element[AppUtils.replaceaNameSpace('%name-space%JSONAttribute__c')] = null;
+            element[AppUtils.replaceaNameSpace('%name-space%AttributeMetadata__c')] = null;
+            //console.log(element);
+          }
+          AppUtils.log3("Updating Records...");
+          await DBUtils.bulkAPIUpdate(records,conn,'Product2');
+        } else {
+          AppUtils.log2('No Records To UPdate');
+        }
+        AppUtils.log2('Job Done');
       } else {
         var body = { job: jobsList[job] };
         await AppUtils.sleep(2);
