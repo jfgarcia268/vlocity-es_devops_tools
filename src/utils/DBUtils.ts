@@ -96,7 +96,7 @@ export class DBUtils  {
                 numberOfBatchesDone = numberOfBatchesDone +1;
                 var hadErrors = DBUtils.noErrors(rets);
                 //console.log(rets);
-                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + !hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
                 //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
                 resolve("response");
               });
@@ -157,7 +157,7 @@ export class DBUtils  {
                 numberOfBatchesDone = numberOfBatchesDone +1;
                 var hadErrors = DBUtils.noErrors(rets);
                 //console.log(rets);
-                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + !hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
+                AppUtils.log1('Batch #' + batchNumber + ' With Id: ' + batch.id + ' Finished - Success: ' + hadErrors + '  '+ numberOfBatchesDone + '/' + numberOfBatches + ' Batches have finished');
                 //resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: hadErrors});
                 resolve("response");
               });
@@ -373,10 +373,11 @@ export class DBUtils  {
       private static noErrors(rets){
         for (let index = 0; index < rets.length; index++) {
           const element = rets[index];
-          if(element.success){
+          if(element.success == false){
             return false;
           }
         }
+        //console.log('No Errors');
         return true;
       }
 
