@@ -110,7 +110,7 @@ export default class deleteOldTemplates extends SfdxCommand {
 
             batch.on("error", function(err) { // fired when batch request is queued in server.
               console.log('Error, batchInfo:', err);
-              resolveBatch();
+              resolveBatch(err);
             });
             batch.on("queue", function(batchInfo) { // fired when batch request is queued in server.
               AppUtils.log2('Waiting for batch to finish');
@@ -125,7 +125,7 @@ export default class deleteOldTemplates extends SfdxCommand {
                   AppUtils.log1("#" + (i+1) + " Error occurred, message = " + rets[i].errors.join(', '));
                 }
               }
-              resolveBatch();;
+              resolveBatch(rets);;
             });
         })
       } else {
