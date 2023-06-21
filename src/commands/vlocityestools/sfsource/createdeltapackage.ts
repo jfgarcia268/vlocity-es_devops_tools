@@ -222,6 +222,12 @@ export default class deltaPackage extends SfdxCommand {
                   AppUtils.log1("Skiped - MetaData alredy moved: " + newCompPath);
                 } 
               } else if (  filePath.includes(path.sep + "aura" + path.sep) || filePath.includes(path.sep + "lwc" + path.sep) || filePath.includes(path.sep + "experiences" + path.sep )) {
+                
+                if(filePath.includes(path.sep + "lwc" + path.sep) && filePath.includes("__tests__")){
+                  AppUtils.log1("LWC Delta Change ignored... '__tests__' is in the path.");
+                  return;
+                }
+
                 /**
                  *  Cases when we need to copy the complete folder when a change happne inside the folder.
                  */
