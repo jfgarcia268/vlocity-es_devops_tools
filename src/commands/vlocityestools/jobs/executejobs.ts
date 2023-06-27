@@ -229,7 +229,7 @@ export default class executejobs extends SfdxCommand {
     if(job == 'EPCFixCompiledAttributeOverrideBatchJob'){
       apexBody = "Database.executeBatch(new vlocity_cmt.EPCFixCompiledAttributeOverrideBatchJob (), 1);";
     } else if(job == 'FixProductAttribJSONBatchJob'){ 
-      apexBody = "Database.executeBatch(new vlocity_cmt.FixProductAttribJSONBatchJob(), 1); "; // OLD METHOD
+      apexBody = "Database.executeBatch(new vlocity_cmt.FixProductAttribJSONBatchJob()); "; // OLD METHOD
     } else if(job == 'EPCProductAttribJSONBatchJob'){    
       apexBody += "List<Id> productIds = new List<Id>();"
       apexBody += "for (Product2 prod : [ Select Id from Product2 where vlocity_cmt__ObjectTypeId__c != null ]){"
