@@ -41,7 +41,7 @@ CMT
 
 -  [vlocityestools:jobs:executejobs](#vlocityestoolsjobsexecutejobs)
 
-Copadp
+Copado
 
 - [vlocityestools:copado:copadomanifest](#vlocityestoolscopadocopadomanifest)
 - [vlocityestools:copado:copadolist](#vlocityestoolscopadocopadolist)
