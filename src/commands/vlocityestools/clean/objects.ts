@@ -127,11 +127,13 @@ export default class cleanObjects extends SfdxCommand {
         resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
       }
     } else {
-      AppUtils.log3('Big size...');
-      while(records.length > 1 && !onlyquery){
+      var numberOfLocalBatches = Math.ceil(records.length/500000);
+      AppUtils.log3('Big size - Number of local Batches: ' + numberOfLocalBatches);
+     while(numberOfLocalBatches > 0 && !onlyquery){
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
         records = await DBUtils.bulkAPIquery(conn,query);
-      }
+        numberOfLocalBatches -=1;
+     }
     }
     
   }
