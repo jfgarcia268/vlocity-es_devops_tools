@@ -8,6 +8,12 @@ export class DBUtils  {
 
     public static bulkApiPollTimeout = 120;
 
+    static async query(conn, initialQuery) {
+      const query = AppUtils.replaceaNameSpace(initialQuery);
+      const result = await conn.query(query);
+      return result
+    }    
+
     static async bulkAPIquery(conn, initialQuery) {
         var query = AppUtils.replaceaNameSpace(initialQuery);
         AppUtils.startSpinner('Fetching records');
