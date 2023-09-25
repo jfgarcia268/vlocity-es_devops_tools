@@ -114,26 +114,29 @@ export default class cleanObjects extends SfdxCommand {
     if(where){
       query += ' ' + where;  
     }
-    if (big){
-      query += ' LIMIT 500000';
-    } 
+ 
     AppUtils.log3('Query: ' + query);
-    var records = await DBUtils.bulkAPIquery(conn,query);
     if(!big){
       if(records.length > 1 && !onlyquery){
+        var records = await DBUtils.bulkAPIquery(conn,query);
         //console.log(JSON.stringify(records));
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
       } else {
         resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
       }
     } else {
-      var numberOfLocalBatches = Math.ceil(records.length/500000);
-      AppUtils.log3('Big size - Number of local Batches: ' + numberOfLocalBatches);
-     while(numberOfLocalBatches > 0 && !onlyquery){
+      query += ' LIMIT 500000';
+      var countQuery = 'SELECT count(Id) FROM ' + objectName;
+      var countResult = await DBUtils.query(conn,countQuery);
+      var totalRecords = countResult.records[0].expr0;
+      var numberOfLocalBatches = Math.ceil(totalRecords/500000);
+      AppUtils.log3('Big size - Number of local Batches: ' + numberOfLocalBatches + '  Total Records to Delete: ' + totalRecords);
+      records = await DBUtils.bulkAPIquery(conn,query);
+      while(numberOfLocalBatches > 0 && !onlyquery){
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
         records = await DBUtils.bulkAPIquery(conn,query);
         numberOfLocalBatches -=1;
-     }
+      }
     }
     
   }
