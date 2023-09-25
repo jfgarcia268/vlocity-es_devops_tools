@@ -117,8 +117,8 @@ export default class cleanObjects extends SfdxCommand {
  
     AppUtils.log3('Query: ' + query);
     if(!big){
+      var records = await DBUtils.bulkAPIquery(conn,query);
       if(records.length > 1 && !onlyquery){
-        var records = await DBUtils.bulkAPIquery(conn,query);
         //console.log(JSON.stringify(records));
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
       } else {
