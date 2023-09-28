@@ -111,8 +111,8 @@ export default class cleanObjects extends SfdxCommand {
 
   static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big) {
     var query = 'SELECT Id FROM ' + objectName 
-    if(where){
-      query += ' ' + where;  
+    if(where != undefined && where != ''){
+      query += ' WHERE ' + where;  
     }
  
     AppUtils.log3('Query: ' + query);
@@ -127,6 +127,9 @@ export default class cleanObjects extends SfdxCommand {
     } else {
       query += ' LIMIT 500000';
       var countQuery = 'SELECT count(Id) FROM ' + objectName;
+      if(where != undefined && where != ''){
+        countQuery += ' WHERE ' + where;  
+      }
       var countResult = await DBUtils.query(conn,countQuery);
       var totalRecords = countResult.records[0].expr0;
       var numberOfLocalBatches = Math.ceil(totalRecords/500000);
