@@ -39,6 +39,7 @@ export default class cleanObjects extends SfdxCommand {
     hard: flags.boolean({char: 'h', description: messages.getMessage('hard')}),
     polltimeout: flags.string({char: 't', description: messages.getMessage('polltimeout')}),
     big: flags.boolean({char: 'b', description: messages.getMessage('big')}),
+    bigsize: flags.string({char: 'z', description: messages.getMessage('bigsize')})
   };
 
   // Comment this out if your command does not require an org username
@@ -59,6 +60,7 @@ export default class cleanObjects extends SfdxCommand {
     var hard = this.flags.hard;
     var polltimeout = this.flags.polltimeout;
     var big = this.flags.big;
+    var bigsize = this.flags.bigsize;
 
     if(polltimeout){
       cleanObjects.bulkApiPollTimeout = polltimeout;
@@ -94,7 +96,7 @@ export default class cleanObjects extends SfdxCommand {
         var objectAPIName = AppUtils.replaceaNameSpaceFromFile(element);
         AppUtils.log4('Object: ' + objectAPIName);
         try {
-          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big);
+          await cleanObjects.deleteRecordsFromObject(objectAPIName,conn,onlyquery,where,save,hard,resultData,big,bigsize);
         } catch (error) {
           AppUtils.log2('Error Deleting: '  + objectAPIName + '  Error: ' + error);
         }
@@ -109,10 +111,10 @@ export default class cleanObjects extends SfdxCommand {
     AppUtils.ux.log(' ');
   }
 
-  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big) {
+  static async deleteRecordsFromObject(objectName,conn,onlyquery,where,save,hard,resultData,big,bigsize) {
     var query = 'SELECT Id FROM ' + objectName 
     if(where != undefined && where != ''){
-      query += ' WHERE ' + where;  
+      query += ' WHERE ' + where; 
     }
  
     AppUtils.log3('Query: ' + query);
@@ -125,21 +127,20 @@ export default class cleanObjects extends SfdxCommand {
         resultData.push({ ObjectName: objectName , RecordsFound: records.length , DeleteSuccess: 'N/A'});
       }
     } else {
-      query += ' LIMIT 500000';
-      var countQuery = 'SELECT count(Id) FROM ' + objectName;
-      if(where != undefined && where != ''){
-        countQuery += ' WHERE ' + where;  
-      }
-      var countResult = await DBUtils.query(conn,countQuery);
-      var totalRecords = countResult.records[0].expr0;
-      var numberOfLocalBatches = Math.ceil(totalRecords/500000);
-      AppUtils.log3('Big size - Number of local Batches: ' + numberOfLocalBatches + '  Total Records to Delete: ' + totalRecords);
+      query += bigsize? ' LIMIT ' +  bigsize : ' LIMIT 500000';
+      AppUtils.log3('Big Query: ' + query);
+      AppUtils.log3('Big Query - Batch Size: ' + (bigsize? bigsize : '500000') );
       records = await DBUtils.bulkAPIquery(conn,query);
-      while(numberOfLocalBatches > 0 && !onlyquery){
+      var numberOfLocalBatches = 1;
+      var totalOfRecords = 0
+      while(records.length>0 && !onlyquery){
+        totalOfRecords = totalOfRecords = records.length;
+        AppUtils.log3('Batch # ' + numberOfLocalBatches );
         await DBUtils.bulkAPIdelete(records,conn,objectName,save,hard,resultData,cleanObjects.bulkApiPollTimeout);
         records = await DBUtils.bulkAPIquery(conn,query);
-        numberOfLocalBatches -=1;
+        numberOfLocalBatches = numberOfLocalBatches + 1;
       }
+      AppUtils.log3('Total Records ' + totalOfRecords);
     }
     
   }
